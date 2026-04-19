@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>DorsalMarket — Dorsal #1247 · Maratón Valencia</title>
+<script>if(localStorage.getItem('dm-theme')==='light')document.documentElement.setAttribute('data-theme','light');</script>
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
 <style>
 :root {
@@ -42,7 +43,33 @@
   --shadow-card: 0 2px 12px rgba(0,0,0,0.3);
   --shadow-elevated: 0 12px 40px rgba(0,0,0,0.4);
   --transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  --nav-bg: rgba(17, 17, 19, 0.85);
+  --mobile-menu-bg: rgba(17,17,19,0.97);
 }
+
+[data-theme="light"] {
+  --bg-primary: #fafaf8;
+  --bg-secondary: #f2f1ed;
+  --bg-card: #ffffff;
+  --bg-elevated: #f7f6f3;
+  --bg-input: #f2f1ed;
+  --border: rgba(0,0,0,0.08);
+  --border-hover: rgba(0,0,0,0.15);
+  --text-primary: #1a1a1f;
+  --text-secondary: #5a5a68;
+  --text-muted: #8a8a96;
+  --coral: #e8552d;
+  --coral-hover: #d44a24;
+  --olive: #4a7c3f;
+  --olive-subtle: rgba(74, 124, 63, 0.1);
+  --olive-tag: #2d5e22;
+  --nav-bg: rgba(250, 250, 248, 0.9);
+  --mobile-menu-bg: rgba(250,250,248,0.97);
+}
+
+.icon-moon { display: none; }
+[data-theme="light"] .icon-sun { display: none; }
+[data-theme="light"] .icon-moon { display: block; }
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
 html { scroll-behavior: smooth; }
@@ -60,28 +87,36 @@ nav {
   position: fixed; top: 0; left: 0; right: 0; z-index: 100;
   display: flex; align-items: center; justify-content: space-between;
   padding: 16px 40px;
-  background: rgba(17, 17, 19, 0.85);
+  background: var(--nav-bg);
   backdrop-filter: blur(20px);
   border-bottom: 1px solid var(--border);
 }
 .logo { font-family: 'Space Mono', monospace; font-size: 1.3rem; font-weight: 700; color: var(--text-primary); letter-spacing: -0.5px; text-decoration: none; }
 .logo span { color: var(--coral); }
 .nav-links { display: flex; gap: 32px; align-items: center; }
-.nav-links a { color: var(--text-secondary); text-decoration: none; font-size: 0.9rem; font-weight: 500; transition: color var(--transition); }
+.nav-links a { color: var(--text-secondary); text-decoration: none; font-size: 0.9rem; font-weight: 500; transition: color var(--transition); position: relative; }
 .nav-links a:hover { color: var(--text-primary); }
 .nav-links a.active { color: var(--coral); }
+.nav-links a.active::after { content: ''; position: absolute; bottom: -6px; left: 0; right: 0; height: 2px; background: var(--coral); border-radius: 2px; }
 .btn-nav { background: var(--coral); color: #fff; border: none; padding: 8px 20px; border-radius: 100px; font-size: 0.85rem; font-weight: 600; cursor: pointer; font-family: 'Outfit', sans-serif; transition: all var(--transition); }
 .btn-nav:hover { background: var(--coral-hover); }
+.btn-theme {
+  background: none; border: 1px solid var(--border);
+  border-radius: var(--radius-sm); padding: 8px;
+  cursor: pointer; color: var(--text-secondary);
+  display: flex; align-items: center; justify-content: center;
+  transition: all var(--transition);
+}
+.btn-theme:hover { border-color: var(--border-hover); color: var(--text-primary); }
 .hamburger { display: none; flex-direction: column; gap: 5px; cursor: pointer; background: none; border: none; padding: 4px; }
 .hamburger span { display: block; width: 24px; height: 2px; background: var(--text-primary); border-radius: 2px; }
-.mobile-menu { display: none; position: fixed; inset: 0; z-index: 99; background: rgba(17,17,19,0.97); backdrop-filter: blur(20px); flex-direction: column; align-items: center; justify-content: center; gap: 32px; }
+.mobile-menu { display: none; position: fixed; inset: 0; z-index: 99; background: var(--mobile-menu-bg); backdrop-filter: blur(20px); flex-direction: column; align-items: center; justify-content: center; gap: 32px; }
 .mobile-menu.active { display: flex; }
-.mobile-menu a { color: var(--text-primary); font-size: 1.4rem; font-weight: 600; text-decoration: none; }
+.mobile-menu a { color: var(--text-primary); font-size: 1.4rem; font-weight: 600; text-decoration: none; transition: color var(--transition); }
+.mobile-menu a:hover { color: var(--coral); }
 
 /* ─── BACK LINK ─── */
-.back-bar {
-  padding: 88px 40px 0;
-}
+.back-bar { padding: 88px 40px 0; }
 .back-link {
   display: inline-flex; align-items: center; gap: 6px;
   color: var(--text-muted); text-decoration: none;
@@ -112,12 +147,10 @@ nav {
   width: 100%; height: 340px;
   background: linear-gradient(135deg, #e8552d, #f5943b);
   display: flex; align-items: center; justify-content: center;
-  position: relative;
-  overflow: hidden;
+  position: relative; overflow: hidden;
 }
 .dorsal-photo::before {
-  content: '';
-  position: absolute; inset: 0;
+  content: ''; position: absolute; inset: 0;
   background:
     repeating-linear-gradient(0deg, transparent, transparent 38px, rgba(255,255,255,0.04) 38px, rgba(255,255,255,0.04) 40px),
     repeating-linear-gradient(90deg, transparent, transparent 38px, rgba(255,255,255,0.04) 38px, rgba(255,255,255,0.04) 40px);
@@ -131,226 +164,87 @@ nav {
   box-shadow: 0 8px 32px rgba(0,0,0,0.3);
   transform: rotate(-2deg);
 }
-.bib-mock .bib-event {
-  font-size: 0.65rem; font-weight: 800;
-  color: #e8552d; text-transform: uppercase;
-  letter-spacing: 2px; margin-bottom: 4px;
-}
-.bib-mock .bib-number {
-  font-family: 'Space Mono', monospace;
-  font-size: 4rem; font-weight: 700;
-  color: #1a1a1f; line-height: 1;
-}
-.bib-mock .bib-name {
-  font-size: 0.75rem; font-weight: 600;
-  color: #6a6a78; margin-top: 6px;
-  text-transform: uppercase; letter-spacing: 1px;
-}
-.bib-mock .bib-dist {
-  position: absolute; top: 10px; right: 12px;
-  font-size: 0.6rem; font-weight: 800;
-  color: #fff; background: #e8552d;
-  padding: 3px 8px; border-radius: 4px;
-}
-.bib-mock .bib-logo {
-  position: absolute; bottom: 10px; left: 12px;
-  width: 40px; height: 14px;
-  background: #ddd; border-radius: 2px;
-}
-.bib-mock .bib-chip {
-  position: absolute; bottom: 8px; right: 10px;
-  font-size: 0.5rem; color: #aaa;
-  font-weight: 600;
-}
+.bib-mock .bib-event { font-size: 0.65rem; font-weight: 800; color: #e8552d; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 4px; }
+.bib-mock .bib-number { font-family: 'Space Mono', monospace; font-size: 4rem; font-weight: 700; color: #1a1a1f; line-height: 1; }
+.bib-mock .bib-name { font-size: 0.75rem; font-weight: 600; color: #6a6a78; margin-top: 6px; text-transform: uppercase; letter-spacing: 1px; }
+.bib-mock .bib-dist { position: absolute; top: 10px; right: 12px; font-size: 0.6rem; font-weight: 800; color: #fff; background: #e8552d; padding: 3px 8px; border-radius: 4px; }
+.bib-mock .bib-logo { position: absolute; bottom: 10px; left: 12px; width: 40px; height: 14px; background: #ddd; border-radius: 2px; }
+.bib-mock .bib-chip { position: absolute; bottom: 8px; right: 10px; font-size: 0.5rem; color: #aaa; font-weight: 600; }
 
-/* Race info section */
 .race-info { padding: 28px; }
-.race-header {
-  display: flex; justify-content: space-between; align-items: flex-start;
-  margin-bottom: 20px; gap: 12px;
-}
+.race-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px; gap: 12px; }
 .race-header h1 { font-size: 1.5rem; font-weight: 800; letter-spacing: -0.5px; flex: 1; }
-.race-tag {
-  font-size: 0.65rem; font-weight: 700; padding: 5px 12px;
-  border-radius: 100px; text-transform: uppercase; letter-spacing: 0.5px;
-  background: var(--olive-subtle); color: var(--olive-tag);
-  white-space: nowrap; flex-shrink: 0;
-}
+.race-tag { font-size: 0.65rem; font-weight: 700; padding: 5px 12px; border-radius: 100px; text-transform: uppercase; letter-spacing: 0.5px; background: var(--olive-subtle); color: var(--olive-tag); white-space: nowrap; flex-shrink: 0; }
 
-.info-grid {
-  display: grid; grid-template-columns: 1fr 1fr;
-  gap: 16px; margin-bottom: 28px;
-}
-.info-item {
-  display: flex; align-items: flex-start; gap: 10px;
-}
-.info-icon {
-  width: 36px; height: 36px; flex-shrink: 0;
-  background: var(--bg-elevated); border-radius: var(--radius-sm);
-  display: flex; align-items: center; justify-content: center;
-  font-size: 0.9rem;
-}
+.info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 28px; }
+.info-item { display: flex; align-items: flex-start; gap: 10px; }
+.info-icon { width: 36px; height: 36px; flex-shrink: 0; background: var(--bg-elevated); border-radius: var(--radius-sm); display: flex; align-items: center; justify-content: center; font-size: 0.9rem; }
 .info-text .info-label { font-size: 0.68rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.8px; font-weight: 600; }
 .info-text .info-value { font-size: 0.92rem; font-weight: 600; margin-top: 1px; }
 
-/* Dividers */
-.divider {
-  height: 1px; background: var(--border);
-  margin: 24px 0;
-}
+.divider { height: 1px; background: var(--border); margin: 24px 0; }
 
-/* Seller section */
-.seller-section h3 {
-  font-size: 0.95rem; font-weight: 700; margin-bottom: 16px;
-  display: flex; align-items: center; gap: 8px;
-}
+.seller-section h3 { font-size: 0.95rem; font-weight: 700; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
 .seller-section h3 .icon { font-size: 0.9rem; }
-.seller-profile {
-  display: flex; align-items: center; gap: 14px;
-  margin-bottom: 18px;
-}
-.seller-avatar {
-  width: 44px; height: 44px; border-radius: 50%;
-  background: linear-gradient(135deg, #3d6834, #6dab5e);
-  display: flex; align-items: center; justify-content: center;
-  font-family: 'Space Mono', monospace;
-  font-size: 0.85rem; font-weight: 700; color: #fff;
-  flex-shrink: 0;
-}
+.seller-profile { display: flex; align-items: center; gap: 14px; margin-bottom: 18px; }
+.seller-avatar { width: 44px; height: 44px; border-radius: 50%; background: linear-gradient(135deg, #3d6834, #6dab5e); display: flex; align-items: center; justify-content: center; font-family: 'Space Mono', monospace; font-size: 0.85rem; font-weight: 700; color: #fff; flex-shrink: 0; }
 .seller-name { font-weight: 700; font-size: 0.92rem; }
 .seller-rating { font-size: 0.78rem; color: var(--text-muted); margin-top: 1px; }
 
-.sell-reason {
-  background: var(--bg-elevated);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-md);
-  padding: 16px 18px; margin-bottom: 18px;
-}
-.sell-reason .reason-label {
-  font-size: 0.7rem; font-weight: 700; color: var(--text-muted);
-  text-transform: uppercase; letter-spacing: 0.8px;
-  margin-bottom: 8px;
-}
-.sell-reason p {
-  font-size: 0.88rem; color: var(--text-secondary);
-  line-height: 1.6; font-style: italic;
-}
+.sell-reason { background: var(--bg-elevated); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 16px 18px; margin-bottom: 18px; }
+.sell-reason .reason-label { font-size: 0.7rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 8px; }
+.sell-reason p { font-size: 0.88rem; color: var(--text-secondary); line-height: 1.6; font-style: italic; }
 .sell-reason p::before { content: '"'; color: var(--coral); font-size: 1.2rem; font-weight: 700; margin-right: 2px; }
 .sell-reason p::after { content: '"'; color: var(--coral); font-size: 1.2rem; font-weight: 700; margin-left: 2px; }
 
-/* Contact buttons */
-.contact-methods {
-  display: flex; gap: 10px;
-}
+.contact-methods { display: flex; gap: 10px; }
 .contact-btn {
   flex: 1; display: flex; align-items: center; justify-content: center; gap: 8px;
   padding: 12px 16px; border-radius: var(--radius-md);
   font-size: 0.85rem; font-weight: 700; cursor: pointer;
-  transition: all var(--transition);
-  font-family: 'Outfit', sans-serif; border: none;
+  transition: all var(--transition); font-family: 'Outfit', sans-serif; border: none;
 }
-.contact-btn.whatsapp {
-  background: var(--whatsapp-subtle);
-  color: var(--whatsapp);
-  border: 1px solid rgba(37, 211, 102, 0.2);
-}
+.contact-btn.whatsapp { background: var(--whatsapp-subtle); color: var(--whatsapp); border: 1px solid rgba(37, 211, 102, 0.2); }
 .contact-btn.whatsapp:hover { background: rgba(37, 211, 102, 0.18); }
-.contact-btn.phone {
-  background: var(--phone-subtle);
-  color: var(--phone-blue);
-  border: 1px solid rgba(91, 141, 239, 0.2);
-}
+.contact-btn.phone { background: var(--phone-subtle); color: var(--phone-blue); border: 1px solid rgba(91, 141, 239, 0.2); }
 .contact-btn.phone:hover { background: rgba(91, 141, 239, 0.18); }
 .contact-btn svg { width: 18px; height: 18px; }
 
 /* ─── RIGHT: PURCHASE PANEL ─── */
-.purchase-panel {
-  position: sticky; top: 88px;
-  align-self: start;
-}
-.purchase-card {
-  background: var(--bg-card);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-xl);
-  padding: 28px; margin-bottom: 16px;
-}
-.purchase-card h2 {
-  font-size: 1rem; font-weight: 700; margin-bottom: 20px;
-  display: flex; align-items: center; gap: 8px;
-}
+.purchase-panel { position: sticky; top: 88px; align-self: start; }
+.purchase-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-xl); padding: 28px; margin-bottom: 16px; }
+.purchase-card h2 { font-size: 1rem; font-weight: 700; margin-bottom: 20px; display: flex; align-items: center; gap: 8px; }
 .purchase-card h2 .icon { font-size: 0.95rem; }
 
-/* Price display */
-.price-display {
-  text-align: center; padding: 20px;
-  background: var(--bg-elevated);
-  border-radius: var(--radius-lg);
-  margin-bottom: 24px;
-}
-.price-display .price-label {
-  font-size: 0.72rem; font-weight: 700; color: var(--text-muted);
-  text-transform: uppercase; letter-spacing: 1px;
-  margin-bottom: 4px;
-}
-.price-display .price-amount {
-  font-family: 'Space Mono', monospace;
-  font-size: 2.8rem; font-weight: 700; color: var(--coral);
-  line-height: 1;
-}
-.price-display .price-note {
-  font-size: 0.72rem; color: var(--text-muted);
-  margin-top: 6px;
-}
+.price-display { text-align: center; padding: 20px; background: var(--bg-elevated); border-radius: var(--radius-lg); margin-bottom: 24px; }
+.price-display .price-label { font-size: 0.72rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px; }
+.price-display .price-amount { font-family: 'Space Mono', monospace; font-size: 2.8rem; font-weight: 700; color: var(--coral); line-height: 1; }
+.price-display .price-note { font-size: 0.72rem; color: var(--text-muted); margin-top: 6px; }
 
-/* Payment methods */
 .payment-section { margin-bottom: 24px; }
-.payment-label {
-  font-size: 0.75rem; font-weight: 700; color: var(--text-secondary);
-  text-transform: uppercase; letter-spacing: 0.8px;
-  margin-bottom: 12px;
-}
+.payment-label { font-size: 0.75rem; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 12px; }
 .payment-options { display: flex; flex-direction: column; gap: 10px; }
 .payment-option {
   display: flex; align-items: center; gap: 14px;
   padding: 14px 16px; border-radius: var(--radius-md);
-  border: 2px solid var(--border);
-  background: var(--bg-primary);
-  cursor: pointer; transition: all var(--transition);
-  position: relative;
+  border: 2px solid var(--border); background: var(--bg-primary);
+  cursor: pointer; transition: all var(--transition); position: relative;
 }
 .payment-option:hover { border-color: var(--border-hover); }
 .payment-option.selected { border-color: var(--coral); background: var(--coral-subtle); }
-.payment-option input[type="radio"] {
-  appearance: none; -webkit-appearance: none;
-  width: 20px; height: 20px; border-radius: 50%;
-  border: 2px solid var(--border-hover);
-  flex-shrink: 0; transition: all var(--transition);
-  position: relative;
-}
-.payment-option.selected input[type="radio"] {
-  border-color: var(--coral);
-}
-.payment-option.selected input[type="radio"]::after {
-  content: ''; position: absolute;
-  top: 3px; left: 3px;
-  width: 10px; height: 10px;
-  background: var(--coral); border-radius: 50%;
-}
-.payment-icon {
-  width: 40px; height: 28px; border-radius: 6px;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 0.65rem; font-weight: 800; color: #fff;
-  flex-shrink: 0; letter-spacing: 0.3px;
-}
+.payment-option input[type="radio"] { appearance: none; -webkit-appearance: none; width: 20px; height: 20px; border-radius: 50%; border: 2px solid var(--border-hover); flex-shrink: 0; transition: all var(--transition); position: relative; }
+.payment-option.selected input[type="radio"] { border-color: var(--coral); }
+.payment-option.selected input[type="radio"]::after { content: ''; position: absolute; top: 3px; left: 3px; width: 10px; height: 10px; background: var(--coral); border-radius: 50%; }
+.payment-icon { width: 40px; height: 28px; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 0.65rem; font-weight: 800; color: #fff; flex-shrink: 0; letter-spacing: 0.3px; }
 .payment-icon.bizum { background: var(--bizum); }
 .payment-icon.paypal { background: var(--paypal); }
 .payment-icon.card { background: var(--card-visa); font-size: 0.55rem; }
 .payment-name { font-weight: 700; font-size: 0.9rem; }
 .payment-desc { font-size: 0.75rem; color: var(--text-muted); margin-top: 1px; }
 
-/* Purchase button */
+/* Purchase button as link */
 .btn-purchase {
-  width: 100%; padding: 16px;
+  display: block; width: 100%; padding: 16px;
   background: var(--coral); color: #fff;
   border: none; border-radius: var(--radius-md);
   font-size: 1rem; font-weight: 800;
@@ -358,53 +252,27 @@ nav {
   font-family: 'Outfit', sans-serif;
   box-shadow: 0 4px 20px var(--coral-glow);
   margin-bottom: 12px;
+  text-decoration: none; text-align: center;
 }
 .btn-purchase:hover { background: var(--coral-hover); transform: translateY(-2px); box-shadow: 0 8px 32px var(--coral-glow); }
-.btn-purchase:disabled {
-  background: var(--bg-elevated); color: var(--text-muted);
-  box-shadow: none; cursor: not-allowed; transform: none;
-}
 
-.purchase-note {
-  font-size: 0.72rem; color: var(--text-muted);
-  text-align: center; line-height: 1.5;
-}
+.purchase-note { font-size: 0.72rem; color: var(--text-muted); text-align: center; line-height: 1.5; }
 .purchase-note svg { width: 12px; height: 12px; stroke: var(--olive); vertical-align: -2px; margin-right: 3px; }
 
-/* Guarantee card */
-.guarantee-card {
-  background: var(--bg-card);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  padding: 20px;
-}
-.guarantee-card h4 {
-  font-size: 0.82rem; font-weight: 700; margin-bottom: 12px;
-  display: flex; align-items: center; gap: 7px;
-}
+.guarantee-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 20px; }
+.guarantee-card h4 { font-size: 0.82rem; font-weight: 700; margin-bottom: 12px; display: flex; align-items: center; gap: 7px; }
 .guarantee-card h4 .icon { font-size: 0.85rem; }
 .guarantee-list { list-style: none; display: flex; flex-direction: column; gap: 8px; }
-.guarantee-list li {
-  font-size: 0.78rem; color: var(--text-secondary);
-  display: flex; align-items: flex-start; gap: 8px; line-height: 1.4;
-}
+.guarantee-list li { font-size: 0.78rem; color: var(--text-secondary); display: flex; align-items: flex-start; gap: 8px; line-height: 1.4; }
 .guarantee-list li .check { color: var(--olive); font-weight: 700; flex-shrink: 0; }
 
 /* ─── FOOTER ─── */
-footer {
-  padding: 32px 40px; border-top: 1px solid var(--border);
-  display: flex; justify-content: space-between; align-items: center;
-  font-size: 0.8rem; color: var(--text-muted);
-}
+footer { padding: 32px 40px; border-top: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; font-size: 0.8rem; color: var(--text-muted); }
 footer .logo { font-size: 1rem; text-decoration: none; }
 
 /* ─── RESPONSIVE ─── */
 @media (max-width: 900px) {
-  .detail-layout {
-    grid-template-columns: 1fr;
-    padding: 20px 20px 40px;
-    gap: 20px;
-  }
+  .detail-layout { grid-template-columns: 1fr; padding: 20px 20px 40px; gap: 20px; }
   .purchase-panel { position: static; }
   .back-bar { padding: 84px 20px 0; }
   .dorsal-photo { height: 260px; }
@@ -430,8 +298,13 @@ footer .logo { font-size: 1rem; text-decoration: none; }
   <a href="home.html" class="logo">dorsal<span>.</span>market</a>
   <div class="nav-links">
     <a href="home.html">Home</a>
-    <a href="dorsales.html">Dorsales</a>
+    <a href="dorsales.html" class="active">Dorsales</a>
+    <a href="vender-dorsal.html">Vender</a>
     <a href="perfil.html">Perfil</a>
+    <button class="btn-theme" onclick="toggleTheme()" title="Cambiar tema">
+      <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+      <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+    </button>
     <button class="btn-nav">Mi cuenta</button>
   </div>
   <button class="hamburger" onclick="document.getElementById('mobileMenu').classList.toggle('active')">
@@ -441,6 +314,7 @@ footer .logo { font-size: 1rem; text-decoration: none; }
 <div class="mobile-menu" id="mobileMenu">
   <a href="home.html">Home</a>
   <a href="dorsales.html">Dorsales</a>
+  <a href="vender-dorsal.html">Vender</a>
   <a href="perfil.html">Perfil</a>
   <a href="#">Mi cuenta</a>
 </div>
@@ -458,7 +332,6 @@ footer .logo { font-size: 1rem; text-decoration: none; }
 
   <!-- ─── LEFT: DORSAL INFO ─── -->
   <div class="dorsal-visual">
-    <!-- Dorsal photo / bib mock -->
     <div class="dorsal-photo">
       <div class="bib-mock">
         <div class="bib-dist">42K</div>
@@ -470,7 +343,6 @@ footer .logo { font-size: 1rem; text-decoration: none; }
       </div>
     </div>
 
-    <!-- Race details -->
     <div class="race-info">
       <div class="race-header">
         <h1>Maratón Valencia Trinidad Alfonso</h1>
@@ -524,7 +396,6 @@ footer .logo { font-size: 1rem; text-decoration: none; }
 
       <div class="divider"></div>
 
-      <!-- Seller info -->
       <div class="seller-section">
         <h3><span class="icon">🧑</span> Vendedor</h3>
         <div class="seller-profile">
@@ -535,13 +406,11 @@ footer .logo { font-size: 1rem; text-decoration: none; }
           </div>
         </div>
 
-        <!-- Reason for selling -->
         <div class="sell-reason">
           <div class="reason-label">Motivo de venta</div>
           <p>Lesión en el gemelo derecho, el médico me ha recomendado no correr en los próximos 3 meses. Me da mucha pena perderme Valencia pero prefiero cuidarme. El dorsal incluye todo: chip, bolsa del corredor y camiseta talla M.</p>
         </div>
 
-        <!-- Contact methods -->
         <div class="contact-methods">
           <button class="contact-btn whatsapp" onclick="alert('Abrir WhatsApp: +34 612 XXX XXX (prototipo)')">
             <svg viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
@@ -561,14 +430,12 @@ footer .logo { font-size: 1rem; text-decoration: none; }
     <div class="purchase-card">
       <h2><span class="icon">💳</span> Comprar dorsal</h2>
 
-      <!-- Price -->
       <div class="price-display">
         <div class="price-label">Precio del dorsal</div>
         <div class="price-amount">€85</div>
         <div class="price-note">Precio fijado por el vendedor</div>
       </div>
 
-      <!-- Payment methods -->
       <div class="payment-section">
         <div class="payment-label">Método de pago</div>
         <div class="payment-options">
@@ -599,17 +466,13 @@ footer .logo { font-size: 1rem; text-decoration: none; }
         </div>
       </div>
 
-      <!-- Buy button -->
-      <button class="btn-purchase" onclick="confirmPurchase()">
-        Comprar dorsal — €85
-      </button>
+      <a href="compra-confirmada.html" class="btn-purchase">Comprar dorsal — €85</a>
       <div class="purchase-note">
         <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
         Tus datos personales se enviarán al vendedor tras confirmar la compra para tramitar el cambio de titularidad
       </div>
     </div>
 
-    <!-- Guarantee -->
     <div class="guarantee-card">
       <h4><span class="icon">🛡️</span> Garantías DorsalMarket</h4>
       <ul class="guarantee-list">
@@ -629,34 +492,17 @@ footer .logo { font-size: 1rem; text-decoration: none; }
   <div>© 2026 DorsalMarket</div>
 </footer>
 
-<!-- PURCHASE CONFIRMATION MODAL -->
-<div id="confirmModal" style="display:none; position:fixed; inset:0; z-index:200; background:rgba(0,0,0,0.6); backdrop-filter:blur(8px); align-items:center; justify-content:center; padding:20px;">
-  <div style="background:var(--bg-card); border:1px solid var(--border); border-radius:var(--radius-xl); padding:36px 32px; width:100%; max-width:400px; text-align:center;">
-    <div style="font-size:2.5rem; margin-bottom:12px;">✅</div>
-    <h2 style="font-size:1.3rem; font-weight:800; margin-bottom:6px;">¡Compra confirmada!</h2>
-    <p style="font-size:0.88rem; color:var(--text-secondary); line-height:1.6; margin-bottom:20px;">
-      Tu dorsal #1247 para el Maratón Valencia ha sido reservado. Tus datos personales se han enviado al vendedor para tramitar el cambio de titularidad.
-    </p>
-    <div style="background:var(--bg-elevated); border-radius:var(--radius-md); padding:14px; margin-bottom:20px; text-align:left;">
-      <div style="font-size:0.7rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.8px; font-weight:700; margin-bottom:6px;">Resumen</div>
-      <div style="display:flex; justify-content:space-between; font-size:0.85rem; margin-bottom:4px;"><span style="color:var(--text-secondary);">Dorsal</span><span style="font-weight:700;">#1247 — 42K</span></div>
-      <div style="display:flex; justify-content:space-between; font-size:0.85rem; margin-bottom:4px;"><span style="color:var(--text-secondary);">Carrera</span><span style="font-weight:700;">Maratón Valencia</span></div>
-      <div style="display:flex; justify-content:space-between; font-size:0.85rem;"><span style="color:var(--text-secondary);">Total pagado</span><span style="font-weight:700; color:var(--coral);">€85</span></div>
-    </div>
-    <button onclick="document.getElementById('confirmModal').style.display='none'" style="width:100%; padding:14px; background:var(--coral); color:#fff; border:none; border-radius:var(--radius-md); font-size:0.95rem; font-weight:700; cursor:pointer; font-family:'Outfit',sans-serif;">Ir a mis compras</button>
-  </div>
-</div>
-
 <script>
+function toggleTheme() {
+  const html = document.documentElement;
+  const isLight = html.getAttribute('data-theme') === 'light';
+  html.setAttribute('data-theme', isLight ? 'dark' : 'light');
+  localStorage.setItem('dm-theme', isLight ? 'dark' : 'light');
+}
 function selectPayment(el) {
   document.querySelectorAll('.payment-option').forEach(o => o.classList.remove('selected'));
   el.classList.add('selected');
   el.querySelector('input[type="radio"]').checked = true;
-}
-
-function confirmPurchase() {
-  const modal = document.getElementById('confirmModal');
-  modal.style.display = 'flex';
 }
 </script>
 </body>
