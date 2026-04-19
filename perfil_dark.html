@@ -1,0 +1,614 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DorsalMarket — Mi Perfil</title>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg-primary: #111113;
+  --bg-secondary: #1a1a1f;
+  --bg-card: #1f1f26;
+  --bg-elevated: #26262e;
+  --bg-input: #16161b;
+  --border: rgba(255,255,255,0.08);
+  --border-hover: rgba(255,255,255,0.16);
+  --text-primary: #f0efec;
+  --text-secondary: #a0a0ac;
+  --text-muted: #6a6a78;
+  --text-faint: rgba(255,255,255,0.05);
+  --coral: #e8552d;
+  --coral-hover: #f06a3f;
+  --coral-glow: rgba(232, 85, 45, 0.25);
+  --coral-subtle: rgba(232, 85, 45, 0.08);
+  --olive: #6dab5e;
+  --olive-dark: #4a7c3f;
+  --olive-subtle: rgba(109, 171, 94, 0.1);
+  --olive-tag: #8fc780;
+  --amber: #d4a03c;
+  --amber-subtle: rgba(212, 160, 60, 0.1);
+  --radius-sm: 8px;
+  --radius-md: 14px;
+  --radius-lg: 20px;
+  --radius-xl: 28px;
+  --shadow-card: 0 2px 12px rgba(0,0,0,0.3);
+  --shadow-elevated: 0 12px 40px rgba(0,0,0,0.4);
+  --transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  font-family: 'Outfit', sans-serif;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+  min-height: 100vh;
+}
+
+/* ─── NAV ─── */
+nav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 16px 40px;
+  background: rgba(17, 17, 19, 0.85);
+  backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--border);
+}
+.logo {
+  font-family: 'Space Mono', monospace;
+  font-size: 1.3rem; font-weight: 700;
+  color: var(--text-primary); letter-spacing: -0.5px;
+  text-decoration: none;
+}
+.logo span { color: var(--coral); }
+.nav-links { display: flex; gap: 32px; align-items: center; }
+.nav-links a {
+  color: var(--text-secondary); text-decoration: none;
+  font-size: 0.9rem; font-weight: 500;
+  transition: color var(--transition); position: relative;
+}
+.nav-links a:hover { color: var(--text-primary); }
+.nav-links a.active { color: var(--coral); }
+.nav-links a.active::after {
+  content: ''; position: absolute; bottom: -6px; left: 0; right: 0;
+  height: 2px; background: var(--coral); border-radius: 2px;
+}
+.btn-logout {
+  background: var(--bg-elevated); color: var(--text-secondary);
+  border: 1px solid var(--border); padding: 8px 20px;
+  border-radius: 100px; font-size: 0.85rem; font-weight: 600;
+  cursor: pointer; transition: all var(--transition);
+  font-family: 'Outfit', sans-serif;
+}
+.btn-logout:hover { border-color: var(--border-hover); color: var(--text-primary); }
+.hamburger { display: none; flex-direction: column; gap: 5px; cursor: pointer; background: none; border: none; padding: 4px; }
+.hamburger span { display: block; width: 24px; height: 2px; background: var(--text-primary); border-radius: 2px; }
+
+/* ─── MOBILE MENU ─── */
+.mobile-menu {
+  display: none; position: fixed; inset: 0; z-index: 99;
+  background: rgba(17, 17, 19, 0.97); backdrop-filter: blur(20px);
+  flex-direction: column; align-items: center; justify-content: center; gap: 32px;
+}
+.mobile-menu.active { display: flex; }
+.mobile-menu a {
+  color: var(--text-primary); font-size: 1.4rem; font-weight: 600;
+  text-decoration: none;
+}
+.mobile-menu a:hover { color: var(--coral); }
+
+/* ─── PROFILE HEADER ─── */
+.profile-header {
+  padding: 110px 40px 0;
+  background:
+    radial-gradient(ellipse 60% 40% at 70% 0%, rgba(232, 85, 45, 0.07), transparent),
+    var(--bg-primary);
+}
+.profile-top {
+  display: flex; align-items: center; gap: 24px;
+  padding-bottom: 28px;
+}
+.avatar {
+  width: 80px; height: 80px;
+  border-radius: 50%; flex-shrink: 0;
+  background: linear-gradient(135deg, var(--coral), #f5943b);
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Space Mono', monospace;
+  font-size: 1.8rem; font-weight: 700; color: #fff;
+  border: 3px solid var(--bg-primary);
+  box-shadow: 0 0 0 2px var(--coral-glow);
+}
+.profile-info h1 {
+  font-size: 1.6rem; font-weight: 800; letter-spacing: -0.5px;
+  margin-bottom: 2px;
+}
+.profile-info .email { font-size: 0.88rem; color: var(--text-muted); }
+.profile-stats {
+  display: flex; gap: 32px; margin-top: 10px;
+}
+.ps-item {
+  display: flex; align-items: center; gap: 6px;
+  font-size: 0.82rem; color: var(--text-secondary);
+}
+.ps-item strong {
+  font-family: 'Space Mono', monospace;
+  font-size: 1rem; color: var(--text-primary);
+}
+
+/* ─── TABS ─── */
+.tabs-container { padding: 0 40px; }
+.tabs {
+  display: flex; gap: 0;
+  border-bottom: 1px solid var(--border);
+}
+.tab {
+  padding: 14px 24px;
+  font-size: 0.88rem; font-weight: 600;
+  color: var(--text-muted); background: none; border: none;
+  cursor: pointer; position: relative;
+  transition: color var(--transition);
+  font-family: 'Outfit', sans-serif;
+}
+.tab:hover { color: var(--text-secondary); }
+.tab.active { color: var(--coral); }
+.tab.active::after {
+  content: ''; position: absolute; bottom: -1px; left: 0; right: 0;
+  height: 2px; background: var(--coral); border-radius: 2px 2px 0 0;
+}
+.tab .count {
+  font-size: 0.68rem; font-weight: 700;
+  background: var(--bg-elevated); padding: 2px 7px;
+  border-radius: 100px; margin-left: 6px;
+  color: var(--text-muted);
+}
+.tab.active .count { background: var(--coral-subtle); color: var(--coral); }
+
+/* ─── TAB PANELS ─── */
+.tab-panel { display: none; padding: 28px 40px 60px; }
+.tab-panel.active { display: block; }
+
+/* ─── PERSONAL DATA FORM ─── */
+.form-section {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 32px; margin-bottom: 24px;
+}
+.form-section-header {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 24px; flex-wrap: wrap; gap: 10px;
+}
+.form-section-header h2 {
+  font-size: 1.1rem; font-weight: 700;
+  display: flex; align-items: center; gap: 10px;
+}
+.form-section-header h2 .icon {
+  width: 32px; height: 32px;
+  background: var(--coral-subtle); border-radius: var(--radius-sm);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.95rem;
+}
+.form-section-header .badge-info {
+  font-size: 0.7rem; font-weight: 600;
+  padding: 4px 12px; border-radius: 100px;
+  background: var(--amber-subtle); color: var(--amber);
+  display: flex; align-items: center; gap: 5px;
+}
+.form-section-header .badge-info svg { width: 12px; height: 12px; stroke: var(--amber); }
+
+.form-desc {
+  font-size: 0.82rem; color: var(--text-muted);
+  line-height: 1.6; margin-bottom: 24px;
+  padding: 12px 16px;
+  background: rgba(212, 160, 60, 0.04);
+  border-left: 3px solid var(--amber);
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
+}
+.form-grid .full { grid-column: 1 / -1; }
+
+.field label {
+  display: block; font-size: 0.75rem; font-weight: 700;
+  color: var(--text-secondary); margin-bottom: 7px;
+  text-transform: uppercase; letter-spacing: 0.8px;
+}
+.field label .optional {
+  font-weight: 500; color: var(--text-muted);
+  text-transform: none; letter-spacing: 0; font-size: 0.72rem;
+}
+.field input,
+.field select,
+.field textarea {
+  width: 100%; padding: 12px 14px;
+  background: var(--bg-input); border: 1px solid var(--border);
+  border-radius: var(--radius-sm); color: var(--text-primary);
+  font-size: 0.88rem; font-family: 'Outfit', sans-serif;
+  outline: none; transition: border-color var(--transition);
+}
+.field input:focus,
+.field select:focus,
+.field textarea:focus { border-color: var(--coral); }
+.field input::placeholder,
+.field textarea::placeholder { color: var(--text-muted); }
+.field textarea { resize: vertical; min-height: 80px; }
+.field .hint {
+  font-size: 0.72rem; color: var(--text-muted);
+  margin-top: 5px; line-height: 1.4;
+}
+.select-wrap { position: relative; }
+.select-wrap::after {
+  content: '▾'; position: absolute; right: 14px; top: 50%;
+  transform: translateY(-50%); color: var(--text-muted);
+  pointer-events: none; font-size: 0.8rem;
+}
+.select-wrap select {
+  appearance: none; -webkit-appearance: none;
+  padding-right: 36px; cursor: pointer;
+}
+.select-wrap select option { background: var(--bg-secondary); color: var(--text-primary); }
+
+.time-group {
+  display: flex; gap: 8px; align-items: center;
+}
+.time-group input { flex: 1; text-align: center; }
+.time-group .sep { color: var(--text-muted); font-weight: 700; font-size: 1.1rem; }
+
+.form-actions {
+  display: flex; gap: 12px; justify-content: flex-end;
+  margin-top: 24px; padding-top: 20px;
+  border-top: 1px solid var(--border);
+}
+.btn-save {
+  padding: 12px 28px;
+  background: var(--coral); color: #fff;
+  border: none; border-radius: var(--radius-md);
+  font-size: 0.9rem; font-weight: 700;
+  cursor: pointer; transition: all var(--transition);
+  font-family: 'Outfit', sans-serif;
+}
+.btn-save:hover { background: var(--coral-hover); transform: translateY(-1px); }
+.btn-cancel {
+  padding: 12px 28px;
+  background: var(--bg-elevated); color: var(--text-secondary);
+  border: 1px solid var(--border); border-radius: var(--radius-md);
+  font-size: 0.9rem; font-weight: 600;
+  cursor: pointer; transition: all var(--transition);
+  font-family: 'Outfit', sans-serif;
+}
+.btn-cancel:hover { border-color: var(--border-hover); color: var(--text-primary); }
+
+/* ─── HISTORY CARDS ─── */
+.history-list { display: flex; flex-direction: column; gap: 14px; }
+.history-card {
+  display: flex; align-items: center; gap: 18px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 18px 20px;
+  transition: all var(--transition);
+  cursor: pointer;
+}
+.history-card:hover { border-color: var(--border-hover); transform: translateX(4px); }
+.hc-img {
+  width: 64px; height: 64px; flex-shrink: 0;
+  border-radius: var(--radius-md);
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Space Mono', monospace;
+  font-size: 1rem; font-weight: 700; color: rgba(255,255,255,0.3);
+}
+.hc-body { flex: 1; min-width: 0; }
+.hc-race { font-weight: 700; font-size: 0.95rem; margin-bottom: 2px; }
+.hc-meta {
+  font-size: 0.78rem; color: var(--text-muted);
+  display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
+}
+.hc-meta .dot { width: 3px; height: 3px; background: var(--text-muted); border-radius: 50%; }
+.hc-right { text-align: right; flex-shrink: 0; }
+.hc-price {
+  font-family: 'Space Mono', monospace;
+  font-weight: 700; font-size: 1.05rem; color: var(--coral);
+  margin-bottom: 4px;
+}
+.hc-status {
+  font-size: 0.65rem; font-weight: 700;
+  padding: 3px 10px; border-radius: 100px;
+  text-transform: uppercase; letter-spacing: 0.5px;
+  display: inline-block;
+}
+.hc-status.bought { background: var(--olive-subtle); color: var(--olive-tag); }
+.hc-status.sold { background: var(--coral-subtle); color: var(--coral); }
+.hc-status.pending { background: var(--amber-subtle); color: var(--amber); }
+
+/* ─── FOOTER ─── */
+footer {
+  padding: 32px 40px; border-top: 1px solid var(--border);
+  display: flex; justify-content: space-between; align-items: center;
+  font-size: 0.8rem; color: var(--text-muted);
+}
+footer .logo { font-size: 1rem; text-decoration: none; }
+
+/* ─── RESPONSIVE ─── */
+@media (max-width: 768px) {
+  .profile-header { padding: 100px 20px 0; }
+  .profile-top { flex-direction: column; text-align: center; }
+  .profile-stats { justify-content: center; }
+  .tabs-container { padding: 0 20px; }
+  .tabs { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .tab { white-space: nowrap; padding: 14px 16px; font-size: 0.82rem; }
+  .tab-panel { padding: 20px 20px 60px; }
+  .form-grid { grid-template-columns: 1fr; }
+  .form-section { padding: 20px 16px; }
+  .form-actions { flex-direction: column; }
+  .form-actions button { width: 100%; }
+  .history-card { flex-direction: column; align-items: flex-start; gap: 12px; }
+  .hc-right { text-align: left; display: flex; align-items: center; gap: 12px; flex-direction: row-reverse; }
+  footer { flex-direction: column; gap: 10px; text-align: center; padding: 24px 20px; }
+}
+@media (max-width: 640px) {
+  nav { padding: 14px 20px; }
+  .nav-links { display: none; }
+  .hamburger { display: flex; }
+  .avatar { width: 64px; height: 64px; font-size: 1.4rem; }
+  .profile-info h1 { font-size: 1.3rem; }
+  .time-group { flex-wrap: wrap; }
+}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <a href="home.html" class="logo">dorsal<span>.</span>market</a>
+  <div class="nav-links">
+    <a href="home.html">Home</a>
+    <a href="dorsales.html">Dorsales</a>
+    <a href="#" class="active">Perfil</a>
+    <button class="btn-logout" onclick="alert('Cerrar sesión (prototipo)')">Cerrar sesión</button>
+  </div>
+  <button class="hamburger" onclick="toggleMenu()">
+    <span></span><span></span><span></span>
+  </button>
+</nav>
+
+<!-- MOBILE MENU -->
+<div class="mobile-menu" id="mobileMenu">
+  <a href="home.html">Home</a>
+  <a href="dorsales.html">Dorsales</a>
+  <a href="#" onclick="toggleMenu()">Perfil</a>
+  <a href="#" onclick="alert('Cerrar sesión (prototipo)')">Cerrar sesión</a>
+</div>
+
+<!-- PROFILE HEADER -->
+<div class="profile-header">
+  <div class="profile-top">
+    <div class="avatar">CM</div>
+    <div class="profile-info">
+      <h1>Carlos Martínez</h1>
+      <div class="email">carlos.martinez@email.com</div>
+      <div class="profile-stats">
+        <div class="ps-item"><strong>3</strong> comprados</div>
+        <div class="ps-item"><strong>1</strong> vendido</div>
+        <div class="ps-item"><strong>4.8</strong> ★</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- TABS -->
+<div class="tabs-container">
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('datos')">Datos personales</button>
+    <button class="tab" onclick="switchTab('compras')">Compras <span class="count">3</span></button>
+    <button class="tab" onclick="switchTab('ventas')">Ventas <span class="count">1</span></button>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════ -->
+<!-- TAB: DATOS PERSONALES                    -->
+<!-- ════════════════════════════════════════ -->
+<div class="tab-panel active" id="tab-datos">
+
+  <!-- Identity -->
+  <div class="form-section">
+    <div class="form-section-header">
+      <h2><span class="icon">👤</span> Datos de identidad</h2>
+    </div>
+    <div class="form-grid">
+      <div class="field">
+        <label>Nombre</label>
+        <input type="text" value="Carlos" placeholder="Tu nombre">
+      </div>
+      <div class="field">
+        <label>Apellidos</label>
+        <input type="text" value="Martínez López" placeholder="Tus apellidos">
+      </div>
+      <div class="field">
+        <label>DNI / NIE</label>
+        <input type="text" value="12345678A" placeholder="00000000X">
+        <div class="hint">Necesario para el cambio de titularidad del dorsal</div>
+      </div>
+      <div class="field">
+        <label>Correo electrónico</label>
+        <input type="email" value="carlos.martinez@email.com" placeholder="tu@email.com">
+      </div>
+    </div>
+  </div>
+
+  <!-- Contact & address -->
+  <div class="form-section">
+    <div class="form-section-header">
+      <h2><span class="icon">📍</span> Contacto y dirección</h2>
+    </div>
+    <div class="form-grid">
+      <div class="field">
+        <label>Teléfono</label>
+        <input type="text" value="+34 612 345 678" placeholder="+34 600 000 000">
+      </div>
+      <div class="field">
+        <label>Código postal</label>
+        <input type="text" value="28001" placeholder="00000">
+      </div>
+      <div class="field full">
+        <label>Dirección</label>
+        <input type="text" value="Calle Gran Vía 42, 3ºB" placeholder="Calle, número, piso...">
+      </div>
+    </div>
+  </div>
+
+  <!-- Runner data — sent to seller after purchase -->
+  <div class="form-section">
+    <div class="form-section-header">
+      <h2><span class="icon">🏃</span> Datos de corredor</h2>
+      <div class="badge-info">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        Se envían al vendedor tras la compra
+      </div>
+    </div>
+    <div class="form-desc">
+      Estos datos se facilitan automáticamente al vendedor una vez confirmada la compra, para que pueda tramitar el cambio de titularidad del dorsal ante la organización de la carrera.
+    </div>
+    <div class="form-grid">
+      <div class="field">
+        <label>Tiempo estimado de finalización</label>
+        <div class="time-group">
+          <input type="text" value="3" placeholder="HH" maxlength="2">
+          <span class="sep">:</span>
+          <input type="text" value="45" placeholder="MM" maxlength="2">
+          <span class="sep">:</span>
+          <input type="text" value="00" placeholder="SS" maxlength="2">
+        </div>
+        <div class="hint">Formato HH:MM:SS — Usado para asignar cajón de salida</div>
+      </div>
+      <div class="field">
+        <label>Talla de camiseta</label>
+        <div class="select-wrap">
+          <select>
+            <option value="">Seleccionar</option>
+            <option value="XS">XS</option>
+            <option value="S">S</option>
+            <option value="M" selected>M</option>
+            <option value="L">L</option>
+            <option value="XL">XL</option>
+            <option value="XXL">XXL</option>
+          </select>
+        </div>
+      </div>
+      <div class="field">
+        <label>Club <span class="optional">(opcional)</span></label>
+        <input type="text" value="Club Atletismo Madrid" placeholder="Nombre de tu club">
+        <div class="hint">Si estás federado o perteneces a un club</div>
+      </div>
+      <div class="field">
+        <label>Nº Licencia federativa <span class="optional">(opcional)</span></label>
+        <input type="text" placeholder="Ej: MAD-24-12345">
+        <div class="hint">Si dispones de licencia federativa activa</div>
+      </div>
+      <div class="field full">
+        <label>Alergias / Condiciones médicas <span class="optional">(opcional)</span></label>
+        <input type="text" placeholder="Ej: Alergia al látex, asmático...">
+        <div class="hint">Información relevante para los servicios médicos de carrera</div>
+      </div>
+      <div class="field full">
+        <label>Contacto de emergencia <span class="optional">(opcional)</span></label>
+        <input type="text" placeholder="Nombre y teléfono">
+      </div>
+      <div class="field full">
+        <label>Datos adicionales <span class="optional">(opcional)</span></label>
+        <textarea placeholder="Cualquier otra información que el vendedor u organización pueda necesitar: grupo de paso, necesidades especiales, acompañante, etc."></textarea>
+        <div class="hint">Este campo se envía junto al resto de datos al vendedor tras confirmar la compra</div>
+      </div>
+    </div>
+    <div class="form-actions">
+      <button class="btn-cancel" onclick="alert('Cambios descartados (prototipo)')">Descartar</button>
+      <button class="btn-save" onclick="alert('Datos guardados (prototipo)')">Guardar cambios</button>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════ -->
+<!-- TAB: COMPRAS                             -->
+<!-- ════════════════════════════════════════ -->
+<div class="tab-panel" id="tab-compras">
+  <div class="history-list">
+    <div class="history-card">
+      <div class="hc-img" style="background: linear-gradient(135deg, #e8552d, #f5943b);">#1247</div>
+      <div class="hc-body">
+        <div class="hc-race">Maratón Valencia</div>
+        <div class="hc-meta">01 Dic 2026 <span class="dot"></span> 42K <span class="dot"></span> Valencia <span class="dot"></span> Bizum</div>
+      </div>
+      <div class="hc-right">
+        <div class="hc-price">€85</div>
+        <span class="hc-status bought">Comprado</span>
+      </div>
+    </div>
+    <div class="history-card">
+      <div class="hc-img" style="background: linear-gradient(135deg, #3d6834, #6dab5e);">#0532</div>
+      <div class="hc-body">
+        <div class="hc-race">Media Maratón Sevilla</div>
+        <div class="hc-meta">26 Ene 2027 <span class="dot"></span> 21K <span class="dot"></span> Sevilla <span class="dot"></span> Tarjeta</div>
+      </div>
+      <div class="hc-right">
+        <div class="hc-price">€45</div>
+        <span class="hc-status bought">Comprado</span>
+      </div>
+    </div>
+    <div class="history-card">
+      <div class="hc-img" style="background: linear-gradient(135deg, #4a2e5c, #9a6abf);">#0891</div>
+      <div class="hc-body">
+        <div class="hc-race">San Silvestre Vallecana</div>
+        <div class="hc-meta">31 Dic 2026 <span class="dot"></span> 10K <span class="dot"></span> Madrid <span class="dot"></span> PayPal</div>
+      </div>
+      <div class="hc-right">
+        <div class="hc-price">€30</div>
+        <span class="hc-status pending">Pendiente</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════ -->
+<!-- TAB: VENTAS                              -->
+<!-- ════════════════════════════════════════ -->
+<div class="tab-panel" id="tab-ventas">
+  <div class="history-list">
+    <div class="history-card">
+      <div class="hc-img" style="background: linear-gradient(135deg, #2a2a32, #e8552d);">#3891</div>
+      <div class="hc-body">
+        <div class="hc-race">Carrera de la Mujer</div>
+        <div class="hc-meta">08 May 2027 <span class="dot"></span> 10K <span class="dot"></span> Madrid <span class="dot"></span> PayPal</div>
+      </div>
+      <div class="hc-right">
+        <div class="hc-price">€20</div>
+        <span class="hc-status sold">Vendido</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- FOOTER -->
+<footer>
+  <a href="home.html" class="logo">dorsal<span>.</span>market</a>
+  <div>© 2026 DorsalMarket</div>
+</footer>
+
+<script>
+function toggleMenu() {
+  document.getElementById('mobileMenu').classList.toggle('active');
+}
+function switchTab(name) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  event.currentTarget.classList.add('active');
+  document.getElementById('tab-' + name).classList.add('active');
+}
+</script>
+</body>
+</html>

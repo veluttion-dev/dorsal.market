@@ -1,0 +1,616 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DorsalMarket — Compra y Vende Dorsales</title>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  /* Light mode — clean whites & warm grays */
+  --bg-primary: #fafaf8;
+  --bg-secondary: #f2f1ed;
+  --bg-card: #ffffff;
+  --bg-elevated: #ffffff;
+  --border: rgba(0,0,0,0.08);
+  --border-hover: rgba(0,0,0,0.15);
+  /* Text */
+  --text-primary: #1a1a1f;
+  --text-secondary: #5a5a68;
+  --text-muted: #8a8a96;
+  --text-faint: rgba(0,0,0,0.06);
+  /* Energy coral — finish line, race bibs */
+  --coral: #e8552d;
+  --coral-hover: #d44a24;
+  --coral-glow: rgba(232, 85, 45, 0.2);
+  --coral-subtle: rgba(232, 85, 45, 0.06);
+  --coral-on: #ffffff;
+  /* Olive/forest — trail, nature, pace */
+  --olive: #4a7c3f;
+  --olive-dark: #3d6834;
+  --olive-subtle: rgba(74, 124, 63, 0.08);
+  --olive-tag: #2d5e22;
+  /* Warm neutrals for overlays */
+  --overlay-light: rgba(255,255,255,0.85);
+  --overlay-dark: rgba(0,0,0,0.5);
+  --radius-sm: 8px;
+  --radius-md: 14px;
+  --radius-lg: 20px;
+  --radius-xl: 28px;
+  --shadow-card: 0 2px 12px rgba(0,0,0,0.06), 0 1px 3px rgba(0,0,0,0.04);
+  --shadow-elevated: 0 12px 40px rgba(0,0,0,0.1);
+  --transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  font-family: 'Outfit', sans-serif;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ─── NAV ─── */
+nav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 16px 40px;
+  background: rgba(250, 250, 248, 0.85);
+  backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--border);
+}
+.logo {
+  font-family: 'Space Mono', monospace;
+  font-size: 1.3rem; font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: -0.5px;
+}
+.logo span { color: var(--coral); }
+.nav-links { display: flex; gap: 32px; align-items: center; }
+.nav-links a {
+  color: var(--text-secondary); text-decoration: none;
+  font-size: 0.9rem; font-weight: 500;
+  transition: color var(--transition);
+  position: relative;
+}
+.nav-links a:hover { color: var(--text-primary); }
+.nav-links a.active { color: var(--coral); }
+.nav-links a.active::after {
+  content: ''; position: absolute; bottom: -6px; left: 0; right: 0;
+  height: 2px; background: var(--coral); border-radius: 2px;
+}
+.btn-login {
+  background: var(--text-primary); color: var(--bg-primary);
+  border: none; padding: 8px 20px;
+  border-radius: 100px; font-size: 0.85rem; font-weight: 600;
+  cursor: pointer; transition: all var(--transition);
+  font-family: 'Outfit', sans-serif;
+}
+.btn-login:hover { opacity: 0.85; }
+.hamburger { display: none; flex-direction: column; gap: 5px; cursor: pointer; background: none; border: none; padding: 4px; }
+.hamburger span { display: block; width: 24px; height: 2px; background: var(--text-primary); border-radius: 2px; transition: all var(--transition); }
+
+/* ─── HERO ─── */
+.hero {
+  min-height: 100vh; display: flex; align-items: center;
+  padding: 120px 40px 80px;
+  position: relative;
+  overflow: hidden;
+}
+.hero-bg {
+  position: absolute; inset: 0;
+  background:
+    radial-gradient(ellipse 80% 50% at 80% 20%, rgba(232, 85, 45, 0.08), transparent),
+    radial-gradient(ellipse 60% 60% at 10% 90%, rgba(74, 124, 63, 0.06), transparent),
+    linear-gradient(180deg, var(--bg-primary), var(--bg-secondary));
+}
+.hero-grid {
+  position: absolute; inset: 0;
+  background-image:
+    repeating-linear-gradient(
+      -30deg,
+      rgba(0,0,0,0.03) 0px, rgba(0,0,0,0.03) 1px,
+      transparent 1px, transparent 80px
+    );
+  mask-image: radial-gradient(ellipse 70% 60% at 50% 40%, black, transparent);
+  opacity: 0.5;
+}
+.hero-content { position: relative; z-index: 2; max-width: 640px; }
+.hero-badge {
+  display: inline-flex; align-items: center; gap: 8px;
+  background: var(--olive-subtle); border: 1px solid rgba(74, 124, 63, 0.15);
+  padding: 6px 16px; border-radius: 100px;
+  font-size: 0.78rem; font-weight: 600; color: var(--olive);
+  margin-bottom: 28px;
+  animation: fadeInUp 0.8s ease-out;
+}
+.hero-badge .dot { width: 6px; height: 6px; background: var(--olive); border-radius: 50%; animation: pulse 2s infinite; }
+@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+h1 {
+  font-size: clamp(2.4rem, 5.5vw, 4rem);
+  font-weight: 800; line-height: 1.08;
+  letter-spacing: -1.5px; color: var(--text-primary);
+  margin-bottom: 20px;
+  animation: fadeInUp 0.8s ease-out 0.15s both;
+}
+h1 .highlight {
+  background: linear-gradient(135deg, var(--coral), #f5943b);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.hero-sub {
+  font-size: 1.1rem; color: var(--text-secondary);
+  line-height: 1.6; max-width: 480px; margin-bottom: 36px;
+  animation: fadeInUp 0.8s ease-out 0.3s both;
+}
+.hero-actions {
+  display: flex; gap: 14px; flex-wrap: wrap;
+  animation: fadeInUp 0.8s ease-out 0.45s both;
+}
+.btn-primary {
+  background: var(--coral); color: #fff;
+  border: none; padding: 14px 32px;
+  border-radius: 100px; font-size: 0.95rem; font-weight: 700;
+  cursor: pointer; transition: all var(--transition);
+  font-family: 'Outfit', sans-serif;
+  box-shadow: 0 4px 20px var(--coral-glow);
+}
+.btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 32px var(--coral-glow); background: var(--coral-hover); }
+.btn-secondary {
+  background: var(--bg-card); color: var(--text-primary);
+  border: 1px solid var(--border); padding: 14px 32px;
+  border-radius: 100px; font-size: 0.95rem; font-weight: 600;
+  cursor: pointer; transition: all var(--transition);
+  font-family: 'Outfit', sans-serif;
+}
+.btn-secondary:hover { border-color: var(--border-hover); box-shadow: var(--shadow-card); }
+.hero-stats {
+  display: flex; gap: 40px; margin-top: 56px;
+  animation: fadeInUp 0.8s ease-out 0.6s both;
+}
+.stat .num { font-family: 'Space Mono', monospace; font-size: 1.8rem; font-weight: 700; color: var(--coral); }
+.stat .label { font-size: 0.8rem; color: var(--text-muted); margin-top: 4px; font-weight: 500; text-transform: uppercase; letter-spacing: 1px; }
+
+/* ─── FLOATING CARDS ─── */
+.hero-visual {
+  position: absolute; right: 40px; top: 50%; transform: translateY(-50%);
+  width: 420px; height: 500px;
+  display: flex; align-items: center; justify-content: center;
+}
+.float-card {
+  position: absolute; background: var(--bg-card);
+  backdrop-filter: blur(16px);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg); padding: 20px;
+  box-shadow: var(--shadow-card);
+  animation: float 6s ease-in-out infinite;
+}
+.float-card:nth-child(1) { top: 10%; right: 0; width: 280px; animation-delay: 0s; }
+.float-card:nth-child(2) { top: 45%; right: 60px; width: 260px; animation-delay: -2s; }
+.float-card:nth-child(3) { bottom: 5%; right: 20px; width: 240px; animation-delay: -4s; }
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-12px); }
+}
+.fc-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; }
+.fc-race { font-weight: 700; font-size: 0.95rem; color: var(--text-primary); }
+.fc-tag {
+  font-size: 0.65rem; font-weight: 700;
+  padding: 3px 10px; border-radius: 100px;
+  text-transform: uppercase; letter-spacing: 0.5px;
+}
+.fc-tag.sell { background: var(--olive-subtle); color: var(--olive-tag); }
+.fc-tag.sold { background: rgba(180, 60, 60, 0.08); color: #a04040; }
+.fc-meta { font-size: 0.78rem; color: var(--text-muted); margin-bottom: 8px; }
+.fc-price { font-family: 'Space Mono', monospace; font-size: 1.2rem; font-weight: 700; color: var(--coral); }
+
+/* ─── HOW IT WORKS ─── */
+.section { padding: 100px 40px; position: relative; }
+.section-label {
+  font-family: 'Space Mono', monospace;
+  font-size: 0.7rem; color: var(--olive);
+  text-transform: uppercase; letter-spacing: 3px;
+  margin-bottom: 12px;
+}
+.section-title {
+  font-size: clamp(1.6rem, 3vw, 2.4rem);
+  font-weight: 800; letter-spacing: -1px;
+  margin-bottom: 56px; color: var(--text-primary);
+}
+.steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; max-width: 1000px; }
+.step {
+  background: var(--bg-card); border: 1px solid var(--border);
+  border-radius: var(--radius-lg); padding: 36px 28px;
+  transition: all var(--transition);
+  position: relative; overflow: hidden;
+  box-shadow: var(--shadow-card);
+}
+.step:hover { border-color: var(--coral); transform: translateY(-4px); box-shadow: var(--shadow-elevated); }
+.step-num {
+  font-family: 'Space Mono', monospace;
+  font-size: 3rem; font-weight: 700;
+  color: var(--text-faint); position: absolute;
+  top: 16px; right: 20px;
+}
+.step-icon {
+  width: 48px; height: 48px;
+  background: linear-gradient(135deg, var(--coral), #f5943b);
+  border-radius: var(--radius-sm);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.3rem; margin-bottom: 20px;
+}
+.step h3 { font-size: 1.1rem; font-weight: 700; margin-bottom: 10px; color: var(--text-primary); }
+.step p { font-size: 0.88rem; color: var(--text-secondary); line-height: 1.6; }
+
+/* ─── FEATURED ─── */
+.featured-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; max-width: 1100px; }
+.dorsal-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  overflow: hidden; cursor: pointer;
+  transition: all var(--transition);
+  box-shadow: var(--shadow-card);
+}
+.dorsal-card:hover { border-color: var(--coral); transform: translateY(-4px); box-shadow: var(--shadow-elevated); }
+.dc-img {
+  width: 100%; height: 160px;
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Space Mono', monospace;
+  font-size: 3rem; font-weight: 700; color: rgba(255,255,255,0.3);
+  position: relative;
+}
+.dc-dist {
+  position: absolute; top: 12px; left: 12px;
+  background: rgba(0,0,0,0.5); padding: 4px 12px;
+  border-radius: 100px; font-size: 0.7rem; font-weight: 700;
+  font-family: 'Outfit', sans-serif; color: #fff;
+}
+.dc-body { padding: 18px; }
+.dc-race { font-weight: 700; font-size: 1rem; margin-bottom: 4px; color: var(--text-primary); }
+.dc-info { font-size: 0.8rem; color: var(--text-muted); margin-bottom: 14px; }
+.dc-footer { display: flex; justify-content: space-between; align-items: center; }
+.dc-price { font-family: 'Space Mono', monospace; font-weight: 700; font-size: 1.1rem; color: var(--coral); }
+.dc-pay { display: flex; gap: 6px; }
+.dc-pay span {
+  font-size: 0.6rem; padding: 3px 8px;
+  background: var(--bg-secondary); border-radius: 100px;
+  color: var(--text-muted); font-weight: 600;
+}
+
+/* ─── LOGIN MODAL ─── */
+.modal-overlay {
+  display: none; position: fixed; inset: 0; z-index: 200;
+  background: rgba(0,0,0,0.35); backdrop-filter: blur(8px);
+  align-items: center; justify-content: center;
+  padding: 20px;
+}
+.modal-overlay.active { display: flex; }
+.modal {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  padding: 44px 40px;
+  width: 100%; max-width: 420px;
+  position: relative;
+  box-shadow: var(--shadow-elevated);
+  animation: modalIn 0.4s ease-out;
+}
+@keyframes modalIn {
+  from { opacity: 0; transform: translateY(24px) scale(0.96); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+.modal-close {
+  position: absolute; top: 18px; right: 18px;
+  background: var(--bg-secondary); border: none;
+  width: 36px; height: 36px; border-radius: 50%;
+  color: var(--text-secondary); font-size: 1.1rem;
+  cursor: pointer; display: flex; align-items: center; justify-content: center;
+  transition: background var(--transition);
+}
+.modal-close:hover { background: var(--border); }
+.modal h2 { font-size: 1.5rem; font-weight: 800; margin-bottom: 6px; letter-spacing: -0.5px; color: var(--text-primary); }
+.modal .sub { font-size: 0.88rem; color: var(--text-muted); margin-bottom: 28px; }
+.social-btns { display: flex; flex-direction: column; gap: 10px; margin-bottom: 24px; }
+.social-btn {
+  display: flex; align-items: center; justify-content: center; gap: 10px;
+  padding: 13px; border-radius: var(--radius-md);
+  border: 1px solid var(--border);
+  background: var(--bg-primary);
+  color: var(--text-primary); font-size: 0.9rem; font-weight: 600;
+  cursor: pointer; transition: all var(--transition);
+  font-family: 'Outfit', sans-serif;
+}
+.social-btn:hover { background: var(--bg-secondary); }
+.social-btn svg { width: 20px; height: 20px; }
+.divider {
+  display: flex; align-items: center; gap: 16px;
+  margin-bottom: 24px; color: var(--text-muted); font-size: 0.78rem;
+}
+.divider::before, .divider::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+.form-group { margin-bottom: 16px; }
+.form-group label { display: block; font-size: 0.8rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 6px; }
+.form-group input {
+  width: 100%; padding: 12px 16px;
+  background: var(--bg-primary); border: 1px solid var(--border);
+  border-radius: var(--radius-sm); color: var(--text-primary);
+  font-size: 0.9rem; font-family: 'Outfit', sans-serif;
+  outline: none; transition: border-color var(--transition);
+}
+.form-group input::placeholder { color: var(--text-muted); }
+.form-group input:focus { border-color: var(--coral); }
+.btn-submit {
+  width: 100%; padding: 14px;
+  background: var(--coral); color: #fff;
+  border: none; border-radius: var(--radius-md);
+  font-size: 0.95rem; font-weight: 700;
+  cursor: pointer; transition: all var(--transition);
+  font-family: 'Outfit', sans-serif;
+  margin-top: 8px;
+}
+.btn-submit:hover { background: var(--coral-hover); transform: translateY(-1px); }
+.modal-footer { text-align: center; margin-top: 20px; font-size: 0.8rem; color: var(--text-muted); }
+.modal-footer a { color: var(--coral); text-decoration: none; font-weight: 600; }
+
+/* ─── FOOTER ─── */
+footer {
+  padding: 40px; border-top: 1px solid var(--border);
+  display: flex; justify-content: space-between; align-items: center;
+  font-size: 0.8rem; color: var(--text-muted);
+}
+footer .logo { font-size: 1rem; }
+
+/* ─── ANIMATIONS ─── */
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(28px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ─── MOBILE NAV MENU ─── */
+.mobile-menu {
+  display: none; position: fixed; inset: 0; z-index: 99;
+  background: rgba(250, 250, 248, 0.97); backdrop-filter: blur(20px);
+  flex-direction: column; align-items: center; justify-content: center; gap: 32px;
+}
+.mobile-menu.active { display: flex; }
+.mobile-menu a {
+  color: var(--text-primary); font-size: 1.4rem; font-weight: 600;
+  text-decoration: none; transition: color var(--transition);
+}
+.mobile-menu a:hover { color: var(--coral); }
+
+/* ─── RESPONSIVE ─── */
+@media (max-width: 900px) {
+  .hero-visual { display: none; }
+  .hero { padding: 120px 24px 60px; }
+  .hero-content { max-width: 100%; }
+  .steps { grid-template-columns: 1fr; }
+  .section { padding: 60px 24px; }
+  .hero-stats { gap: 28px; }
+}
+@media (max-width: 640px) {
+  nav { padding: 14px 20px; }
+  .nav-links { display: none; }
+  .hamburger { display: flex; }
+  .hero { padding: 100px 20px 48px; }
+  h1 { font-size: 2rem; letter-spacing: -1px; }
+  .hero-sub { font-size: 0.95rem; }
+  .hero-actions { flex-direction: column; }
+  .hero-actions button { width: 100%; }
+  .hero-stats { flex-direction: column; gap: 16px; }
+  .stat { display: flex; align-items: center; gap: 12px; }
+  .stat .num { font-size: 1.3rem; }
+  .section-title { font-size: 1.4rem; }
+  .featured-grid { grid-template-columns: 1fr; }
+  footer { flex-direction: column; gap: 12px; text-align: center; }
+  .modal { padding: 32px 24px; }
+}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <div class="logo">dorsal<span>.</span>market</div>
+  <div class="nav-links">
+    <a href="#" class="active">Home</a>
+    <a href="dorsales.html">Dorsales</a>
+    <a href="perfil.html">Perfil</a>
+    <button class="btn-login" onclick="openModal()">Iniciar Sesión</button>
+  </div>
+  <button class="hamburger" onclick="toggleMenu()">
+    <span></span><span></span><span></span>
+  </button>
+</nav>
+
+<!-- MOBILE MENU -->
+<div class="mobile-menu" id="mobileMenu">
+  <a href="#">Home</a>
+  <a href="dorsales.html">Dorsales</a>
+  <a href="perfil.html">Perfil</a>
+  <a href="#" onclick="openModal(); toggleMenu();">Iniciar Sesión</a>
+</div>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-bg"></div>
+  <div class="hero-grid"></div>
+  <div class="hero-content">
+    <div class="hero-badge"><span class="dot"></span> Marketplace activo</div>
+    <h1>Compra y vende <span class="highlight">dorsales</span> de carrera</h1>
+    <p class="hero-sub">La primera plataforma para transferir dorsales de carreras populares de forma segura. Encuentra tu próxima carrera o recupera tu inversión.</p>
+    <div class="hero-actions">
+      <button class="btn-primary" onclick="openModal()">Empezar ahora</button>
+      <button class="btn-secondary" onclick="location.href='dorsales.html'">Ver dorsales</button>
+    </div>
+    <div class="hero-stats">
+      <div class="stat"><div class="num">2.4K</div><div class="label">Dorsales activos</div></div>
+      <div class="stat"><div class="num">890+</div><div class="label">Carreras</div></div>
+      <div class="stat"><div class="num">12K</div><div class="label">Usuarios</div></div>
+    </div>
+  </div>
+
+  <!-- FLOATING CARDS -->
+  <div class="hero-visual">
+    <div class="float-card">
+      <div class="fc-header">
+        <div class="fc-race">Maratón Valencia</div>
+        <div class="fc-tag sell">En venta</div>
+      </div>
+      <div class="fc-meta">01 Dic 2026 · 42K</div>
+      <div class="fc-price">€85</div>
+    </div>
+    <div class="float-card">
+      <div class="fc-header">
+        <div class="fc-race">San Silvestre Madrid</div>
+        <div class="fc-tag sell">En venta</div>
+      </div>
+      <div class="fc-meta">31 Dic 2026 · 10K</div>
+      <div class="fc-price">€25</div>
+    </div>
+    <div class="float-card">
+      <div class="fc-header">
+        <div class="fc-race">Behobia San Sebastián</div>
+        <div class="fc-tag sold">Vendido</div>
+      </div>
+      <div class="fc-meta">12 Nov 2026 · 20K</div>
+      <div class="fc-price">€40</div>
+    </div>
+  </div>
+</section>
+
+<!-- HOW IT WORKS -->
+<section class="section">
+  <div class="section-label">Cómo funciona</div>
+  <h2 class="section-title">Tres pasos. Cero complicaciones.</h2>
+  <div class="steps">
+    <div class="step">
+      <div class="step-num">01</div>
+      <div class="step-icon">🔑</div>
+      <h3>Crea tu cuenta</h3>
+      <p>Regístrate con email, Google o Apple en segundos. Sin papeleo.</p>
+    </div>
+    <div class="step">
+      <div class="step-num">02</div>
+      <div class="step-icon">🏷️</div>
+      <h3>Publica o busca</h3>
+      <p>Vende tu dorsal indicando precio, carrera y método de pago. O busca entre cientos disponibles.</p>
+    </div>
+    <div class="step">
+      <div class="step-num">03</div>
+      <div class="step-icon">✅</div>
+      <h3>Paga seguro</h3>
+      <p>Completa la transacción con Bizum, PayPal o tarjeta. Transferencia inmediata del dorsal.</p>
+    </div>
+  </div>
+</section>
+
+<!-- FEATURED -->
+<section class="section">
+  <div class="section-label">Destacados</div>
+  <h2 class="section-title">Dorsales disponibles ahora</h2>
+  <div class="featured-grid">
+    <div class="dorsal-card">
+      <div class="dc-img" style="background: linear-gradient(135deg, #e8552d, #f5943b);">
+        #1247
+        <div class="dc-dist">42K</div>
+      </div>
+      <div class="dc-body">
+        <div class="dc-race">Maratón Barcelona</div>
+        <div class="dc-info">16 Mar 2027 · Barcelona</div>
+        <div class="dc-footer">
+          <div class="dc-price">€75</div>
+          <div class="dc-pay"><span>Bizum</span><span>PayPal</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="dorsal-card">
+      <div class="dc-img" style="background: linear-gradient(135deg, #3d6834, #6dab5e);">
+        #0532
+        <div class="dc-dist">21K</div>
+      </div>
+      <div class="dc-body">
+        <div class="dc-race">Media Maratón Sevilla</div>
+        <div class="dc-info">26 Ene 2027 · Sevilla</div>
+        <div class="dc-footer">
+          <div class="dc-price">€45</div>
+          <div class="dc-pay"><span>Tarjeta</span><span>Bizum</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="dorsal-card">
+      <div class="dc-img" style="background: linear-gradient(135deg, #2a2a32, #e8552d);">
+        #3891
+        <div class="dc-dist">10K</div>
+      </div>
+      <div class="dc-body">
+        <div class="dc-race">Carrera de la Mujer</div>
+        <div class="dc-info">08 May 2027 · Madrid</div>
+        <div class="dc-footer">
+          <div class="dc-price">€20</div>
+          <div class="dc-pay"><span>PayPal</span><span>Tarjeta</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="logo">dorsal<span>.</span>market</div>
+  <div>© 2026 DorsalMarket. Todos los derechos reservados.</div>
+</footer>
+
+<!-- LOGIN MODAL -->
+<div class="modal-overlay" id="loginModal">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal()">✕</button>
+    <h2>Bienvenido</h2>
+    <p class="sub">Inicia sesión para comprar y vender dorsales</p>
+
+    <div class="social-btns">
+      <button class="social-btn" onclick="alert('Login con Google (prototipo)')">
+        <svg viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.27-4.74 3.27-8.1z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+        Continuar con Google
+      </button>
+      <button class="social-btn" onclick="alert('Login con Apple (prototipo)')">
+        <svg viewBox="0 0 24 24" fill="#1a1a1f"><path d="M17.05 20.28c-.98.95-2.05.88-3.08.4-1.09-.5-2.08-.48-3.24 0-1.44.62-2.2.44-3.06-.4C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.5-1.31 2.99-2.54 4.09zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25z"/></svg>
+        Continuar con Apple
+      </button>
+    </div>
+
+    <div class="divider">o con email</div>
+
+    <div class="form-group">
+      <label>Email</label>
+      <input type="email" placeholder="tu@email.com">
+    </div>
+    <div class="form-group">
+      <label>Contraseña</label>
+      <input type="password" placeholder="••••••••">
+    </div>
+    <button class="btn-submit" onclick="alert('Login exitoso (prototipo)')">Iniciar Sesión</button>
+    <div class="modal-footer">¿No tienes cuenta? <a href="#" onclick="alert('Registro (prototipo)')">Regístrate</a></div>
+  </div>
+</div>
+
+<script>
+function openModal() {
+  document.getElementById('loginModal').classList.add('active');
+  document.body.style.overflow = 'hidden';
+}
+function closeModal() {
+  document.getElementById('loginModal').classList.remove('active');
+  document.body.style.overflow = '';
+}
+function toggleMenu() {
+  document.getElementById('mobileMenu').classList.toggle('active');
+}
+document.getElementById('loginModal').addEventListener('click', function(e) {
+  if (e.target === this) closeModal();
+});
+</script>
+</body>
+</html>

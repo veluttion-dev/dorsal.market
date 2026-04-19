@@ -1,0 +1,817 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DorsalMarket — Vender Dorsal</title>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg-primary: #111113;
+  --bg-secondary: #1a1a1f;
+  --bg-card: #1f1f26;
+  --bg-elevated: #26262e;
+  --bg-input: #16161b;
+  --border: rgba(255,255,255,0.08);
+  --border-hover: rgba(255,255,255,0.16);
+  --border-active: rgba(255,255,255,0.25);
+  --text-primary: #f0efec;
+  --text-secondary: #a0a0ac;
+  --text-muted: #6a6a78;
+  --text-faint: rgba(255,255,255,0.05);
+  --coral: #e8552d;
+  --coral-hover: #f06a3f;
+  --coral-glow: rgba(232, 85, 45, 0.25);
+  --coral-subtle: rgba(232, 85, 45, 0.08);
+  --olive: #6dab5e;
+  --olive-subtle: rgba(109, 171, 94, 0.1);
+  --olive-tag: #8fc780;
+  --amber: #d4a03c;
+  --amber-subtle: rgba(212, 160, 60, 0.1);
+  --whatsapp: #25d366;
+  --whatsapp-subtle: rgba(37, 211, 102, 0.1);
+  --phone-blue: #5b8def;
+  --phone-subtle: rgba(91, 141, 239, 0.1);
+  --radius-sm: 8px;
+  --radius-md: 14px;
+  --radius-lg: 20px;
+  --radius-xl: 28px;
+  --shadow-card: 0 2px 12px rgba(0,0,0,0.3);
+  --shadow-elevated: 0 12px 40px rgba(0,0,0,0.4);
+  --transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  font-family: 'Outfit', sans-serif;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+  min-height: 100vh;
+}
+
+/* ─── NAV ─── */
+nav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 16px 40px;
+  background: rgba(17, 17, 19, 0.85);
+  backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--border);
+}
+.logo { font-family: 'Space Mono', monospace; font-size: 1.3rem; font-weight: 700; color: var(--text-primary); letter-spacing: -0.5px; text-decoration: none; }
+.logo span { color: var(--coral); }
+.nav-links { display: flex; gap: 32px; align-items: center; }
+.nav-links a { color: var(--text-secondary); text-decoration: none; font-size: 0.9rem; font-weight: 500; transition: color var(--transition); }
+.nav-links a:hover { color: var(--text-primary); }
+.btn-nav { background: var(--coral); color: #fff; border: none; padding: 8px 20px; border-radius: 100px; font-size: 0.85rem; font-weight: 600; cursor: pointer; font-family: 'Outfit', sans-serif; transition: all var(--transition); }
+.btn-nav:hover { background: var(--coral-hover); }
+.hamburger { display: none; flex-direction: column; gap: 5px; cursor: pointer; background: none; border: none; padding: 4px; }
+.hamburger span { display: block; width: 24px; height: 2px; background: var(--text-primary); border-radius: 2px; }
+.mobile-menu { display: none; position: fixed; inset: 0; z-index: 99; background: rgba(17,17,19,0.97); backdrop-filter: blur(20px); flex-direction: column; align-items: center; justify-content: center; gap: 32px; }
+.mobile-menu.active { display: flex; }
+.mobile-menu a { color: var(--text-primary); font-size: 1.4rem; font-weight: 600; text-decoration: none; }
+
+/* ─── BACK ─── */
+.back-bar { padding: 88px 40px 0; }
+.back-link {
+  display: inline-flex; align-items: center; gap: 6px;
+  color: var(--text-muted); text-decoration: none;
+  font-size: 0.85rem; font-weight: 600;
+  transition: color var(--transition);
+}
+.back-link:hover { color: var(--text-primary); }
+.back-link svg { width: 16px; height: 16px; stroke: currentColor; }
+
+/* ─── PAGE CONTAINER ─── */
+.sell-container {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 24px 40px 80px;
+}
+.sell-header {
+  margin-bottom: 32px;
+}
+.sell-header h1 {
+  font-size: 1.8rem; font-weight: 800; letter-spacing: -0.5px;
+  margin-bottom: 6px;
+}
+.sell-header h1 em {
+  font-style: normal;
+  background: linear-gradient(135deg, var(--coral), #f5943b);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.sell-header p { font-size: 0.92rem; color: var(--text-muted); line-height: 1.5; }
+
+/* ─── STEPPER ─── */
+.stepper {
+  display: flex; align-items: center; gap: 0;
+  margin-bottom: 36px;
+}
+.step-item {
+  display: flex; align-items: center; gap: 10px;
+  flex: 1;
+}
+.step-dot {
+  width: 32px; height: 32px; border-radius: 50%; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Space Mono', monospace;
+  font-size: 0.78rem; font-weight: 700;
+  background: var(--bg-elevated); color: var(--text-muted);
+  border: 2px solid var(--border);
+  transition: all var(--transition);
+}
+.step-item.active .step-dot {
+  background: var(--coral); color: #fff; border-color: var(--coral);
+  box-shadow: 0 0 12px var(--coral-glow);
+}
+.step-item.done .step-dot {
+  background: var(--olive-subtle); color: var(--olive-tag); border-color: var(--olive);
+}
+.step-label { font-size: 0.78rem; font-weight: 600; color: var(--text-muted); }
+.step-item.active .step-label { color: var(--text-primary); }
+.step-item.done .step-label { color: var(--olive-tag); }
+.step-line {
+  flex: 0 0 40px; height: 2px;
+  background: var(--border); margin: 0 4px;
+}
+.step-line.done { background: var(--olive); }
+
+/* ─── FORM SECTIONS ─── */
+.form-section {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 28px; margin-bottom: 20px;
+}
+.form-section-header {
+  display: flex; align-items: center; gap: 10px;
+  margin-bottom: 22px;
+}
+.form-section-header .icon {
+  width: 32px; height: 32px;
+  background: var(--coral-subtle); border-radius: var(--radius-sm);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.95rem; flex-shrink: 0;
+}
+.form-section-header h2 { font-size: 1.05rem; font-weight: 700; }
+.form-section-header .step-badge {
+  margin-left: auto;
+  font-size: 0.65rem; font-weight: 700;
+  padding: 3px 10px; border-radius: 100px;
+  background: var(--bg-elevated); color: var(--text-muted);
+  text-transform: uppercase; letter-spacing: 0.5px;
+}
+
+.form-grid {
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 18px;
+}
+.form-grid .full { grid-column: 1 / -1; }
+
+.field label {
+  display: block; font-size: 0.73rem; font-weight: 700;
+  color: var(--text-secondary); margin-bottom: 7px;
+  text-transform: uppercase; letter-spacing: 0.8px;
+}
+.field label .req { color: var(--coral); }
+.field label .optional {
+  font-weight: 500; color: var(--text-muted);
+  text-transform: none; letter-spacing: 0; font-size: 0.72rem;
+}
+.field input,
+.field select,
+.field textarea {
+  width: 100%; padding: 12px 14px;
+  background: var(--bg-input); border: 1px solid var(--border);
+  border-radius: var(--radius-sm); color: var(--text-primary);
+  font-size: 0.88rem; font-family: 'Outfit', sans-serif;
+  outline: none; transition: border-color var(--transition);
+}
+.field input:focus,
+.field select:focus,
+.field textarea:focus { border-color: var(--coral); }
+.field input::placeholder,
+.field textarea::placeholder { color: var(--text-muted); }
+.field textarea { resize: vertical; min-height: 90px; }
+.field .hint { font-size: 0.72rem; color: var(--text-muted); margin-top: 5px; line-height: 1.4; }
+.select-wrap { position: relative; }
+.select-wrap::after {
+  content: '▾'; position: absolute; right: 14px; top: 50%;
+  transform: translateY(-50%); color: var(--text-muted);
+  pointer-events: none; font-size: 0.8rem;
+}
+.select-wrap select { appearance: none; -webkit-appearance: none; padding-right: 36px; cursor: pointer; }
+.select-wrap select option { background: var(--bg-secondary); color: var(--text-primary); }
+
+/* Price input with € */
+.price-input-wrap {
+  position: relative;
+}
+.price-input-wrap .currency {
+  position: absolute; left: 14px; top: 50%; transform: translateY(-50%);
+  font-family: 'Space Mono', monospace;
+  font-size: 1rem; font-weight: 700; color: var(--coral);
+}
+.price-input-wrap input {
+  padding-left: 32px;
+  font-family: 'Space Mono', monospace;
+  font-size: 1.1rem; font-weight: 700;
+}
+
+/* ─── PHOTO UPLOAD ─── */
+.photo-upload {
+  border: 2px dashed var(--border);
+  border-radius: var(--radius-lg);
+  padding: 36px 20px;
+  text-align: center;
+  cursor: pointer;
+  transition: all var(--transition);
+  background: var(--bg-input);
+}
+.photo-upload:hover { border-color: var(--coral); background: var(--coral-subtle); }
+.photo-upload .upload-icon {
+  font-size: 2rem; margin-bottom: 8px; opacity: 0.6;
+}
+.photo-upload .upload-text { font-size: 0.88rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 4px; }
+.photo-upload .upload-hint { font-size: 0.72rem; color: var(--text-muted); }
+.photo-upload .upload-btn {
+  display: inline-block; margin-top: 12px;
+  padding: 8px 20px; background: var(--bg-elevated);
+  border: 1px solid var(--border); border-radius: 100px;
+  font-size: 0.8rem; font-weight: 600; color: var(--text-primary);
+  cursor: pointer; transition: all var(--transition);
+}
+.photo-upload .upload-btn:hover { border-color: var(--coral); }
+
+/* ─── CHIPS (MULTI-SELECT) ─── */
+.chip-group { display: flex; flex-wrap: wrap; gap: 8px; }
+.chip {
+  padding: 9px 16px; border-radius: 100px;
+  border: 1px solid var(--border);
+  background: transparent; color: var(--text-secondary);
+  font-size: 0.82rem; font-weight: 600; cursor: pointer;
+  transition: all var(--transition);
+  font-family: 'Outfit', sans-serif;
+  display: flex; align-items: center; gap: 6px;
+}
+.chip:hover { border-color: var(--border-hover); color: var(--text-primary); }
+.chip.active { background: var(--coral-subtle); border-color: var(--coral); color: var(--coral); }
+.chip .chip-icon { font-size: 0.95rem; }
+
+/* ─── TOGGLE SWITCH ─── */
+.toggle-row {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--border);
+}
+.toggle-row:last-child { border-bottom: none; }
+.toggle-info { flex: 1; }
+.toggle-info .toggle-label { font-size: 0.88rem; font-weight: 600; margin-bottom: 2px; }
+.toggle-info .toggle-desc { font-size: 0.75rem; color: var(--text-muted); }
+.toggle-switch {
+  width: 44px; height: 24px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: 100px;
+  position: relative; cursor: pointer;
+  transition: all var(--transition);
+  flex-shrink: 0; margin-left: 16px;
+}
+.toggle-switch.on { background: var(--coral); border-color: var(--coral); }
+.toggle-switch::after {
+  content: ''; position: absolute;
+  top: 2px; left: 2px;
+  width: 18px; height: 18px;
+  background: #fff; border-radius: 50%;
+  transition: all var(--transition);
+}
+.toggle-switch.on::after { left: 22px; }
+
+/* ─── CONTACT INPUTS ─── */
+.contact-input-group {
+  display: flex; align-items: stretch; gap: 0;
+}
+.contact-prefix {
+  display: flex; align-items: center; gap: 6px;
+  padding: 0 14px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-right: none;
+  border-radius: var(--radius-sm) 0 0 var(--radius-sm);
+  font-size: 0.82rem; font-weight: 700;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+.contact-prefix svg { width: 16px; height: 16px; flex-shrink: 0; }
+.contact-prefix.wa { color: var(--whatsapp); }
+.contact-prefix.wa svg { fill: var(--whatsapp); }
+.contact-prefix.ph { color: var(--phone-blue); }
+.contact-prefix.ph svg { stroke: var(--phone-blue); fill: none; }
+.contact-input-group input {
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+  flex: 1;
+}
+
+/* ─── INCLUDES CHECKBOXES ─── */
+.includes-grid {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
+}
+.include-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 12px 14px;
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  cursor: pointer; transition: all var(--transition);
+}
+.include-item:hover { border-color: var(--border-hover); }
+.include-item.checked { border-color: var(--olive); background: var(--olive-subtle); }
+.include-check {
+  width: 20px; height: 20px; border-radius: 4px;
+  border: 2px solid var(--border-hover);
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0; transition: all var(--transition);
+  font-size: 0.7rem; color: transparent;
+}
+.include-item.checked .include-check {
+  background: var(--olive); border-color: var(--olive); color: #fff;
+}
+.include-icon { font-size: 1rem; }
+.include-label { font-size: 0.82rem; font-weight: 600; }
+
+/* ─── PREVIEW CARD ─── */
+.preview-section {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 28px; margin-bottom: 20px;
+}
+.preview-section h3 {
+  font-size: 0.95rem; font-weight: 700; margin-bottom: 18px;
+  display: flex; align-items: center; gap: 8px;
+}
+.preview-section h3 .icon { font-size: 0.9rem; }
+.preview-mini {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+.pm-img {
+  height: 100px; display: flex; align-items: center; justify-content: center;
+  background: linear-gradient(135deg, var(--coral), #f5943b);
+  font-family: 'Space Mono', monospace;
+  font-size: 1.8rem; font-weight: 700; color: rgba(255,255,255,0.3);
+  position: relative;
+}
+.pm-dist {
+  position: absolute; top: 8px; left: 8px;
+  background: rgba(0,0,0,0.5); padding: 3px 9px;
+  border-radius: 100px; font-size: 0.6rem; font-weight: 700;
+  font-family: 'Outfit', sans-serif; color: #fff;
+}
+.pm-status {
+  position: absolute; top: 8px; right: 8px;
+  padding: 3px 9px; border-radius: 100px;
+  font-size: 0.55rem; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 0.5px;
+  background: var(--olive-subtle); color: var(--olive-tag);
+  font-family: 'Outfit', sans-serif;
+}
+.pm-body { padding: 14px; }
+.pm-race { font-weight: 700; font-size: 0.88rem; margin-bottom: 2px; }
+.pm-meta { font-size: 0.72rem; color: var(--text-muted); margin-bottom: 10px; }
+.pm-footer { display: flex; justify-content: space-between; align-items: center; }
+.pm-price { font-family: 'Space Mono', monospace; font-weight: 700; font-size: 1rem; color: var(--coral); }
+.pm-pays { display: flex; gap: 4px; }
+.pm-pays span {
+  font-size: 0.55rem; padding: 2px 7px;
+  background: rgba(255,255,255,0.05); border-radius: 100px;
+  color: var(--text-muted); font-weight: 600;
+  border: 1px solid var(--border);
+}
+
+/* ─── ACTION BAR ─── */
+.action-bar {
+  display: flex; gap: 12px; margin-top: 8px;
+}
+.btn-publish {
+  flex: 1; padding: 16px;
+  background: var(--coral); color: #fff;
+  border: none; border-radius: var(--radius-md);
+  font-size: 1rem; font-weight: 800;
+  cursor: pointer; transition: all var(--transition);
+  font-family: 'Outfit', sans-serif;
+  box-shadow: 0 4px 20px var(--coral-glow);
+}
+.btn-publish:hover { background: var(--coral-hover); transform: translateY(-2px); box-shadow: 0 8px 32px var(--coral-glow); }
+.btn-draft {
+  padding: 16px 24px;
+  background: var(--bg-elevated); color: var(--text-secondary);
+  border: 1px solid var(--border); border-radius: var(--radius-md);
+  font-size: 0.9rem; font-weight: 600;
+  cursor: pointer; transition: all var(--transition);
+  font-family: 'Outfit', sans-serif;
+}
+.btn-draft:hover { border-color: var(--border-hover); color: var(--text-primary); }
+
+/* ─── FOOTER ─── */
+footer {
+  padding: 32px 40px; border-top: 1px solid var(--border);
+  display: flex; justify-content: space-between; align-items: center;
+  font-size: 0.8rem; color: var(--text-muted);
+}
+footer .logo { font-size: 1rem; text-decoration: none; }
+
+/* ─── SUCCESS MODAL ─── */
+.modal-overlay {
+  display: none; position: fixed; inset: 0; z-index: 200;
+  background: rgba(0,0,0,0.6); backdrop-filter: blur(8px);
+  align-items: center; justify-content: center; padding: 20px;
+}
+.modal-overlay.active { display: flex; }
+.modal-box {
+  background: var(--bg-card); border: 1px solid var(--border);
+  border-radius: var(--radius-xl); padding: 40px 32px;
+  width: 100%; max-width: 420px; text-align: center;
+  box-shadow: var(--shadow-elevated);
+  animation: modalIn 0.4s ease-out;
+}
+@keyframes modalIn { from { opacity: 0; transform: translateY(20px) scale(0.96); } to { opacity: 1; transform: translateY(0) scale(1); } }
+.modal-box .success-icon { font-size: 3rem; margin-bottom: 14px; }
+.modal-box h2 { font-size: 1.3rem; font-weight: 800; margin-bottom: 6px; }
+.modal-box p { font-size: 0.88rem; color: var(--text-secondary); line-height: 1.6; margin-bottom: 24px; }
+.modal-box .btn-modal {
+  width: 100%; padding: 14px;
+  background: var(--coral); color: #fff;
+  border: none; border-radius: var(--radius-md);
+  font-size: 0.95rem; font-weight: 700; cursor: pointer;
+  font-family: 'Outfit', sans-serif;
+  transition: all var(--transition);
+}
+.modal-box .btn-modal:hover { background: var(--coral-hover); }
+
+/* ─── RESPONSIVE ─── */
+@media (max-width: 768px) {
+  .sell-container { padding: 20px 20px 80px; }
+  .back-bar { padding: 84px 20px 0; }
+  .form-grid { grid-template-columns: 1fr; }
+  .includes-grid { grid-template-columns: 1fr; }
+  .stepper { overflow-x: auto; -webkit-overflow-scrolling: touch; gap: 0; }
+  .step-label { font-size: 0.7rem; display: none; }
+  .step-line { flex: 0 0 24px; }
+  .action-bar { flex-direction: column; }
+  footer { flex-direction: column; gap: 10px; text-align: center; padding: 24px 20px; }
+}
+@media (max-width: 640px) {
+  nav { padding: 14px 20px; }
+  .nav-links { display: none; }
+  .hamburger { display: flex; }
+  .sell-header h1 { font-size: 1.4rem; }
+  .contact-input-group { flex-direction: column; }
+  .contact-prefix { border-right: 1px solid var(--border); border-bottom: none; border-radius: var(--radius-sm) var(--radius-sm) 0 0; padding: 10px 14px; }
+  .contact-input-group input { border-radius: 0 0 var(--radius-sm) var(--radius-sm); }
+}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <a href="home.html" class="logo">dorsal<span>.</span>market</a>
+  <div class="nav-links">
+    <a href="home.html">Home</a>
+    <a href="dorsales.html">Dorsales</a>
+    <a href="perfil.html">Perfil</a>
+    <button class="btn-nav">Mi cuenta</button>
+  </div>
+  <button class="hamburger" onclick="document.getElementById('mobileMenu').classList.toggle('active')">
+    <span></span><span></span><span></span>
+  </button>
+</nav>
+<div class="mobile-menu" id="mobileMenu">
+  <a href="home.html">Home</a>
+  <a href="dorsales.html">Dorsales</a>
+  <a href="perfil.html">Perfil</a>
+  <a href="#">Mi cuenta</a>
+</div>
+
+<!-- BACK -->
+<div class="back-bar">
+  <a href="dorsales.html" class="back-link">
+    <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+    Volver a dorsales
+  </a>
+</div>
+
+<!-- SELL FORM -->
+<div class="sell-container">
+
+  <div class="sell-header">
+    <h1>Vender <em>dorsal</em></h1>
+    <p>Rellena los datos de tu dorsal para publicarlo en el marketplace</p>
+  </div>
+
+  <!-- Stepper -->
+  <div class="stepper">
+    <div class="step-item active">
+      <div class="step-dot">1</div>
+      <div class="step-label">Carrera</div>
+    </div>
+    <div class="step-line"></div>
+    <div class="step-item">
+      <div class="step-dot">2</div>
+      <div class="step-label">Precio</div>
+    </div>
+    <div class="step-line"></div>
+    <div class="step-item">
+      <div class="step-dot">3</div>
+      <div class="step-label">Contacto</div>
+    </div>
+    <div class="step-line"></div>
+    <div class="step-item">
+      <div class="step-dot">4</div>
+      <div class="step-label">Publicar</div>
+    </div>
+  </div>
+
+  <!-- ═══ SECTION 1: RACE & DORSAL INFO ═══ -->
+  <div class="form-section">
+    <div class="form-section-header">
+      <div class="icon">🏅</div>
+      <h2>Datos de la carrera</h2>
+      <span class="step-badge">Paso 1 de 4</span>
+    </div>
+    <div class="form-grid">
+      <div class="field full">
+        <label>Nombre de la carrera <span class="req">*</span></label>
+        <input type="text" id="raceName" placeholder="Ej: Maratón Valencia Trinidad Alfonso" oninput="updatePreview()">
+      </div>
+      <div class="field">
+        <label>Número de dorsal <span class="req">*</span></label>
+        <input type="text" id="bibNumber" placeholder="Ej: 1247" oninput="updatePreview()">
+      </div>
+      <div class="field">
+        <label>Fecha de la carrera <span class="req">*</span></label>
+        <input type="date" id="raceDate" oninput="updatePreview()">
+      </div>
+      <div class="field">
+        <label>Ubicación <span class="req">*</span></label>
+        <input type="text" placeholder="Ej: Valencia, España">
+      </div>
+      <div class="field">
+        <label>Distancia <span class="req">*</span></label>
+        <div class="select-wrap">
+          <select id="raceDist" onchange="updatePreview()">
+            <option value="">Seleccionar</option>
+            <option value="5K">5K</option>
+            <option value="10K">10K</option>
+            <option value="15K">15K</option>
+            <option value="21K">Media Maratón (21K)</option>
+            <option value="42K">Maratón (42K)</option>
+            <option value="Trail">Trail</option>
+            <option value="Ultra">Ultra Trail</option>
+            <option value="Otra">Otra distancia</option>
+          </select>
+        </div>
+      </div>
+      <div class="field">
+        <label>Cajón de salida <span class="optional">(opcional)</span></label>
+        <input type="text" placeholder="Ej: Cajón B, sub 3:45">
+      </div>
+    </div>
+  </div>
+
+  <!-- Photo upload -->
+  <div class="form-section">
+    <div class="form-section-header">
+      <div class="icon">📸</div>
+      <h2>Foto del dorsal</h2>
+    </div>
+    <div class="photo-upload" onclick="document.getElementById('photoInput').click()">
+      <input type="file" id="photoInput" accept="image/*" style="display:none">
+      <div class="upload-icon">📷</div>
+      <div class="upload-text">Sube una foto de tu dorsal</div>
+      <div class="upload-hint">JPG, PNG — Máx. 5MB. Ayuda a generar confianza en el comprador</div>
+      <span class="upload-btn">Seleccionar archivo</span>
+    </div>
+  </div>
+
+  <!-- Includes -->
+  <div class="form-section">
+    <div class="form-section-header">
+      <div class="icon">🎒</div>
+      <h2>¿Qué incluye?</h2>
+    </div>
+    <div class="includes-grid">
+      <div class="include-item checked" onclick="toggleInclude(this)">
+        <div class="include-check">✓</div>
+        <span class="include-icon">🏷️</span>
+        <span class="include-label">Dorsal</span>
+      </div>
+      <div class="include-item checked" onclick="toggleInclude(this)">
+        <div class="include-check">✓</div>
+        <span class="include-icon">📡</span>
+        <span class="include-label">Chip de cronometraje</span>
+      </div>
+      <div class="include-item" onclick="toggleInclude(this)">
+        <div class="include-check">✓</div>
+        <span class="include-icon">👕</span>
+        <span class="include-label">Camiseta</span>
+      </div>
+      <div class="include-item" onclick="toggleInclude(this)">
+        <div class="include-check">✓</div>
+        <span class="include-icon">🎒</span>
+        <span class="include-label">Bolsa del corredor</span>
+      </div>
+      <div class="include-item" onclick="toggleInclude(this)">
+        <div class="include-check">✓</div>
+        <span class="include-icon">🥇</span>
+        <span class="include-label">Medalla finisher</span>
+      </div>
+      <div class="include-item" onclick="toggleInclude(this)">
+        <div class="include-check">✓</div>
+        <span class="include-icon">🍌</span>
+        <span class="include-label">Avituallamiento</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ SECTION 2: PRICE & PAYMENT ═══ -->
+  <div class="form-section">
+    <div class="form-section-header">
+      <div class="icon">💰</div>
+      <h2>Precio y método de pago</h2>
+      <span class="step-badge">Paso 2 de 4</span>
+    </div>
+    <div class="form-grid">
+      <div class="field">
+        <label>Precio de venta <span class="req">*</span></label>
+        <div class="price-input-wrap">
+          <span class="currency">€</span>
+          <input type="text" id="salePrice" placeholder="0" oninput="updatePreview()">
+        </div>
+        <div class="hint">Indica el precio al que quieres vender tu dorsal</div>
+      </div>
+      <div class="field">
+        <label>Precio original <span class="optional">(opcional)</span></label>
+        <div class="price-input-wrap">
+          <span class="currency" style="color: var(--text-muted);">€</span>
+          <input type="text" placeholder="0" style="color: var(--text-muted);">
+        </div>
+        <div class="hint">Lo que pagaste por la inscripción — referencia para el comprador</div>
+      </div>
+      <div class="field full">
+        <label>Métodos de pago aceptados <span class="req">*</span></label>
+        <div class="chip-group">
+          <button type="button" class="chip active" onclick="toggleChip(this)">
+            <span class="chip-icon">📱</span> Bizum
+          </button>
+          <button type="button" class="chip" onclick="toggleChip(this)">
+            <span class="chip-icon">🅿️</span> PayPal
+          </button>
+          <button type="button" class="chip" onclick="toggleChip(this)">
+            <span class="chip-icon">💳</span> Tarjeta
+          </button>
+        </div>
+        <div class="hint">Selecciona uno o más métodos de pago que aceptas</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ SECTION 3: CONTACT & REASON ═══ -->
+  <div class="form-section">
+    <div class="form-section-header">
+      <div class="icon">💬</div>
+      <h2>Contacto y motivo</h2>
+      <span class="step-badge">Paso 3 de 4</span>
+    </div>
+    <div class="form-grid">
+      <div class="field full">
+        <label>Motivo de venta <span class="req">*</span></label>
+        <textarea placeholder="Cuéntale al comprador por qué vendes tu dorsal. Ej: Lesión, cambio de planes, no puedo asistir..."></textarea>
+        <div class="hint">Ser transparente genera confianza y facilita la venta</div>
+      </div>
+      <div class="field full">
+        <label>WhatsApp</label>
+        <div class="contact-input-group">
+          <div class="contact-prefix wa">
+            <svg viewBox="0 0 24 24" width="16" height="16"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+            WhatsApp
+          </div>
+          <input type="text" placeholder="+34 612 345 678">
+        </div>
+      </div>
+      <div class="field full">
+        <label>Teléfono</label>
+        <div class="contact-input-group">
+          <div class="contact-prefix ph">
+            <svg viewBox="0 0 24 24" width="16" height="16" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.362 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.338 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+            Teléfono
+          </div>
+          <input type="text" placeholder="+34 612 345 678">
+        </div>
+      </div>
+      <div class="field full">
+        <label>Preferencias de contacto</label>
+        <div class="toggle-row">
+          <div class="toggle-info">
+            <div class="toggle-label">Mostrar WhatsApp al comprador</div>
+            <div class="toggle-desc">El comprador podrá enviarte un mensaje directo</div>
+          </div>
+          <div class="toggle-switch on" onclick="this.classList.toggle('on')"></div>
+        </div>
+        <div class="toggle-row">
+          <div class="toggle-info">
+            <div class="toggle-label">Mostrar teléfono al comprador</div>
+            <div class="toggle-desc">El comprador podrá llamarte directamente</div>
+          </div>
+          <div class="toggle-switch" onclick="this.classList.toggle('on')"></div>
+        </div>
+        <div class="toggle-row">
+          <div class="toggle-info">
+            <div class="toggle-label">Acepto negociar el precio</div>
+            <div class="toggle-desc">Indica si estás abierto a ofertas</div>
+          </div>
+          <div class="toggle-switch on" onclick="this.classList.toggle('on')"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ SECTION 4: PREVIEW & PUBLISH ═══ -->
+  <div class="preview-section">
+    <h3><span class="icon">👁️</span> Vista previa</h3>
+    <div class="preview-mini">
+      <div class="pm-img" id="prevImg">
+        <span id="prevBib">#----</span>
+        <div class="pm-dist" id="prevDist">--</div>
+        <div class="pm-status">En venta</div>
+      </div>
+      <div class="pm-body">
+        <div class="pm-race" id="prevRace">Nombre de la carrera</div>
+        <div class="pm-meta" id="prevMeta">-- --- ---- · Ciudad</div>
+        <div class="pm-footer">
+          <div class="pm-price" id="prevPrice">€--</div>
+          <div class="pm-pays"><span>Bizum</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Action buttons -->
+  <div class="action-bar">
+    <button class="btn-draft" onclick="alert('Guardado como borrador (prototipo)')">Guardar borrador</button>
+    <button class="btn-publish" onclick="publishDorsal()">Publicar dorsal</button>
+  </div>
+
+</div>
+
+<!-- SUCCESS MODAL -->
+<div class="modal-overlay" id="successModal">
+  <div class="modal-box">
+    <div class="success-icon">🎉</div>
+    <h2>¡Dorsal publicado!</h2>
+    <p>Tu dorsal ya está visible en el marketplace. Te notificaremos cuando alguien esté interesado en comprarlo.</p>
+    <button class="btn-modal" onclick="window.location.href='dorsales.html'">Ver en dorsales</button>
+  </div>
+</div>
+
+<!-- FOOTER -->
+<footer>
+  <a href="home.html" class="logo">dorsal<span>.</span>market</a>
+  <div>© 2026 DorsalMarket</div>
+</footer>
+
+<script>
+function toggleChip(el) { el.classList.toggle('active'); }
+function toggleInclude(el) { el.classList.toggle('checked'); }
+
+function updatePreview() {
+  const name = document.getElementById('raceName').value;
+  const bib = document.getElementById('bibNumber').value;
+  const date = document.getElementById('raceDate').value;
+  const dist = document.getElementById('raceDist').value;
+  const price = document.getElementById('salePrice').value;
+
+  if (name) document.getElementById('prevRace').textContent = name;
+  if (bib) document.getElementById('prevBib').textContent = '#' + bib;
+  if (dist) document.getElementById('prevDist').textContent = dist;
+  if (price) document.getElementById('prevPrice').textContent = '€' + price;
+  if (date) {
+    const d = new Date(date);
+    const months = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+    document.getElementById('prevMeta').textContent = d.getDate() + ' ' + months[d.getMonth()] + ' ' + d.getFullYear();
+  }
+}
+
+function publishDorsal() {
+  document.getElementById('successModal').classList.add('active');
+}
+</script>
+</body>
+</html>

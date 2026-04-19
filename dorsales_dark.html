@@ -1,0 +1,752 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DorsalMarket — Dorsales</title>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg-primary: #111113;
+  --bg-secondary: #1a1a1f;
+  --bg-card: #1f1f26;
+  --bg-elevated: #26262e;
+  --bg-input: #1a1a1f;
+  --border: rgba(255,255,255,0.08);
+  --border-hover: rgba(255,255,255,0.16);
+  --text-primary: #f0efec;
+  --text-secondary: #a0a0ac;
+  --text-muted: #6a6a78;
+  --text-faint: rgba(255,255,255,0.05);
+  --coral: #e8552d;
+  --coral-hover: #f06a3f;
+  --coral-glow: rgba(232, 85, 45, 0.25);
+  --coral-subtle: rgba(232, 85, 45, 0.08);
+  --olive: #6dab5e;
+  --olive-dark: #4a7c3f;
+  --olive-subtle: rgba(109, 171, 94, 0.1);
+  --olive-tag: #8fc780;
+  --radius-sm: 8px;
+  --radius-md: 14px;
+  --radius-lg: 20px;
+  --radius-xl: 28px;
+  --shadow-card: 0 2px 12px rgba(0,0,0,0.3);
+  --shadow-elevated: 0 12px 40px rgba(0,0,0,0.4);
+  --transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  font-family: 'Outfit', sans-serif;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+  min-height: 100vh;
+}
+
+/* ─── NAV ─── */
+nav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 16px 40px;
+  background: rgba(17, 17, 19, 0.85);
+  backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--border);
+}
+.logo {
+  font-family: 'Space Mono', monospace;
+  font-size: 1.3rem; font-weight: 700;
+  color: var(--text-primary); letter-spacing: -0.5px;
+  text-decoration: none;
+}
+.logo span { color: var(--coral); }
+.nav-links { display: flex; gap: 32px; align-items: center; }
+.nav-links a {
+  color: var(--text-secondary); text-decoration: none;
+  font-size: 0.9rem; font-weight: 500;
+  transition: color var(--transition); position: relative;
+}
+.nav-links a:hover { color: var(--text-primary); }
+.nav-links a.active { color: var(--coral); }
+.nav-links a.active::after {
+  content: ''; position: absolute; bottom: -6px; left: 0; right: 0;
+  height: 2px; background: var(--coral); border-radius: 2px;
+}
+.btn-login {
+  background: var(--coral); color: #fff;
+  border: none; padding: 8px 20px;
+  border-radius: 100px; font-size: 0.85rem; font-weight: 600;
+  cursor: pointer; transition: all var(--transition);
+  font-family: 'Outfit', sans-serif;
+}
+.btn-login:hover { background: var(--coral-hover); }
+.hamburger { display: none; flex-direction: column; gap: 5px; cursor: pointer; background: none; border: none; padding: 4px; }
+.hamburger span { display: block; width: 24px; height: 2px; background: var(--text-primary); border-radius: 2px; transition: all var(--transition); }
+
+/* ─── MOBILE MENU ─── */
+.mobile-menu {
+  display: none; position: fixed; inset: 0; z-index: 99;
+  background: rgba(17, 17, 19, 0.97); backdrop-filter: blur(20px);
+  flex-direction: column; align-items: center; justify-content: center; gap: 32px;
+}
+.mobile-menu.active { display: flex; }
+.mobile-menu a {
+  color: var(--text-primary); font-size: 1.4rem; font-weight: 600;
+  text-decoration: none; transition: color var(--transition);
+}
+.mobile-menu a:hover { color: var(--coral); }
+
+/* ─── PAGE HEADER ─── */
+.page-header {
+  padding: 110px 40px 32px;
+  background:
+    radial-gradient(ellipse 70% 50% at 80% 0%, rgba(232, 85, 45, 0.08), transparent),
+    radial-gradient(ellipse 50% 60% at 10% 100%, rgba(109, 171, 94, 0.06), transparent),
+    var(--bg-primary);
+  position: relative;
+}
+.page-header::after {
+  content: ''; position: absolute; bottom: 0; left: 0; right: 0;
+  height: 1px; background: var(--border);
+}
+.page-header h1 {
+  font-size: clamp(1.8rem, 3.5vw, 2.6rem);
+  font-weight: 800; letter-spacing: -1px; margin-bottom: 6px;
+}
+.page-header h1 em {
+  font-style: normal;
+  background: linear-gradient(135deg, var(--coral), #f5943b);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.page-header p { color: var(--text-muted); font-size: 0.95rem; }
+.results-count {
+  font-family: 'Space Mono', monospace;
+  font-size: 0.75rem; color: var(--olive);
+  margin-top: 8px; letter-spacing: 0.5px;
+}
+
+/* ─── MAIN LAYOUT ─── */
+.main-layout {
+  display: grid;
+  grid-template-columns: 300px 1fr;
+  gap: 0;
+  min-height: calc(100vh - 200px);
+}
+
+/* ─── FILTERS SIDEBAR ─── */
+.filters-sidebar {
+  padding: 28px 24px;
+  border-right: 1px solid var(--border);
+  background: var(--bg-secondary);
+  position: sticky; top: 72px;
+  height: calc(100vh - 72px);
+  overflow-y: auto;
+}
+.filters-sidebar::-webkit-scrollbar { width: 4px; }
+.filters-sidebar::-webkit-scrollbar-track { background: transparent; }
+.filters-sidebar::-webkit-scrollbar-thumb { background: var(--border-hover); border-radius: 4px; }
+
+.filters-header {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 24px;
+}
+.filters-header h3 {
+  font-size: 0.95rem; font-weight: 700;
+  display: flex; align-items: center; gap: 8px;
+}
+.filters-header h3 svg { width: 18px; height: 18px; stroke: var(--coral); }
+.btn-clear {
+  font-size: 0.72rem; color: var(--text-muted);
+  background: none; border: none; cursor: pointer;
+  font-family: 'Outfit', sans-serif; font-weight: 600;
+  transition: color var(--transition);
+}
+.btn-clear:hover { color: var(--coral); }
+
+.filter-group { margin-bottom: 24px; }
+.filter-group label {
+  display: block; font-size: 0.75rem; font-weight: 700;
+  color: var(--text-secondary); margin-bottom: 10px;
+  text-transform: uppercase; letter-spacing: 1px;
+}
+.filter-group input[type="text"],
+.filter-group input[type="date"],
+.filter-group select {
+  width: 100%; padding: 11px 14px;
+  background: var(--bg-input); border: 1px solid var(--border);
+  border-radius: var(--radius-sm); color: var(--text-primary);
+  font-size: 0.88rem; font-family: 'Outfit', sans-serif;
+  outline: none; transition: border-color var(--transition);
+  appearance: none; -webkit-appearance: none;
+}
+.filter-group input:focus,
+.filter-group select:focus { border-color: var(--coral); }
+.filter-group input::placeholder { color: var(--text-muted); }
+
+/* Custom select arrow */
+.select-wrap {
+  position: relative;
+}
+.select-wrap::after {
+  content: '▾'; position: absolute; right: 14px; top: 50%;
+  transform: translateY(-50%); color: var(--text-muted);
+  pointer-events: none; font-size: 0.8rem;
+}
+.select-wrap select { padding-right: 36px; cursor: pointer; }
+.select-wrap select option { background: var(--bg-secondary); color: var(--text-primary); }
+
+/* Date range */
+.date-range { display: flex; gap: 8px; }
+.date-range input { flex: 1; min-width: 0; font-size: 0.8rem; padding: 10px; }
+input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(0.7); cursor: pointer; }
+
+/* Price range */
+.price-inputs { display: flex; gap: 8px; align-items: center; }
+.price-inputs input {
+  flex: 1; min-width: 0;
+  padding: 11px 14px;
+  background: var(--bg-input); border: 1px solid var(--border);
+  border-radius: var(--radius-sm); color: var(--text-primary);
+  font-size: 0.88rem; font-family: 'Outfit', sans-serif;
+  outline: none; transition: border-color var(--transition);
+}
+.price-inputs input:focus { border-color: var(--coral); }
+.price-inputs input::placeholder { color: var(--text-muted); }
+.price-sep { color: var(--text-muted); font-size: 0.8rem; font-weight: 600; }
+
+/* Distance chips */
+.chip-group { display: flex; flex-wrap: wrap; gap: 8px; }
+.chip {
+  padding: 7px 14px; border-radius: 100px;
+  border: 1px solid var(--border);
+  background: transparent; color: var(--text-secondary);
+  font-size: 0.78rem; font-weight: 600; cursor: pointer;
+  transition: all var(--transition);
+  font-family: 'Outfit', sans-serif;
+}
+.chip:hover { border-color: var(--border-hover); color: var(--text-primary); }
+.chip.active {
+  background: var(--coral-subtle); border-color: var(--coral);
+  color: var(--coral);
+}
+
+/* Apply button */
+.btn-apply {
+  width: 100%; padding: 12px;
+  background: var(--coral); color: #fff;
+  border: none; border-radius: var(--radius-md);
+  font-size: 0.9rem; font-weight: 700;
+  cursor: pointer; transition: all var(--transition);
+  font-family: 'Outfit', sans-serif;
+  margin-top: 8px;
+}
+.btn-apply:hover { background: var(--coral-hover); transform: translateY(-1px); }
+
+/* ─── DORSALS GRID ─── */
+.dorsals-area { padding: 28px 32px 60px; }
+.sort-bar {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 24px;
+}
+.sort-bar .view-toggles { display: flex; gap: 6px; }
+.view-btn {
+  width: 36px; height: 36px;
+  background: var(--bg-card); border: 1px solid var(--border);
+  border-radius: var(--radius-sm); cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: all var(--transition); color: var(--text-muted);
+}
+.view-btn:hover { border-color: var(--border-hover); color: var(--text-primary); }
+.view-btn.active { border-color: var(--coral); color: var(--coral); background: var(--coral-subtle); }
+.view-btn svg { width: 16px; height: 16px; }
+
+.sort-select-wrap {
+  position: relative; display: flex; align-items: center; gap: 10px;
+}
+.sort-select-wrap span { font-size: 0.8rem; color: var(--text-muted); white-space: nowrap; }
+.sort-select-wrap select {
+  padding: 8px 32px 8px 12px;
+  background: var(--bg-card); border: 1px solid var(--border);
+  border-radius: var(--radius-sm); color: var(--text-primary);
+  font-size: 0.82rem; font-family: 'Outfit', sans-serif;
+  outline: none; cursor: pointer; appearance: none;
+}
+.sort-select-wrap::after {
+  content: '▾'; position: absolute; right: 12px; top: 50%;
+  transform: translateY(-50%); color: var(--text-muted);
+  pointer-events: none; font-size: 0.7rem;
+}
+
+.dorsals-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(270px, 1fr));
+  gap: 18px;
+}
+
+/* ─── DORSAL CARD ─── */
+.dorsal-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  overflow: hidden; cursor: pointer;
+  transition: all var(--transition);
+}
+.dorsal-card:hover {
+  border-color: var(--coral);
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-elevated);
+}
+.dc-img {
+  width: 100%; height: 150px;
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Space Mono', monospace;
+  font-size: 2.8rem; font-weight: 700; color: rgba(255,255,255,0.2);
+  position: relative; overflow: hidden;
+}
+.dc-badges {
+  position: absolute; top: 10px; left: 10px; right: 10px;
+  display: flex; justify-content: space-between; align-items: flex-start;
+}
+.dc-dist {
+  background: rgba(0,0,0,0.55); padding: 4px 11px;
+  border-radius: 100px; font-size: 0.68rem; font-weight: 700;
+  font-family: 'Outfit', sans-serif; color: #fff;
+  backdrop-filter: blur(6px);
+}
+.dc-status {
+  padding: 4px 10px; border-radius: 100px;
+  font-size: 0.6rem; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 0.5px;
+  backdrop-filter: blur(6px);
+}
+.dc-status.available { background: var(--olive-subtle); color: var(--olive-tag); }
+.dc-status.sold { background: rgba(180, 60, 60, 0.2); color: #e07070; }
+
+.dc-body { padding: 16px 18px 18px; }
+.dc-race { font-weight: 700; font-size: 0.95rem; margin-bottom: 3px; color: var(--text-primary); }
+.dc-meta {
+  font-size: 0.78rem; color: var(--text-muted); margin-bottom: 14px;
+  display: flex; align-items: center; gap: 6px;
+}
+.dc-meta .dot { width: 3px; height: 3px; background: var(--text-muted); border-radius: 50%; }
+.dc-footer { display: flex; justify-content: space-between; align-items: center; }
+.dc-price {
+  font-family: 'Space Mono', monospace;
+  font-weight: 700; font-size: 1.15rem; color: var(--coral);
+}
+.dc-pay { display: flex; gap: 5px; }
+.dc-pay span {
+  font-size: 0.58rem; padding: 3px 8px;
+  background: rgba(255,255,255,0.05); border-radius: 100px;
+  color: var(--text-muted); font-weight: 600;
+  border: 1px solid var(--border);
+}
+
+/* ─── SELL FAB ─── */
+.fab-sell {
+  position: fixed; bottom: 28px; right: 28px; z-index: 50;
+  width: 56px; height: 56px;
+  background: var(--coral); color: #fff;
+  border: none; border-radius: 50%;
+  font-size: 1.6rem; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 6px 24px var(--coral-glow);
+  transition: all var(--transition);
+}
+.fab-sell:hover { transform: scale(1.08); box-shadow: 0 8px 32px var(--coral-glow); }
+
+/* ─── MOBILE FILTERS TOGGLE ─── */
+.mobile-filter-toggle {
+  display: none;
+  position: fixed; bottom: 28px; left: 28px; z-index: 50;
+  padding: 14px 22px;
+  background: var(--bg-elevated); color: var(--text-primary);
+  border: 1px solid var(--border); border-radius: 100px;
+  font-size: 0.85rem; font-weight: 700; cursor: pointer;
+  font-family: 'Outfit', sans-serif;
+  box-shadow: var(--shadow-elevated);
+  transition: all var(--transition);
+  align-items: center; gap: 8px;
+}
+.mobile-filter-toggle svg { width: 16px; height: 16px; stroke: var(--coral); }
+.mobile-filter-toggle:hover { border-color: var(--coral); }
+
+/* ─── FOOTER ─── */
+footer {
+  padding: 32px 40px; border-top: 1px solid var(--border);
+  display: flex; justify-content: space-between; align-items: center;
+  font-size: 0.8rem; color: var(--text-muted);
+}
+footer .logo { font-size: 1rem; text-decoration: none; }
+
+/* ─── RESPONSIVE ─── */
+@media (max-width: 960px) {
+  .main-layout { grid-template-columns: 1fr; }
+  .filters-sidebar {
+    position: fixed; left: -100%; top: 0; bottom: 0;
+    width: 320px; max-width: 85vw; z-index: 110;
+    transition: left var(--transition);
+    border-right: 1px solid var(--border);
+    padding-top: 80px;
+  }
+  .filters-sidebar.open { left: 0; }
+  .filters-backdrop {
+    display: none; position: fixed; inset: 0; z-index: 105;
+    background: rgba(0,0,0,0.5); backdrop-filter: blur(4px);
+  }
+  .filters-backdrop.active { display: block; }
+  .mobile-filter-toggle { display: flex; }
+  .dorsals-area { padding: 20px 16px 100px; }
+  .dorsals-grid { grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 14px; }
+}
+@media (max-width: 640px) {
+  nav { padding: 14px 20px; }
+  .nav-links { display: none; }
+  .hamburger { display: flex; }
+  .page-header { padding: 100px 20px 24px; }
+  .page-header h1 { font-size: 1.5rem; }
+  .dorsals-grid { grid-template-columns: 1fr; }
+  .sort-bar { flex-direction: column; gap: 12px; align-items: stretch; }
+  .sort-bar .view-toggles { display: none; }
+  footer { flex-direction: column; gap: 10px; text-align: center; padding: 24px 20px; }
+}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <a href="home.html" class="logo">dorsal<span>.</span>market</a>
+  <div class="nav-links">
+    <a href="home.html">Home</a>
+    <a href="#" class="active">Dorsales</a>
+    <a href="perfil.html">Perfil</a>
+    <button class="btn-login">Mi cuenta</button>
+  </div>
+  <button class="hamburger" onclick="toggleMenu()">
+    <span></span><span></span><span></span>
+  </button>
+</nav>
+
+<!-- MOBILE MENU -->
+<div class="mobile-menu" id="mobileMenu">
+  <a href="home.html">Home</a>
+  <a href="#" onclick="toggleMenu()">Dorsales</a>
+  <a href="perfil.html">Perfil</a>
+  <a href="#">Mi cuenta</a>
+</div>
+
+<!-- PAGE HEADER -->
+<div class="page-header">
+  <h1>Encuentra tu <em>dorsal</em></h1>
+  <p>Explora dorsales disponibles en cientos de carreras</p>
+  <div class="results-count">→ 147 dorsales encontrados</div>
+</div>
+
+<!-- MAIN -->
+<div class="main-layout">
+
+  <!-- FILTERS SIDEBAR -->
+  <div class="filters-backdrop" id="filtersBackdrop" onclick="toggleFilters()"></div>
+  <aside class="filters-sidebar" id="filtersSidebar">
+    <div class="filters-header">
+      <h3>
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="14" y2="12"/><line x1="4" y1="18" x2="9" y2="18"/></svg>
+        Filtros
+      </h3>
+      <button class="btn-clear" onclick="clearFilters()">Limpiar todo</button>
+    </div>
+
+    <!-- Search -->
+    <div class="filter-group">
+      <label>Carrera</label>
+      <input type="text" placeholder="Buscar carrera..." id="filterRace">
+    </div>
+
+    <!-- Date range -->
+    <div class="filter-group">
+      <label>Fecha</label>
+      <div class="date-range">
+        <input type="date" id="filterDateFrom">
+        <input type="date" id="filterDateTo">
+      </div>
+    </div>
+
+    <!-- Distance -->
+    <div class="filter-group">
+      <label>Distancia</label>
+      <div class="chip-group">
+        <button class="chip" onclick="toggleChip(this)">5K</button>
+        <button class="chip" onclick="toggleChip(this)">10K</button>
+        <button class="chip active" onclick="toggleChip(this)">21K</button>
+        <button class="chip" onclick="toggleChip(this)">42K</button>
+        <button class="chip" onclick="toggleChip(this)">Trail</button>
+        <button class="chip" onclick="toggleChip(this)">Ultra</button>
+      </div>
+    </div>
+
+    <!-- Price -->
+    <div class="filter-group">
+      <label>Precio (€)</label>
+      <div class="price-inputs">
+        <input type="text" placeholder="Min" id="filterPriceMin">
+        <span class="price-sep">—</span>
+        <input type="text" placeholder="Max" id="filterPriceMax">
+      </div>
+    </div>
+
+    <!-- Payment method -->
+    <div class="filter-group">
+      <label>Método de pago</label>
+      <div class="select-wrap">
+        <select id="filterPayment">
+          <option value="">Todos</option>
+          <option value="bizum">Bizum</option>
+          <option value="paypal">PayPal</option>
+          <option value="card">Tarjeta</option>
+        </select>
+      </div>
+    </div>
+
+    <button class="btn-apply" onclick="applyFilters()">Aplicar filtros</button>
+  </aside>
+
+  <!-- DORSALS CONTENT -->
+  <div class="dorsals-area">
+    <!-- Sort bar -->
+    <div class="sort-bar">
+      <div class="view-toggles">
+        <button class="view-btn active" title="Grid">
+          <svg viewBox="0 0 16 16" fill="currentColor"><rect x="1" y="1" width="6" height="6" rx="1"/><rect x="9" y="1" width="6" height="6" rx="1"/><rect x="1" y="9" width="6" height="6" rx="1"/><rect x="9" y="9" width="6" height="6" rx="1"/></svg>
+        </button>
+        <button class="view-btn" title="Lista">
+          <svg viewBox="0 0 16 16" fill="currentColor"><rect x="1" y="1" width="14" height="3" rx="1"/><rect x="1" y="6.5" width="14" height="3" rx="1"/><rect x="1" y="12" width="14" height="3" rx="1"/></svg>
+        </button>
+      </div>
+      <div class="sort-select-wrap">
+        <span>Ordenar por</span>
+        <select>
+          <option>Más recientes</option>
+          <option>Precio: menor a mayor</option>
+          <option>Precio: mayor a menor</option>
+          <option>Fecha de carrera</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Grid -->
+    <div class="dorsals-grid">
+
+      <div class="dorsal-card">
+        <div class="dc-img" style="background: linear-gradient(135deg, #e8552d, #f5943b);">
+          #1247
+          <div class="dc-badges">
+            <span class="dc-dist">42K</span>
+            <span class="dc-status available">En venta</span>
+          </div>
+        </div>
+        <div class="dc-body">
+          <div class="dc-race">Maratón Valencia</div>
+          <div class="dc-meta">01 Dic 2026 <span class="dot"></span> Valencia</div>
+          <div class="dc-footer">
+            <div class="dc-price">€85</div>
+            <div class="dc-pay"><span>Bizum</span><span>PayPal</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="dorsal-card">
+        <div class="dc-img" style="background: linear-gradient(135deg, #3d6834, #6dab5e);">
+          #0532
+          <div class="dc-badges">
+            <span class="dc-dist">21K</span>
+            <span class="dc-status available">En venta</span>
+          </div>
+        </div>
+        <div class="dc-body">
+          <div class="dc-race">Media Maratón Sevilla</div>
+          <div class="dc-meta">26 Ene 2027 <span class="dot"></span> Sevilla</div>
+          <div class="dc-footer">
+            <div class="dc-price">€45</div>
+            <div class="dc-pay"><span>Tarjeta</span><span>Bizum</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="dorsal-card">
+        <div class="dc-img" style="background: linear-gradient(135deg, #2a2a32, #e8552d);">
+          #3891
+          <div class="dc-badges">
+            <span class="dc-dist">10K</span>
+            <span class="dc-status available">En venta</span>
+          </div>
+        </div>
+        <div class="dc-body">
+          <div class="dc-race">Carrera de la Mujer</div>
+          <div class="dc-meta">08 May 2027 <span class="dot"></span> Madrid</div>
+          <div class="dc-footer">
+            <div class="dc-price">€20</div>
+            <div class="dc-pay"><span>PayPal</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="dorsal-card">
+        <div class="dc-img" style="background: linear-gradient(135deg, #1a3a5c, #4a90d9);">
+          #2076
+          <div class="dc-badges">
+            <span class="dc-dist">42K</span>
+            <span class="dc-status sold">Vendido</span>
+          </div>
+        </div>
+        <div class="dc-body">
+          <div class="dc-race">Maratón Barcelona</div>
+          <div class="dc-meta">16 Mar 2027 <span class="dot"></span> Barcelona</div>
+          <div class="dc-footer">
+            <div class="dc-price" style="color: var(--text-muted); text-decoration: line-through;">€75</div>
+            <div class="dc-pay"><span>Bizum</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="dorsal-card">
+        <div class="dc-img" style="background: linear-gradient(135deg, #5c3d1a, #c9883a);">
+          #4455
+          <div class="dc-badges">
+            <span class="dc-dist">Trail 30K</span>
+            <span class="dc-status available">En venta</span>
+          </div>
+        </div>
+        <div class="dc-body">
+          <div class="dc-race">Transvulcania</div>
+          <div class="dc-meta">10 May 2027 <span class="dot"></span> La Palma</div>
+          <div class="dc-footer">
+            <div class="dc-price">€110</div>
+            <div class="dc-pay"><span>PayPal</span><span>Tarjeta</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="dorsal-card">
+        <div class="dc-img" style="background: linear-gradient(135deg, #4a2e5c, #9a6abf);">
+          #0891
+          <div class="dc-badges">
+            <span class="dc-dist">10K</span>
+            <span class="dc-status available">En venta</span>
+          </div>
+        </div>
+        <div class="dc-body">
+          <div class="dc-race">San Silvestre Vallecana</div>
+          <div class="dc-meta">31 Dic 2026 <span class="dot"></span> Madrid</div>
+          <div class="dc-footer">
+            <div class="dc-price">€30</div>
+            <div class="dc-pay"><span>Bizum</span><span>Tarjeta</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="dorsal-card">
+        <div class="dc-img" style="background: linear-gradient(135deg, #1a4040, #2d8a7a);">
+          #7712
+          <div class="dc-badges">
+            <span class="dc-dist">21K</span>
+            <span class="dc-status available">En venta</span>
+          </div>
+        </div>
+        <div class="dc-body">
+          <div class="dc-race">Mitja Marató Barcelona</div>
+          <div class="dc-meta">09 Feb 2027 <span class="dot"></span> Barcelona</div>
+          <div class="dc-footer">
+            <div class="dc-price">€55</div>
+            <div class="dc-pay"><span>Bizum</span><span>PayPal</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="dorsal-card">
+        <div class="dc-img" style="background: linear-gradient(135deg, #e8552d, #c9323a);">
+          #1590
+          <div class="dc-badges">
+            <span class="dc-dist">5K</span>
+            <span class="dc-status available">En venta</span>
+          </div>
+        </div>
+        <div class="dc-body">
+          <div class="dc-race">Carrera Ponle Freno</div>
+          <div class="dc-meta">22 Nov 2026 <span class="dot"></span> Madrid</div>
+          <div class="dc-footer">
+            <div class="dc-price">€15</div>
+            <div class="dc-pay"><span>Bizum</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="dorsal-card">
+        <div class="dc-img" style="background: linear-gradient(135deg, #2a4a1a, #5a9a3a);">
+          #6320
+          <div class="dc-badges">
+            <span class="dc-dist">Ultra 80K</span>
+            <span class="dc-status available">En venta</span>
+          </div>
+        </div>
+        <div class="dc-body">
+          <div class="dc-race">Ultra Trail Sierra Nevada</div>
+          <div class="dc-meta">15 Jun 2027 <span class="dot"></span> Granada</div>
+          <div class="dc-footer">
+            <div class="dc-price">€135</div>
+            <div class="dc-pay"><span>PayPal</span><span>Tarjeta</span></div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- FAB Sell -->
+<button class="fab-sell" onclick="alert('Vender dorsal (prototipo)')" title="Vender dorsal">+</button>
+
+<!-- Mobile filter toggle -->
+<button class="mobile-filter-toggle" onclick="toggleFilters()">
+  <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="14" y2="12"/><line x1="4" y1="18" x2="9" y2="18"/></svg>
+  Filtros
+</button>
+
+<!-- FOOTER -->
+<footer>
+  <a href="home.html" class="logo">dorsal<span>.</span>market</a>
+  <div>© 2026 DorsalMarket</div>
+</footer>
+
+<script>
+function toggleMenu() {
+  document.getElementById('mobileMenu').classList.toggle('active');
+}
+function toggleFilters() {
+  document.getElementById('filtersSidebar').classList.toggle('open');
+  document.getElementById('filtersBackdrop').classList.toggle('active');
+}
+function toggleChip(el) {
+  el.classList.toggle('active');
+}
+function clearFilters() {
+  document.getElementById('filterRace').value = '';
+  document.getElementById('filterDateFrom').value = '';
+  document.getElementById('filterDateTo').value = '';
+  document.getElementById('filterPriceMin').value = '';
+  document.getElementById('filterPriceMax').value = '';
+  document.getElementById('filterPayment').value = '';
+  document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+}
+function applyFilters() {
+  alert('Filtros aplicados (prototipo)');
+  // Close mobile sidebar
+  document.getElementById('filtersSidebar').classList.remove('open');
+  document.getElementById('filtersBackdrop').classList.remove('active');
+}
+</script>
+</body>
+</html>
