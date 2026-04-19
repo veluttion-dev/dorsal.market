@@ -165,21 +165,20 @@ nav {
 
 /* ─── MAIN LAYOUT ─── */
 .main-layout {
-  display: grid;
-  grid-template-columns: 300px 1fr;
-  gap: 0;
   min-height: calc(100vh - 200px);
 }
 
 /* ─── FILTERS SIDEBAR ─── */
 .filters-sidebar {
-  padding: 28px 24px;
+  position: fixed; left: -100%; top: 0; bottom: 0;
+  width: 320px; max-width: 85vw; z-index: 110;
+  transition: left var(--transition);
   border-right: 1px solid var(--border);
   background: var(--bg-secondary);
-  position: sticky; top: 72px;
-  height: calc(100vh - 72px);
+  padding: 80px 24px 28px;
   overflow-y: auto;
 }
+.filters-sidebar.open { left: 0; }
 .filters-sidebar::-webkit-scrollbar { width: 4px; }
 .filters-sidebar::-webkit-scrollbar-track { background: transparent; }
 .filters-sidebar::-webkit-scrollbar-thumb { background: var(--border-hover); border-radius: 4px; }
@@ -277,9 +276,19 @@ input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(0.7); cur
 .dorsals-area { padding: 28px 32px 60px; }
 .sort-bar {
   display: flex; justify-content: space-between; align-items: center;
-  margin-bottom: 24px;
+  margin-bottom: 24px; gap: 12px;
 }
 .sort-bar .view-toggles { display: flex; gap: 6px; }
+.btn-filter-toggle {
+  display: flex; align-items: center; gap: 8px;
+  padding: 8px 16px;
+  background: var(--bg-card); border: 1px solid var(--border);
+  border-radius: var(--radius-sm); color: var(--text-secondary);
+  font-size: 0.82rem; font-weight: 600; cursor: pointer;
+  font-family: 'Outfit', sans-serif; transition: all var(--transition);
+}
+.btn-filter-toggle svg { width: 16px; height: 16px; stroke: var(--coral); flex-shrink: 0; }
+.btn-filter-toggle:hover { border-color: var(--coral); color: var(--text-primary); }
 .view-btn {
   width: 36px; height: 36px;
   background: var(--bg-card); border: 1px solid var(--border);
@@ -390,7 +399,7 @@ input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(0.7); cur
 
 /* ─── MOBILE FILTERS TOGGLE ─── */
 .mobile-filter-toggle {
-  display: none;
+  display: none; /* shown only on mobile via media query */
   position: fixed; bottom: 28px; left: 28px; z-index: 50;
   padding: 14px 22px;
   background: var(--bg-elevated); color: var(--text-primary);
@@ -413,22 +422,9 @@ footer {
 footer .logo { font-size: 1rem; text-decoration: none; }
 
 /* ─── RESPONSIVE ─── */
-@media (max-width: 960px) {
-  .main-layout { grid-template-columns: 1fr; }
-  .filters-sidebar {
-    position: fixed; left: -100%; top: 0; bottom: 0;
-    width: 320px; max-width: 85vw; z-index: 110;
-    transition: left var(--transition);
-    border-right: 1px solid var(--border);
-    padding-top: 80px;
-  }
-  .filters-sidebar.open { left: 0; }
-  .filters-backdrop {
-    display: none; position: fixed; inset: 0; z-index: 105;
-    background: rgba(0,0,0,0.5); backdrop-filter: blur(4px);
-  }
-  .filters-backdrop.active { display: block; }
+@media (max-width: 640px) {
   .mobile-filter-toggle { display: flex; }
+  .btn-filter-toggle { display: none; }
   .dorsals-area { padding: 20px 16px 100px; }
   .dorsals-grid { grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 14px; }
 }
@@ -548,6 +544,10 @@ footer .logo { font-size: 1rem; text-decoration: none; }
   <!-- DORSALS CONTENT -->
   <div class="dorsals-area">
     <div class="sort-bar">
+      <button class="btn-filter-toggle" onclick="toggleFilters()">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="14" y2="12"/><line x1="4" y1="18" x2="9" y2="18"/></svg>
+        Filtros
+      </button>
       <div class="view-toggles">
         <button class="view-btn active" title="Grid">
           <svg viewBox="0 0 16 16" fill="currentColor"><rect x="1" y="1" width="6" height="6" rx="1"/><rect x="9" y="1" width="6" height="6" rx="1"/><rect x="1" y="9" width="6" height="6" rx="1"/><rect x="9" y="9" width="6" height="6" rx="1"/></svg>
