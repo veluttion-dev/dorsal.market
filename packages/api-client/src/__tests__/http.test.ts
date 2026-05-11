@@ -21,7 +21,7 @@ describe('createHttp', () => {
       }),
     );
     await http.get('/api/v1/dorsals');
-    const init = fetchMock.mock.calls[0][1] as RequestInit;
+    const init = fetchMock.mock.calls[0]?.[1] as RequestInit;
     expect(new Headers(init.headers).get('X-User-Id')).toBe('user-1');
   });
 
@@ -29,7 +29,7 @@ describe('createHttp', () => {
     fetchMock.mockResolvedValueOnce(new Response('{}', { status: 200 }));
     const anon = createHttp({ baseUrl: 'http://api.test', getUserId: () => null });
     await anon.get('/api/v1/dorsals');
-    const init = fetchMock.mock.calls[0][1] as RequestInit;
+    const init = fetchMock.mock.calls[0]?.[1] as RequestInit;
     expect(new Headers(init.headers).get('X-User-Id')).toBeNull();
   });
 
@@ -56,7 +56,7 @@ describe('createHttp', () => {
   it('serializes URLSearchParams for repeated query params', async () => {
     fetchMock.mockResolvedValueOnce(new Response('{}', { status: 200 }));
     await http.get('/api/v1/dorsals', { query: { distance: ['10k', '42k'], price_max: 50 } });
-    const url = fetchMock.mock.calls[0][0] as string;
+    const url = fetchMock.mock.calls[0]?.[0] as string;
     expect(url).toContain('distance=10k');
     expect(url).toContain('distance=42k');
     expect(url).toContain('price_max=50');

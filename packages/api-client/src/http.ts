@@ -43,14 +43,13 @@ export function createHttp(opts: HttpClientOptions): HttpClient {
     const userId = opts.getUserId();
     if (userId) headers.set('X-User-Id', userId);
 
+    const fetchInit: RequestInit = { method, headers };
+    if (init?.body !== undefined) fetchInit.body = JSON.stringify(init.body);
+    if (init?.signal) fetchInit.signal = init.signal;
+
     let response: Response;
     try {
-      response = await fetch(buildUrl(opts.baseUrl, path, init?.query), {
-        method,
-        headers,
-        body: init?.body !== undefined ? JSON.stringify(init.body) : undefined,
-        signal: init?.signal,
-      });
+      response = await fetch(buildUrl(opts.baseUrl, path, init?.query), fetchInit);
     } catch (e) {
       throw new NetworkError(e);
     }
