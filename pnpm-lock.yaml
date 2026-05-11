@@ -18,6 +18,22 @@ importers:
         specifier: 5.6.3
         version: 5.6.3
 
+  packages/domain:
+    dependencies:
+      '@dorsal/schemas':
+        specifier: workspace:*
+        version: link:../schemas
+    devDependencies:
+      '@dorsal/tsconfig':
+        specifier: workspace:*
+        version: link:../tsconfig
+      typescript:
+        specifier: 5.6.3
+        version: 5.6.3
+      vitest:
+        specifier: 2.1.5
+        version: 2.1.5
+
   packages/schemas:
     dependencies:
       zod:
