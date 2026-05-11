@@ -10,6 +10,9 @@ build/
 # Turbo
 .turbo
 
+# TypeScript incremental
+*.tsbuildinfo
+
 # Test outputs
 coverage/
 playwright-report/
