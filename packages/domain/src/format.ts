@@ -6,7 +6,7 @@ export function formatPrice(amount: number, locale = 'es-ES', currency = 'EUR'):
     minimumFractionDigits: fractionDigits,
     maximumFractionDigits: 2,
     useGrouping: 'always',
-  });
+  } as unknown as Intl.NumberFormatOptions);
   return fmt.format(amount);
 }
 
