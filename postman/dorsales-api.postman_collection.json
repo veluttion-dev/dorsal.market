@@ -1,0 +1,928 @@
+{
+  "info": {
+    "_postman_id": "dorsales-api-v2",
+    "name": "Dorsales API",
+    "description": "Complete test suite for Dorsales API. Run the Seed folder first to populate the database, then use the IDs captured in collection variables for Search and Detail tests.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:8000",
+      "type": "string"
+    },
+    {
+      "key": "user_id",
+      "value": "550e8400-e29b-41d4-a716-446655440001",
+      "type": "string"
+    },
+    {
+      "key": "dorsal_id_madrid",
+      "value": "",
+      "type": "string",
+      "description": "Set automatically by Seed: San Silvestre Madrid"
+    },
+    {
+      "key": "dorsal_id_barcelona",
+      "value": "",
+      "type": "string",
+      "description": "Set automatically by Seed: Marato Barcelona"
+    },
+    {
+      "key": "dorsal_id_sevilla",
+      "value": "",
+      "type": "string",
+      "description": "Set automatically by Seed: Media Sevilla"
+    },
+    {
+      "key": "dorsal_id_draft",
+      "value": "",
+      "type": "string",
+      "description": "Set automatically by Seed: Draft Dorsal"
+    }
+  ],
+  "item": [
+    {
+      "name": "Health",
+      "item": [
+        {
+          "name": "GET /health",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/health",
+            "description": "Liveness probe"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('status ok', () => pm.expect(pm.response.json().status).to.eql('ok'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /ready",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/ready",
+            "description": "Readiness probe — checks DB connection"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Seed",
+      "description": "Run these requests in order to populate the DB. IDs are saved as collection variables for use in Search and Detail folders.",
+      "item": [
+        {
+          "name": "Seed: San Silvestre Madrid (10k, 45EUR, bizum+paypal)",
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/api/v1/dorsals",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "X-User-Id", "value": "{{user_id}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"photo_url\": \"https://example.com/photos/san-silvestre.jpg\",\n  \"publish\": true,\n  \"race_name\": \"San Silvestre Madrid\",\n  \"bib_number\": \"1234\",\n  \"race_date\": \"2026-12-31\",\n  \"location\": \"Madrid\",\n  \"distance\": \"10k\",\n  \"start_corral\": \"B\",\n  \"included_items\": {\n    \"chip\": true,\n    \"shirt\": true,\n    \"bag\": false,\n    \"medal\": true,\n    \"refreshments\": false\n  },\n  \"price_amount\": 45.00,\n  \"payment_methods\": [\"bizum\", \"paypal\"],\n  \"contact\": {\n    \"phone\": \"612345678\",\n    \"email\": \"seller@example.com\",\n    \"phone_visible\": true,\n    \"email_visible\": true\n  },\n  \"sale_reason\": \"I broke my ankle and cannot run\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 201', () => pm.response.to.have.status(201));",
+                  "const body = pm.response.json();",
+                  "pm.test('status published', () => pm.expect(body.status).to.eql('published'));",
+                  "pm.collectionVariables.set('dorsal_id_madrid', body.dorsal_id);",
+                  "console.log('dorsal_id_madrid =', body.dorsal_id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Seed: Marato Barcelona (42k, 90EUR, card+paypal)",
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/api/v1/dorsals",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "X-User-Id", "value": "{{user_id}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"photo_url\": \"https://example.com/photos/marato-bcn.jpg\",\n  \"publish\": true,\n  \"race_name\": \"Marato de Barcelona\",\n  \"bib_number\": \"5678\",\n  \"race_date\": \"2027-03-15\",\n  \"location\": \"Barcelona\",\n  \"distance\": \"42k\",\n  \"start_corral\": \"A\",\n  \"included_items\": {\n    \"chip\": true,\n    \"shirt\": true,\n    \"bag\": true,\n    \"medal\": true,\n    \"refreshments\": true\n  },\n  \"price_amount\": 90.00,\n  \"payment_methods\": [\"card\", \"paypal\"],\n  \"contact\": {\n    \"phone\": \"933456789\",\n    \"email\": \"runner@example.com\",\n    \"phone_visible\": false,\n    \"email_visible\": true\n  },\n  \"sale_reason\": \"Work trip on race day\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 201', () => pm.response.to.have.status(201));",
+                  "const body = pm.response.json();",
+                  "pm.collectionVariables.set('dorsal_id_barcelona', body.dorsal_id);",
+                  "console.log('dorsal_id_barcelona =', body.dorsal_id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Seed: Media Maraton Sevilla (21k, 30EUR, bizum)",
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/api/v1/dorsals",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "X-User-Id", "value": "{{user_id}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"photo_url\": \"https://example.com/photos/media-sevilla.jpg\",\n  \"publish\": true,\n  \"race_name\": \"Media Maraton de Sevilla\",\n  \"bib_number\": \"999\",\n  \"race_date\": \"2027-02-14\",\n  \"location\": \"Sevilla\",\n  \"distance\": \"21k\",\n  \"start_corral\": \"C\",\n  \"included_items\": {\n    \"chip\": true,\n    \"shirt\": false,\n    \"bag\": false,\n    \"medal\": true,\n    \"refreshments\": false\n  },\n  \"price_amount\": 30.00,\n  \"payment_methods\": [\"bizum\"],\n  \"contact\": {\n    \"phone\": \"954567890\",\n    \"email\": null,\n    \"phone_visible\": true,\n    \"email_visible\": false\n  },\n  \"sale_reason\": \"Injury\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 201', () => pm.response.to.have.status(201));",
+                  "const body = pm.response.json();",
+                  "pm.collectionVariables.set('dorsal_id_sevilla', body.dorsal_id);",
+                  "console.log('dorsal_id_sevilla =', body.dorsal_id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Seed: Valencia Popular 5K (5k, 15EUR, bizum+card)",
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/api/v1/dorsals",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "X-User-Id", "value": "{{user_id}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"photo_url\": \"https://example.com/photos/valencia-5k.jpg\",\n  \"publish\": true,\n  \"race_name\": \"Valencia Popular 5K\",\n  \"bib_number\": \"42\",\n  \"race_date\": \"2026-11-15\",\n  \"location\": \"Valencia\",\n  \"distance\": \"5k\",\n  \"start_corral\": null,\n  \"included_items\": {\n    \"chip\": false,\n    \"shirt\": true,\n    \"bag\": false,\n    \"medal\": false,\n    \"refreshments\": true\n  },\n  \"price_amount\": 15.00,\n  \"payment_methods\": [\"bizum\", \"card\"],\n  \"contact\": {\n    \"phone\": \"961234567\",\n    \"email\": \"val@example.com\",\n    \"phone_visible\": true,\n    \"email_visible\": false\n  },\n  \"sale_reason\": null\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 201', () => pm.response.to.have.status(201));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Seed: Draft Dorsal (should NOT appear in search or detail)",
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/api/v1/dorsals",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "X-User-Id", "value": "{{user_id}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"photo_url\": \"https://example.com/photos/draft.jpg\",\n  \"publish\": false\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 201', () => pm.response.to.have.status(201));",
+                  "const body = pm.response.json();",
+                  "pm.test('status is draft', () => pm.expect(body.status).to.eql('draft'));",
+                  "pm.collectionVariables.set('dorsal_id_draft', body.dorsal_id);",
+                  "console.log('dorsal_id_draft =', body.dorsal_id);"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Search Dorsals — GET /api/v1/dorsals",
+      "description": "UC-04: search, filter, sort and paginate published dorsals.",
+      "item": [
+        {
+          "name": "All published (no filters)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/api/v1/dorsals",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "dorsals"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json();",
+                  "pm.test('has pagination fields', () => {",
+                  "  ['items','total','page','page_size','total_pages'].forEach(f =>",
+                  "    pm.expect(body).to.have.property(f));",
+                  "});",
+                  "pm.test('draft not included', () => {",
+                  "  const draft_id = pm.collectionVariables.get('dorsal_id_draft');",
+                  "  body.items.forEach(d => pm.expect(d.id).to.not.eql(draft_id));",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Filter: race name text search",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/api/v1/dorsals?race_name=madrid",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "dorsals"],
+              "query": [{ "key": "race_name", "value": "madrid" }]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.response.json().items.forEach(d =>",
+                  "  pm.test('race_name contains madrid', () =>",
+                  "    pm.expect(d.race_name.toLowerCase()).to.include('madrid')));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Filter: single distance 10k",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/api/v1/dorsals?distance=10k",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "dorsals"],
+              "query": [{ "key": "distance", "value": "10k" }]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.response.json().items.forEach(d =>",
+                  "  pm.test('distance is 10k', () => pm.expect(d.distance).to.eql('10k')));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Filter: multiple distances (10k + 42k)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/api/v1/dorsals?distance=10k&distance=42k",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "dorsals"],
+              "query": [
+                { "key": "distance", "value": "10k" },
+                { "key": "distance", "value": "42k" }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.response.json().items.forEach(d =>",
+                  "  pm.test('distance in [10k,42k]', () =>",
+                  "    pm.expect(['10k','42k']).to.include(d.distance)));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Filter: price range 20-50EUR",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/api/v1/dorsals?price_min=20&price_max=50",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "dorsals"],
+              "query": [
+                { "key": "price_min", "value": "20" },
+                { "key": "price_max", "value": "50" }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.response.json().items.forEach(d => {",
+                  "  pm.test('price >= 20', () => pm.expect(parseFloat(d.price_amount)).to.be.at.least(20));",
+                  "  pm.test('price <= 50', () => pm.expect(parseFloat(d.price_amount)).to.be.at.most(50));",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Filter: payment method bizum",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/api/v1/dorsals?payment_method=bizum",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "dorsals"],
+              "query": [{ "key": "payment_method", "value": "bizum" }]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.response.json().items.forEach(d =>",
+                  "  pm.test('accepts bizum', () => pm.expect(d.payment_methods).to.include('bizum')));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Filter: location Sevilla",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/api/v1/dorsals?location=sevilla",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "dorsals"],
+              "query": [{ "key": "location", "value": "sevilla" }]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.response.json().items.forEach(d =>",
+                  "  pm.test('location contains sevilla', () =>",
+                  "    pm.expect(d.location.toLowerCase()).to.include('sevilla')));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Filter: date range 2027",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/api/v1/dorsals?date_from=2027-01-01&date_to=2027-12-31",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "dorsals"],
+              "query": [
+                { "key": "date_from", "value": "2027-01-01" },
+                { "key": "date_to", "value": "2027-12-31" }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.response.json().items.forEach(d => {",
+                  "  if (d.race_date) {",
+                  "    pm.test('race_date in 2027', () => {",
+                  "      pm.expect(d.race_date >= '2027-01-01').to.be.true;",
+                  "      pm.expect(d.race_date <= '2027-12-31').to.be.true;",
+                  "    });",
+                  "  }",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Sort: price ascending",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/api/v1/dorsals?sort_by=price&sort_order=asc",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "dorsals"],
+              "query": [
+                { "key": "sort_by", "value": "price" },
+                { "key": "sort_order", "value": "asc" }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "const items = pm.response.json().items;",
+                  "pm.test('prices are ascending', () => {",
+                  "  for (let i = 1; i < items.length; i++)",
+                  "    pm.expect(parseFloat(items[i].price_amount)).to.be.at.least(parseFloat(items[i-1].price_amount));",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Sort: price descending",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/api/v1/dorsals?sort_by=price&sort_order=desc",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "dorsals"],
+              "query": [
+                { "key": "sort_by", "value": "price" },
+                { "key": "sort_order", "value": "desc" }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "const items = pm.response.json().items;",
+                  "pm.test('prices are descending', () => {",
+                  "  for (let i = 1; i < items.length; i++)",
+                  "    pm.expect(parseFloat(items[i].price_amount)).to.be.at.most(parseFloat(items[i-1].price_amount));",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Sort: race_date ascending",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/api/v1/dorsals?sort_by=race_date&sort_order=asc",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "dorsals"],
+              "query": [
+                { "key": "sort_by", "value": "race_date" },
+                { "key": "sort_order", "value": "asc" }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Pagination: page 1 size 2",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/api/v1/dorsals?page=1&page_size=2",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "dorsals"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "page_size", "value": "2" }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json();",
+                  "pm.test('max 2 items', () => pm.expect(body.items.length).to.be.at.most(2));",
+                  "pm.test('page=1', () => pm.expect(body.page).to.eql(1));",
+                  "pm.test('page_size=2', () => pm.expect(body.page_size).to.eql(2));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Combined: 10k Madrid bizum under 50EUR",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/api/v1/dorsals?race_name=madrid&distance=10k&payment_method=bizum&price_max=50",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "dorsals"],
+              "query": [
+                { "key": "race_name", "value": "madrid" },
+                { "key": "distance", "value": "10k" },
+                { "key": "payment_method", "value": "bizum" },
+                { "key": "price_max", "value": "50" }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Dorsal Detail — GET /api/v1/dorsals/{id}",
+      "description": "UC-05: full detail view. Only PUBLISHED dorsals are returned. Draft/sold/cancelled return 404.",
+      "item": [
+        {
+          "name": "Detail: Madrid (phone+email visible)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/api/v1/dorsals/{{dorsal_id_madrid}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "dorsals", "{{dorsal_id_madrid}}"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "const d = pm.response.json();",
+                  "pm.test('all required fields present', () => {",
+                  "  ['id','seller_id','photo_url','included_items','status','created_at','updated_at']",
+                  "    .forEach(f => pm.expect(d).to.have.property(f));",
+                  "});",
+                  "pm.test('status published', () => pm.expect(d.status).to.eql('published'));",
+                  "pm.test('race_name San Silvestre Madrid', () => pm.expect(d.race_name).to.include('Madrid'));",
+                  "pm.test('distance 10k', () => pm.expect(d.distance).to.eql('10k'));",
+                  "pm.test('price 45', () => pm.expect(parseFloat(d.price_amount)).to.eql(45));",
+                  "pm.test('contact_phone visible', () => pm.expect(d.contact_phone).to.eql('612345678'));",
+                  "pm.test('contact_email visible', () => pm.expect(d.contact_email).to.eql('seller@example.com'));",
+                  "pm.test('included_items.chip true', () => pm.expect(d.included_items.chip).to.be.true);",
+                  "pm.test('sale_reason present', () => pm.expect(d.sale_reason).to.be.a('string'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Detail: Barcelona (phone hidden, email visible)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/api/v1/dorsals/{{dorsal_id_barcelona}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "dorsals", "{{dorsal_id_barcelona}}"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "const d = pm.response.json();",
+                  "pm.test('contact_phone is null (phone_visible=false)', () => pm.expect(d.contact_phone).to.be.null);",
+                  "pm.test('contact_email visible', () => pm.expect(d.contact_email).to.eql('runner@example.com'));",
+                  "pm.test('distance 42k', () => pm.expect(d.distance).to.eql('42k'));",
+                  "pm.test('price 90', () => pm.expect(parseFloat(d.price_amount)).to.eql(90));",
+                  "pm.test('all included_items true', () => {",
+                  "  const i = d.included_items;",
+                  "  pm.expect(i.chip && i.shirt && i.bag && i.medal && i.refreshments).to.be.true;",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Detail: Sevilla (phone visible, email hidden)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/api/v1/dorsals/{{dorsal_id_sevilla}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "dorsals", "{{dorsal_id_sevilla}}"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "const d = pm.response.json();",
+                  "pm.test('contact_phone visible', () => pm.expect(d.contact_phone).to.eql('954567890'));",
+                  "pm.test('contact_email is null (email_visible=false)', () => pm.expect(d.contact_email).to.be.null);",
+                  "pm.test('distance 21k', () => pm.expect(d.distance).to.eql('21k'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Detail: draft dorsal -> 404 (not published)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/api/v1/dorsals/{{dorsal_id_draft}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "dorsals", "{{dorsal_id_draft}}"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 404', () => pm.response.to.have.status(404));",
+                  "pm.test('has detail field', () => pm.expect(pm.response.json()).to.have.property('detail'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Detail: non-existent UUID -> 404",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/api/v1/dorsals/00000000-0000-0000-0000-000000000000"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 404', () => pm.response.to.have.status(404));",
+                  "pm.test('has detail field', () => pm.expect(pm.response.json()).to.have.property('detail'));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Create Dorsal — POST /api/v1/dorsals",
+      "description": "UC-02: ad-hoc creation tests beyond seed.",
+      "item": [
+        {
+          "name": "Create: publish immediately (full payload)",
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/api/v1/dorsals",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "X-User-Id", "value": "{{user_id}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"photo_url\": \"https://example.com/photos/race.jpg\",\n  \"publish\": true,\n  \"race_name\": \"Madrid Corre\",\n  \"bib_number\": \"777\",\n  \"race_date\": \"2027-04-15\",\n  \"location\": \"Madrid\",\n  \"distance\": \"10k\",\n  \"start_corral\": \"D\",\n  \"included_items\": {\n    \"chip\": true,\n    \"shirt\": false,\n    \"bag\": false,\n    \"medal\": true,\n    \"refreshments\": false\n  },\n  \"price_amount\": 35.00,\n  \"payment_methods\": [\"bizum\"],\n  \"contact\": {\n    \"phone\": \"611111111\",\n    \"email\": null,\n    \"phone_visible\": true,\n    \"email_visible\": false\n  },\n  \"sale_reason\": \"Schedule conflict\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 201', () => pm.response.to.have.status(201));",
+                  "const body = pm.response.json();",
+                  "pm.test('has dorsal_id', () => pm.expect(body).to.have.property('dorsal_id'));",
+                  "pm.test('status published', () => pm.expect(body.status).to.eql('published'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Create: save as draft",
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/api/v1/dorsals",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "X-User-Id", "value": "{{user_id}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"photo_url\": \"https://example.com/photos/draft2.jpg\",\n  \"publish\": false\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 201', () => pm.response.to.have.status(201));",
+                  "pm.test('status draft', () => pm.expect(pm.response.json().status).to.eql('draft'));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Error Cases",
+      "item": [
+        {
+          "name": "POST dorsals: missing X-User-Id -> 401",
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/api/v1/dorsals",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"photo_url\": \"https://example.com/photo.jpg\"}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 401', () => pm.response.to.have.status(401));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST dorsals: invalid X-User-Id -> 422",
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/api/v1/dorsals",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "X-User-Id", "value": "not-a-uuid" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"photo_url\": \"https://example.com/photo.jpg\"}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 422', () => pm.response.to.have.status(422));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET dorsals: invalid distance -> 422",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/api/v1/dorsals?distance=marathon",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "dorsals"],
+              "query": [{ "key": "distance", "value": "marathon" }]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 422', () => pm.response.to.have.status(422));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET dorsals: invalid sort_by -> 422",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/api/v1/dorsals?sort_by=relevance",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "dorsals"],
+              "query": [{ "key": "sort_by", "value": "relevance" }]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 422', () => pm.response.to.have.status(422));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET dorsals: invalid payment_method -> 422",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/api/v1/dorsals?payment_method=cash",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "dorsals"],
+              "query": [{ "key": "payment_method", "value": "cash" }]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 422', () => pm.response.to.have.status(422));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET dorsals/{id}: malformed UUID -> 422",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/api/v1/dorsals/not-a-uuid"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 422', () => pm.response.to.have.status(422));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

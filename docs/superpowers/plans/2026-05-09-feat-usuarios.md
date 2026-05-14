@@ -12,10 +12,12 @@
 
 **Pre-flight branching:**
 ```bash
-git switch feat/dorsales      # or feat/foundation if dorsales not yet merged — see ADR-012
+git switch feat/foundation    # parte directamente de foundation, en paralelo con feat/dorsales y feat/transacciones
 git pull
 git switch -c feat/usuarios
 ```
+
+**Parallel work note (ADR-012).** Esta rama es **independiente** de `feat/dorsales` y `feat/transacciones`. Tu slice de archivos no toca los suyos. La página de historial (UC-10) la coordinas con `feat/transacciones` — quien abra el PR primero la crea, el segundo solo enchufa hooks (ver Task 11 del plan de transacciones).
 
 **Mock note:** the `users` module is **mocked** by MSW in `feat/foundation` (`packages/api-client/src/msw/users.ts`). Seed user is `demo@dorsal.market` / `demo1234`. To switch to the real backend later, set `NEXT_PUBLIC_REAL_API_MODULES=dorsals,users` and the same `UsersHttpAdapter` already shipped in foundation will take over.
 

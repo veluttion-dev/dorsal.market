@@ -2,22 +2,24 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Implement Transaction feature surface (UC-03 escrow, UC-06 compra, UC-07/08 timeline post-venta + chat) against the **mocked Transaction adapter** (backend not exposed). Users can buy a published dorsal, watch the 5-step timeline progress, exchange messages with the counterpart and (minimal MVP) open a dispute. Stripe is integrated in test mode using Elements.
+**Goal:** Implement the Transaction feature surface (UC-03 escrow + disputas, UC-06 compra, UC-07/08 timeline post-venta + soporte) against the **real backend Transaction module** (vivo desde 2026-05-14). Cubre seller onboarding por Stripe Connect, reserva con PaymentIntent, vistas separadas buyer/seller, flujo de prueba de transferencia, disputas, y los seller problem reports post-resolución.
 
-**Architecture:** Buy flow = wizard launched from `/dorsales/[id]` ("Comprar"). Stripe Elements in a Client Component. After payment, redirect to `/compra/confirmada` and from there to `/compra/[id]` showing timeline + chat. Timeline is a Client Component polling `useQuery` every 10 s (real-time chat is out of MVP — polling is sufficient and cheap to swap to WebSockets later). Dispute flow is a side action behind a button.
+**Architecture.** Buy flow comienza en `/dorsales/[id]` (CTA "Comprar") → reserva crea PaymentIntent → Stripe Elements confirma pago → backend recibe el webhook → frontend hace polling al endpoint `/transactions/buyer/{id}`. Tracking page es client-rendered con `useQuery` polling cada 10s (`refetchInterval`). Acciones (transfer-in-progress, upload-proof, confirm, dispute) son `useMutation` que invalidan el query del tracking.
 
-**Tech Stack:** Inherits foundation. Adds: `@stripe/stripe-js`, `@stripe/react-stripe-js`. Sentry SDK is added here because this is the surface where errors hurt most.
+**Tech stack adicional sobre foundation:** `@stripe/stripe-js`, `@stripe/react-stripe-js`, `@sentry/nextjs` (DSN vacío en dev → no-op).
 
-**Spec reference:** ADR-006 (Server Components first — but most of this branch is interactive Client Components), ADR-007 (TanStack Query), ADR-015 (observability), section 9 (real-time deferred).
+**Spec reference:** `docs/superpowers/specs/2026-05-09-frontend-architecture-design.md` ADR-004 (mock layer), ADR-006 (Server Components), ADR-007 (TanStack Query), ADR-011 (presigned uploads), ADR-015 (observabilidad).
+
+**Backend contract reference:** `postman/transaction_bounded_context.postman_collection.json` (en raíz del repo).
 
 **Pre-flight branching:**
 ```bash
-git switch feat/usuarios
+git switch feat/foundation       # parte directamente de foundation, NO de otras feature branches
 git pull
 git switch -c feat/transacciones
 ```
 
-**Mock note:** the `transactions` and `reviews` modules are mocked by MSW (`packages/api-client/src/msw/transactions.ts` from foundation). Stripe runs in **test mode** with publishable key `pk_test_...`; on confirmation, the mock adapter advances the timeline regardless. To swap to real backend later: set `NEXT_PUBLIC_REAL_API_MODULES=dorsals,users,transactions`.
+**Parallel work note (ADR-012).** Esta rama es **independiente** de `feat/dorsales` y `feat/usuarios`. Su slice de archivos no toca lo que ellas tocan. Si necesitas conocer el `dorsal_id` para reservar, usa los mocks de Catalog hasta que el backend real esté arriba; si necesitas auth, el HTTP client de foundation ya inyecta `Authorization: Bearer <jwt>` automáticamente cuando hay sesión Auth.js.
 
 ---
 
@@ -26,39 +28,52 @@ git switch -c feat/transacciones
 ```
 apps/web/
 ├── app/(app)/compra/
-│   ├── [transactionId]/page.tsx       # UC-07/08 timeline + chat
-│   ├── confirmada/page.tsx            # UC-06 confirmation (post-redirect)
-│   └── checkout/[dorsalId]/page.tsx   # Stripe Elements step (Client Component wrapper)
-├── components/
-│   └── transaction/
-│       ├── timeline.client.tsx
-│       ├── timeline-step.tsx
-│       ├── chat-thread.client.tsx
-│       ├── chat-composer.client.tsx
-│       ├── dispute-button.client.tsx
-│       └── dispute-form.client.tsx
-└── features/
-    └── transactions/
-        ├── hooks/
-        │   ├── use-purchase.ts
-        │   ├── use-confirm-payment.ts
-        │   ├── use-transaction.ts
-        │   ├── use-advance-step.ts
-        │   ├── use-messages.ts
-        │   └── use-open-dispute.ts
-        ├── components/
-        │   └── checkout-form.client.tsx
-        └── lib/
-            └── stripe.ts              # loadStripe singleton
+│   ├── [transactionId]/page.tsx        # UC-07/08 tracking (rol-aware)
+│   ├── confirmada/page.tsx             # post-pago redirect target
+│   └── checkout/[dorsalId]/page.tsx    # Stripe Elements wrapper
+├── app/(app)/vender/
+│   └── onboarding/page.tsx             # UC-03 Stripe Connect onboarding del seller
+├── components/transaction/
+│   ├── tracking-timeline.client.tsx    # timeline de eventos
+│   ├── tracking-step.tsx
+│   ├── transfer-actions.client.tsx     # acciones del seller (transfer-in-progress, upload-proof)
+│   ├── confirm-action.client.tsx       # acción del buyer (confirm) + dispute
+│   ├── dispute-dialog.client.tsx
+│   ├── seller-problem-report.client.tsx
+│   └── proof-uploader.client.tsx
+└── features/transactions/
+    ├── hooks/
+    │   ├── use-onboard-seller.ts
+    │   ├── use-reserve-listing.ts
+    │   ├── use-buyer-transaction.ts
+    │   ├── use-seller-transaction.ts
+    │   ├── use-transfer-in-progress.ts
+    │   ├── use-submit-proof.ts
+    │   ├── use-confirm-transfer.ts
+    │   ├── use-open-dispute.ts
+    │   ├── use-seller-problem-report.ts
+    │   ├── use-my-purchases.ts
+    │   └── use-my-sales.ts
+    ├── components/
+    │   └── checkout-form.client.tsx
+    └── lib/
+        └── stripe.ts                   # loadStripe singleton
+
+packages/api-client/src/
+├── ports/transactions.ts               # ACTUALIZAR — nuevos métodos
+├── adapters/transactions-http.ts       # ACTUALIZAR — paths reales del backend
+└── msw/transactions.ts                 # ACTUALIZAR — shape real
+
+packages/schemas/src/
+└── transaction.ts                      # ACTUALIZAR — añadir SellerProblemReport, refinar TransactionStatus/Timeline
 ```
 
 ---
 
-## Task 1: Branch setup + Stripe deps + Sentry
+## Task 1: Branch setup + Stripe + Sentry deps
 
 **Files:**
 - Modify: `apps/web/package.json`
-- Modify: `apps/web/.env.example` (Stripe + Sentry placeholders already present)
 
 - [ ] **Step 1: Add deps**
 
@@ -67,13 +82,13 @@ cd apps/web
 pnpm add @stripe/stripe-js@4.10.0 @stripe/react-stripe-js@2.9.0 @sentry/nextjs@8.40.0
 ```
 
-- [ ] **Step 2: Initialize Sentry (no-op when DSN missing)**
+- [ ] **Step 2: Initialize Sentry (no-op si DSN vacío)**
 
 ```bash
 pnpm dlx @sentry/wizard@latest -i nextjs --skip-connect
 ```
 
-When prompted, accept defaults; the wizard creates `sentry.client.config.ts`, `sentry.server.config.ts`, `sentry.edge.config.ts`. Open each and replace the DSN string with `process.env.SENTRY_DSN ?? ''` (server) and `process.env.NEXT_PUBLIC_SENTRY_DSN ?? ''` (client). When the env var is empty Sentry skips initialization — no events sent in dev.
+Acepta defaults; el wizard crea `sentry.client.config.ts`, `sentry.server.config.ts`, `sentry.edge.config.ts`. En cada uno sustituye la cadena del DSN por `process.env.SENTRY_DSN ?? ''` (server/edge) y `process.env.NEXT_PUBLIC_SENTRY_DSN ?? ''` (client). Con DSN vacío Sentry no envía nada.
 
 - [ ] **Step 3: Stripe singleton**
 
@@ -93,13 +108,7 @@ export function getStripe(): Promise<Stripe | null> {
 }
 ```
 
-- [ ] **Step 4: Verify**
-
-```bash
-pnpm --filter @dorsal/web typecheck
-```
-
-- [ ] **Step 5: Commit**
+- [ ] **Step 4: Commit**
 
 ```bash
 git add -A
@@ -108,742 +117,689 @@ git commit -m "chore(transacciones): add Stripe Elements and Sentry SDKs"
 
 ---
 
-## Task 2: Hooks (TDD-light — wrappers around adapters)
+## Task 2: Update transaction schemas to match real backend
+
+**Why:** El plan original asumía un endpoint `advanceStep`; el backend real tiene endpoints granulares por evento. También añadimos seller problem reports.
 
 **Files:**
-- Create: `apps/web/features/transactions/hooks/{use-purchase, use-confirm-payment, use-transaction, use-advance-step, use-messages, use-open-dispute}.ts`
+- Modify: `packages/schemas/src/transaction.ts`
 
-- [ ] **Step 1: usePurchase**
-
-```ts
-'use client';
-import { useMutation } from '@tanstack/react-query';
-import { useApi } from '@/lib/api-client';
-import type { PurchaseInput } from '@dorsal/schemas';
-
-export function usePurchase() {
-  const api = useApi();
-  return useMutation({ mutationFn: (input: PurchaseInput) => api.transactions.purchase(input) });
-}
-```
-
-- [ ] **Step 2: useConfirmPayment**
+- [ ] **Step 1: Reescribir transaction.ts**
 
 ```ts
-'use client';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { useApi } from '@/lib/api-client';
+import { z } from 'zod';
+import { IsoDateTime, Uuid } from './common';
 
-export function useConfirmPayment() {
-  const api = useApi();
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: (transactionId: string) => api.transactions.confirmPayment(transactionId),
-    onSuccess: (tx) => {
-      qc.setQueryData(['transactions', 'detail', tx.id], tx);
-      void qc.invalidateQueries({ queryKey: ['transactions', 'mine'] });
-    },
-  });
-}
+// Status técnico del modelo del backend (no es un timeline, es un estado)
+export const TransactionStatus = z.enum([
+  'reserved',                  // Reserva creada, esperando pago
+  'paid',                      // PaymentIntent confirmed, fondos retenidos
+  'transfer_in_progress',      // Seller marcó cambio en proceso
+  'transfer_proof_submitted',  // Seller subió prueba
+  'confirmed',                 // Buyer confirmó cambio recibido
+  'released_to_seller',        // Fondos transferidos al seller
+  'refunded_to_buyer',         // Reembolso al buyer
+  'disputed',                  // Buyer abrió disputa
+  'expired',                   // Reserva expiró sin pago
+  'cancelled',
+]);
+export type TransactionStatus = z.infer<typeof TransactionStatus>;
+
+// Timeline derivado de los eventos para la UI
+export const TimelineEventType = z.enum([
+  'reservation_created',
+  'payment_succeeded',
+  'transfer_in_progress',
+  'proof_submitted',
+  'transfer_confirmed',
+  'funds_released',
+  'dispute_opened',
+  'dispute_resolved',
+  'refunded',
+]);
+export type TimelineEventType = z.infer<typeof TimelineEventType>;
+
+export const TimelineEvent = z.object({
+  type: TimelineEventType,
+  at: IsoDateTime,
+  actor: z.enum(['buyer', 'seller', 'system', 'admin']).nullable().optional(),
+  metadata: z.record(z.unknown()).nullable().optional(),
+});
+export type TimelineEvent = z.infer<typeof TimelineEvent>;
+
+// Vista para el buyer
+export const BuyerTransactionDetail = z.object({
+  id: Uuid,
+  dorsal_id: Uuid,
+  buyer_id: Uuid,
+  seller_id: Uuid,
+  status: TransactionStatus,
+  amount: z.coerce.number().nonnegative(),
+  currency: z.literal('EUR'),
+  stripe_payment_intent_client_secret: z.string().nullable(),
+  proof_file_url: z.string().url().nullable(),
+  timeline: z.array(TimelineEvent),
+  // Datos del dorsal embebidos para no pedirlos aparte
+  dorsal_snapshot: z.object({
+    race_name: z.string(),
+    race_date: z.string().nullable(),
+    location: z.string(),
+    distance: z.string(),
+    photo_url: z.string().url(),
+  }),
+  created_at: IsoDateTime,
+  updated_at: IsoDateTime,
+});
+export type BuyerTransactionDetail = z.infer<typeof BuyerTransactionDetail>;
+
+// Vista para el seller — incluye datos del buyer para hacer el cambio de titularidad
+export const SellerTransactionDetail = z.object({
+  id: Uuid,
+  dorsal_id: Uuid,
+  buyer_id: Uuid,
+  seller_id: Uuid,
+  status: TransactionStatus,
+  amount: z.coerce.number().nonnegative(),
+  currency: z.literal('EUR'),
+  proof_file_url: z.string().url().nullable(),
+  timeline: z.array(TimelineEvent),
+  // Datos del comprador que el seller necesita para hacer el cambio
+  buyer_snapshot: z.object({
+    full_name: z.string(),
+    dni: z.string(),
+    email: z.string().email(),
+    phone: z.string().nullable(),
+    birth_date: z.string(),
+    runner: z.object({
+      shirt_size: z.string().nullable(),
+      club: z.string().nullable(),
+    }).optional(),
+  }),
+  created_at: IsoDateTime,
+  updated_at: IsoDateTime,
+});
+export type SellerTransactionDetail = z.infer<typeof SellerTransactionDetail>;
+
+// Resultado de la reserva
+export const ReserveListingResponse = z.object({
+  transaction_id: Uuid,
+  stripe_payment_intent_client_secret: z.string(),
+  amount: z.coerce.number().nonnegative(),
+  expires_at: IsoDateTime,
+});
+export type ReserveListingResponse = z.infer<typeof ReserveListingResponse>;
+
+// Onboarding del seller (Stripe Connect)
+export const SellerOnboardingResponse = z.object({
+  account_id: z.string(),
+  onboarding_url: z.string().url().nullable(),
+  charges_enabled: z.boolean(),
+});
+export type SellerOnboardingResponse = z.infer<typeof SellerOnboardingResponse>;
+
+// Presigned URL para subir la prueba de transferencia
+export const ProofUploadUrlResponse = z.object({
+  upload_url: z.string().url(),
+  upload_method: z.enum(['PUT', 'POST']),
+  fields: z.record(z.string()).optional(),
+  final_url: z.string().url(),
+});
+export type ProofUploadUrlResponse = z.infer<typeof ProofUploadUrlResponse>;
+
+// Disputas
+export const Dispute = z.object({
+  id: Uuid,
+  transaction_id: Uuid,
+  opened_by: Uuid,
+  reason: z.string(),
+  status: z.enum(['open', 'in_review', 'resolved_buyer', 'resolved_seller']),
+  resolution_notes: z.string().nullable(),
+  created_at: IsoDateTime,
+});
+export type Dispute = z.infer<typeof Dispute>;
+
+// Seller problem reports (post-final, distinto de disputa)
+export const SellerProblemCategory = z.enum([
+  'buyer_data_issue',
+  'race_rejected_transfer',
+  'payment_or_payout_issue',
+  'other',
+]);
+export type SellerProblemCategory = z.infer<typeof SellerProblemCategory>;
+
+export const SellerProblemReport = z.object({
+  id: Uuid,
+  transaction_id: Uuid,
+  seller_id: Uuid,
+  category: SellerProblemCategory,
+  message: z.string(),
+  attachments: z.array(z.string().url()).default([]),
+  status: z.enum(['open', 'in_review', 'resolved']),
+  resolution_notes: z.string().nullable(),
+  created_at: IsoDateTime,
+});
+export type SellerProblemReport = z.infer<typeof SellerProblemReport>;
+
+// Listados de historial (UC-10)
+export const TransactionListItem = z.object({
+  id: Uuid,
+  dorsal_id: Uuid,
+  status: TransactionStatus,
+  amount: z.coerce.number().nonnegative(),
+  counterparty_name: z.string(),
+  race_name: z.string(),
+  created_at: IsoDateTime,
+});
+export type TransactionListItem = z.infer<typeof TransactionListItem>;
+
+export const TransactionListResponse = z.object({
+  items: z.array(TransactionListItem),
+  total: z.number().int().nonnegative(),
+  limit: z.number().int().positive(),
+  offset: z.number().int().nonnegative(),
+});
+export type TransactionListResponse = z.infer<typeof TransactionListResponse>;
 ```
 
-- [ ] **Step 3: useTransaction (with polling)**
+- [ ] **Step 2: Tests del schema**
+
+`packages/schemas/src/__tests__/transaction.test.ts`:
 
 ```ts
-'use client';
-import { useQuery } from '@tanstack/react-query';
-import { useApi } from '@/lib/api-client';
+import { describe, expect, it } from 'vitest';
+import {
+  BuyerTransactionDetail,
+  ReserveListingResponse,
+  SellerProblemReport,
+  TransactionStatus,
+} from '../transaction';
 
-export function useTransaction(id: string | null) {
-  const api = useApi();
-  return useQuery({
-    queryKey: ['transactions', 'detail', id],
-    queryFn: () => api.transactions.getById(id!),
-    enabled: !!id,
-    refetchInterval: 10_000,
+describe('TransactionStatus', () => {
+  it('accepts released_to_seller and refunded_to_buyer (per Postman)', () => {
+    expect(TransactionStatus.parse('released_to_seller')).toBe('released_to_seller');
+    expect(TransactionStatus.parse('refunded_to_buyer')).toBe('refunded_to_buyer');
   });
-}
-```
+});
 
-- [ ] **Step 4: useAdvanceStep**
-
-```ts
-'use client';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { useApi } from '@/lib/api-client';
-import type { TimelineStepKey } from '@dorsal/schemas';
-
-export function useAdvanceStep(transactionId: string) {
-  const api = useApi();
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: (step: TimelineStepKey) => api.transactions.advanceStep(transactionId, step),
-    onSuccess: (tx) => qc.setQueryData(['transactions', 'detail', tx.id], tx),
-  });
-}
-```
-
-- [ ] **Step 5: useMessages (with polling for MVP "real-time")**
-
-```ts
-'use client';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useApi } from '@/lib/api-client';
-
-export function useMessages(transactionId: string | null) {
-  const api = useApi();
-  return useQuery({
-    queryKey: ['transactions', 'messages', transactionId],
-    queryFn: () => api.transactions.listMessages(transactionId!),
-    enabled: !!transactionId,
-    refetchInterval: 5_000,
-  });
-}
-
-export function useSendMessage(transactionId: string) {
-  const api = useApi();
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: (content: string) => api.transactions.sendMessage(transactionId, content),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['transactions', 'messages', transactionId] }),
-  });
-}
-```
-
-- [ ] **Step 6: useOpenDispute**
-
-```ts
-'use client';
-import { useMutation } from '@tanstack/react-query';
-import { useApi } from '@/lib/api-client';
-
-export function useOpenDispute(transactionId: string) {
-  const api = useApi();
-  return useMutation({
-    mutationFn: ({ reason, evidenceUrls }: { reason: string; evidenceUrls: string[] }) =>
-      api.transactions.openDispute(transactionId, reason, evidenceUrls),
-  });
-}
-```
-
-- [ ] **Step 7: Commit**
-
-```bash
-git add -A
-git commit -m "feat(transactions): add hooks for purchase, confirm, polling and dispute"
-```
-
----
-
-## Task 3: Replace the "Comprar dorsal" placeholder with the buy flow trigger
-
-**Files:**
-- Modify: `apps/web/app/(app)/dorsales/[id]/page.tsx` (button → link to checkout)
-- Create: `apps/web/components/dorsal/buy-button.client.tsx`
-
-- [ ] **Step 1: Buy button**
-
-```tsx
-'use client';
-import { useRouter } from 'next/navigation';
-import { useSession } from 'next-auth/react';
-import { canBuyDorsal } from '@dorsal/domain';
-import type { DorsalDetail } from '@dorsal/schemas';
-import { Button } from '@/components/ui/button';
-import { toast } from 'sonner';
-
-const REASON_LABEL = {
-  not_authenticated: 'Inicia sesión para comprar',
-  own_dorsal: 'No puedes comprar tu propio dorsal',
-  not_available: 'Este dorsal ya no está disponible',
-};
-
-export function BuyButton({ dorsal }: { dorsal: DorsalDetail }) {
-  const router = useRouter();
-  const { data: session } = useSession();
-  const result = canBuyDorsal({ userId: session?.user?.id ?? null, sellerId: dorsal.seller_id, status: dorsal.status });
-
-  function go() {
-    if (!result.ok) {
-      if (result.reason === 'not_authenticated') router.push(`/login?callbackUrl=/dorsales/${dorsal.id}`);
-      else toast.error(REASON_LABEL[result.reason]);
-      return;
-    }
-    router.push(`/compra/checkout/${dorsal.id}`);
-  }
-
-  return (
-    <Button onClick={go} className="w-full" size="lg" disabled={!result.ok && result.reason !== 'not_authenticated'}>
-      Comprar dorsal
-    </Button>
-  );
-}
-```
-
-- [ ] **Step 2: Wire BuyButton in detail page**
-
-In `apps/web/app/(app)/dorsales/[id]/page.tsx`, replace the placeholder `<button>Comprar dorsal</button>` with `<BuyButton dorsal={d} />`. Update the imports.
-
-- [ ] **Step 3: Commit**
-
-```bash
-git add -A
-git commit -m "feat(transactions): hook BuyButton on dorsal detail with eligibility check"
-```
-
----
-
-## Task 4: Stripe checkout page (UC-06)
-
-**Files:**
-- Create: `apps/web/app/(app)/compra/checkout/[dorsalId]/page.tsx`
-- Create: `apps/web/features/transactions/components/checkout-form.client.tsx`
-
-- [ ] **Step 1: Checkout page (Server Component fetches dorsal, hands off)**
-
-```tsx
-import { notFound } from 'next/navigation';
-import { getDorsalDetail } from '@/features/dorsals/server/get-detail';
-import { CheckoutForm } from '@/features/transactions/components/checkout-form.client';
-
-type Params = { dorsalId: string };
-export const metadata = { title: 'Pago seguro' };
-
-export default async function CheckoutPage({ params }: { params: Promise<Params> }) {
-  const { dorsalId } = await params;
-  const dorsal = await getDorsalDetail(dorsalId);
-  if (!dorsal) notFound();
-  return (
-    <main className="container mx-auto max-w-2xl px-4 py-10">
-      <header className="mb-6">
-        <h1 className="text-3xl font-bold">Pago seguro</h1>
-        <p className="text-text-secondary">Tu dinero queda retenido en custodia hasta que confirmes el cambio de titularidad.</p>
-      </header>
-      <CheckoutForm dorsalId={dorsal.id} amount={dorsal.price_amount} raceName={dorsal.race_name} />
-    </main>
-  );
-}
-```
-
-- [ ] **Step 2: CheckoutForm — wraps Stripe Elements**
-
-```tsx
-'use client';
-import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { Elements, PaymentElement, useElements, useStripe } from '@stripe/react-stripe-js';
-import { toast } from 'sonner';
-import { formatPrice } from '@dorsal/domain';
-import { Button } from '@/components/ui/button';
-import { getStripe } from '@/features/transactions/lib/stripe';
-import { useConfirmPayment, usePurchase } from '@/features/transactions/hooks/use-purchase';
-
-function InnerForm({ transactionId, amount, raceName }: { transactionId: string; amount: number; raceName: string }) {
-  const stripe = useStripe();
-  const elements = useElements();
-  const router = useRouter();
-  const confirm = useConfirmPayment();
-  const [submitting, setSubmitting] = useState(false);
-
-  async function pay(e: React.FormEvent) {
-    e.preventDefault();
-    if (!stripe || !elements) return;
-    setSubmitting(true);
-
-    if (process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY) {
-      // Real Stripe path: needs PaymentElement to be configured against a real PaymentIntent.
-      const { error } = await stripe.confirmPayment({ elements, redirect: 'if_required' });
-      if (error) { toast.error(error.message ?? 'Pago fallido'); setSubmitting(false); return; }
-    }
-    // Mock path (or after real success): mark transaction confirmed in our backend mock.
-    confirm.mutate(transactionId, {
-      onSuccess: () => {
-        router.push(`/compra/confirmada?tx=${transactionId}`);
-      },
-      onError: (e) => { toast.error(e.message); setSubmitting(false); },
+describe('ReserveListingResponse', () => {
+  it('parses a typical backend reservation response', () => {
+    const out = ReserveListingResponse.parse({
+      transaction_id: '11111111-1111-4111-8111-111111111111',
+      stripe_payment_intent_client_secret: 'pi_secret_x',
+      amount: '45.00',
+      expires_at: '2026-05-14T12:00:00Z',
     });
-  }
+    expect(out.amount).toBe(45);
+  });
+});
 
-  const stripeReady = !!process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY;
-
-  return (
-    <form onSubmit={pay} className="space-y-5 rounded-lg border border-border bg-bg-card p-6">
-      <div>
-        <p className="text-sm text-text-secondary">Pago para</p>
-        <p className="font-semibold">{raceName}</p>
-        <p className="mt-1 text-2xl font-bold">{formatPrice(amount)}</p>
-      </div>
-      {stripeReady ? (
-        <PaymentElement />
-      ) : (
-        <div className="rounded-md border border-dashed border-border p-4 text-sm text-text-secondary">
-          Stripe en modo mock (sin clave publishable). En producción aquí se renderiza la pasarela real.
-        </div>
-      )}
-      <Button type="submit" className="w-full" disabled={submitting}>
-        {submitting ? 'Procesando…' : `Pagar ${formatPrice(amount)}`}
-      </Button>
-      <p className="text-center text-xs text-text-muted">
-        Tu dinero queda en custodia de un tercero. Solo se libera cuando confirmes el cambio de titularidad.
-      </p>
-    </form>
-  );
-}
-
-export function CheckoutForm({ dorsalId, amount, raceName }: { dorsalId: string; amount: number; raceName: string }) {
-  const purchase = usePurchase();
-  const [transactionId, setTransactionId] = useState<string | null>(null);
-  const [clientSecret, setClientSecret] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (purchase.isPending || transactionId) return;
-    purchase.mutate({ dorsal_id: dorsalId, payment_method: 'card' }, {
-      onSuccess: ({ transaction_id, client_secret }) => {
-        setTransactionId(transaction_id);
-        setClientSecret(client_secret);
+describe('BuyerTransactionDetail', () => {
+  it('includes dorsal_snapshot', () => {
+    const sample = {
+      id: '11111111-1111-4111-8111-111111111111',
+      dorsal_id: '55555555-5555-4555-8555-555555555555',
+      buyer_id: '22222222-2222-4222-8222-222222222222',
+      seller_id: '33333333-3333-4333-8333-333333333333',
+      status: 'paid' as const,
+      amount: 45,
+      currency: 'EUR' as const,
+      stripe_payment_intent_client_secret: null,
+      proof_file_url: null,
+      timeline: [],
+      dorsal_snapshot: {
+        race_name: 'Madrid',
+        race_date: '2026-12-31',
+        location: 'Madrid',
+        distance: '10k',
+        photo_url: 'https://x/y.jpg',
       },
+      created_at: '2026-05-14T10:00:00Z',
+      updated_at: '2026-05-14T10:00:00Z',
+    };
+    expect(BuyerTransactionDetail.parse(sample).dorsal_snapshot.race_name).toBe('Madrid');
+  });
+});
+
+describe('SellerProblemReport', () => {
+  it('accepts race_rejected_transfer category', () => {
+    const parsed = SellerProblemReport.parse({
+      id: '88888888-8888-4888-8888-888888888888',
+      transaction_id: '11111111-1111-4111-8111-111111111111',
+      seller_id: '33333333-3333-4333-8333-333333333333',
+      category: 'race_rejected_transfer',
+      message: 'organizer rejected',
+      attachments: [],
+      status: 'open',
+      resolution_notes: null,
+      created_at: '2026-05-14T10:00:00Z',
     });
-  }, [purchase, dorsalId, transactionId]);
-
-  if (purchase.isError) return <p className="text-red-500">No se pudo iniciar el pago.</p>;
-  if (!transactionId || !clientSecret) return <p>Preparando pasarela…</p>;
-
-  const stripeKey = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY;
-
-  if (!stripeKey) {
-    // Mock path: render form directly without Stripe Elements wrapper.
-    return <InnerForm transactionId={transactionId} amount={amount} raceName={raceName} />;
-  }
-
-  const options = { clientSecret, appearance: { theme: 'night' as const } };
-
-  return (
-    <Elements stripe={getStripe()} options={options}>
-      <InnerForm transactionId={transactionId} amount={amount} raceName={raceName} />
-    </Elements>
-  );
-}
+    expect(parsed.category).toBe('race_rejected_transfer');
+  });
+});
 ```
 
-- [ ] **Step 3: Add `useConfirmPayment` import path fix**
-
-The hook lives in `apps/web/features/transactions/hooks/use-confirm-payment.ts`. Update `useConfirmPayment, usePurchase` import in CheckoutForm:
-
-```tsx
-import { useConfirmPayment } from '@/features/transactions/hooks/use-confirm-payment';
-import { usePurchase } from '@/features/transactions/hooks/use-purchase';
-```
-
-- [ ] **Step 4: Verify**
+- [ ] **Step 3: Run schema tests**
 
 ```bash
-pnpm --filter @dorsal/web dev
-# 1) Log in (demo@dorsal.market / demo1234)
-# 2) Visit /dorsales, pick a dorsal, click "Comprar dorsal"
-# 3) Submit payment in mock mode → redirect to /compra/confirmada?tx=...
+pnpm --filter @dorsal/schemas test
 ```
 
-- [ ] **Step 5: Commit**
-
-```bash
-git add -A
-git commit -m "feat(transactions): UC-06 Stripe checkout with mock fallback"
-```
-
----
-
-## Task 5: Confirmation page (post-payment)
-
-**Files:**
-- Modify: `apps/web/app/(app)/compra/confirmada/page.tsx`
-
-- [ ] **Step 1: Implement**
-
-```tsx
-'use client';
-import Link from 'next/link';
-import { useSearchParams } from 'next/navigation';
-import { CheckCircle2 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { ReviewForm } from '@/features/users/components/review-form.client';
-import { useTransaction } from '@/features/transactions/hooks/use-transaction';
-
-export default function ConfirmadaPage() {
-  const sp = useSearchParams();
-  const tx = sp.get('tx');
-  const { data: transaction } = useTransaction(tx);
-  return (
-    <main className="container mx-auto max-w-xl px-4 py-12 text-center space-y-6">
-      <CheckCircle2 className="mx-auto h-16 w-16 text-olive" />
-      <div className="space-y-1">
-        <h1 className="text-3xl font-bold">¡Compra <em className="not-italic text-coral">confirmada</em>!</h1>
-        <p className="text-text-secondary">Tu pago está retenido en custodia. Hemos enviado tus datos al vendedor.</p>
-      </div>
-      {tx && (
-        <div className="space-y-3">
-          <Button asChild><Link href={`/compra/${tx}`}>Ver estado de la compra</Link></Button>
-          <Button asChild variant="outline"><Link href="/perfil/historial">Ir a mi historial</Link></Button>
-        </div>
-      )}
-      {transaction?.status === 'released' && tx && (
-        <div className="text-left"><ReviewForm transactionId={tx} /></div>
-      )}
-    </main>
-  );
-}
-```
-
-- [ ] **Step 2: Commit**
-
-```bash
-git add -A
-git commit -m "feat(transactions): confirmation page with review CTA when released"
-```
-
----
-
-## Task 6: Timeline view (UC-07/08) with polling
-
-**Files:**
-- Create: `apps/web/components/transaction/timeline-step.tsx`
-- Create: `apps/web/components/transaction/timeline.client.tsx`
-- Modify: `apps/web/app/(app)/compra/[transactionId]/page.tsx`
-
-- [ ] **Step 1: TimelineStep**
-
-```tsx
-import { Check } from 'lucide-react';
-import type { TimelineStep as Step } from '@dorsal/schemas';
-import { cn } from '@/lib/utils';
-
-const LABELS: Record<Step['step'], string> = {
-  payment_held: 'Pago retenido en custodia',
-  data_sent: 'Datos enviados al vendedor',
-  change_in_progress: 'Cambio de titularidad en proceso',
-  change_confirmed: 'Cambio confirmado',
-  released: 'Dinero liberado al vendedor',
-};
-
-export function TimelineStep({ step, isCurrent }: { step: Step; isCurrent: boolean }) {
-  return (
-    <div className="flex items-start gap-4">
-      <div className={cn(
-        'flex h-9 w-9 shrink-0 items-center justify-center rounded-full border-2',
-        step.completed ? 'border-olive bg-olive text-white' : isCurrent ? 'border-coral text-coral' : 'border-border text-text-muted',
-      )}>
-        {step.completed ? <Check className="h-4 w-4" /> : '·'}
-      </div>
-      <div className="pt-1.5">
-        <p className={cn('font-medium', step.completed ? 'text-text-primary' : 'text-text-secondary')}>{LABELS[step.step]}</p>
-        {step.completed_at && <p className="text-xs text-text-muted">{new Date(step.completed_at).toLocaleString('es-ES')}</p>}
-      </div>
-    </div>
-  );
-}
-```
-
-- [ ] **Step 2: Timeline (with action buttons depending on role)**
-
-```tsx
-'use client';
-import { useSession } from 'next-auth/react';
-import { Button } from '@/components/ui/button';
-import { computeTimelineProgress } from '@dorsal/domain';
-import type { Transaction } from '@dorsal/schemas';
-import { TimelineStep } from './timeline-step';
-import { useAdvanceStep } from '@/features/transactions/hooks/use-advance-step';
-
-export function Timeline({ tx }: { tx: Transaction }) {
-  const { data: session } = useSession();
-  const isBuyer = session?.user?.id === tx.buyer_id;
-  const isSeller = session?.user?.id === tx.seller_id;
-  const advance = useAdvanceStep(tx.id);
-  const progress = computeTimelineProgress(tx.timeline);
-
-  const nextSeller = !tx.timeline.find((s) => s.step === 'change_in_progress')?.completed && isSeller;
-  const nextBuyer = !tx.timeline.find((s) => s.step === 'change_confirmed')?.completed && isBuyer
-    && tx.timeline.find((s) => s.step === 'change_in_progress')?.completed;
-
-  return (
-    <div className="space-y-6 rounded-lg border border-border bg-bg-card p-6">
-      <header className="space-y-1">
-        <p className="text-sm text-text-secondary">Estado de la compra</p>
-        <p className="text-lg font-semibold">{progress.percent}% completado</p>
-        <div className="h-1.5 w-full overflow-hidden rounded-full bg-bg-elevated">
-          <div className="h-full bg-coral transition-all" style={{ width: `${progress.percent}%` }} />
-        </div>
-      </header>
-      <div className="space-y-5">
-        {tx.timeline.map((s, i) => (
-          <TimelineStep key={s.step} step={s} isCurrent={i === progress.currentIndex} />
-        ))}
-      </div>
-      <div className="space-y-2 border-t border-border pt-4">
-        {nextSeller && (
-          <Button onClick={() => advance.mutate('change_in_progress')} disabled={advance.isPending}>
-            Marcar cambio de titularidad iniciado
-          </Button>
-        )}
-        {nextBuyer && (
-          <Button onClick={() => advance.mutate('change_confirmed')} disabled={advance.isPending}>
-            Confirmar cambio recibido
-          </Button>
-        )}
-        {progress.isComplete && <p className="text-sm text-olive">¡Operación finalizada!</p>}
-      </div>
-    </div>
-  );
-}
-```
-
-- [ ] **Step 3: Transaction detail page**
-
-```tsx
-'use client';
-import { use } from 'react';
-import { Timeline } from '@/components/transaction/timeline.client';
-import { ChatThread } from '@/components/transaction/chat-thread.client';
-import { DisputeButton } from '@/components/transaction/dispute-button.client';
-import { useTransaction } from '@/features/transactions/hooks/use-transaction';
-
-export default function CompraPage({ params }: { params: Promise<{ transactionId: string }> }) {
-  const { transactionId } = use(params);
-  const { data: tx, isLoading } = useTransaction(transactionId);
-  if (isLoading || !tx) return <main className="container mx-auto py-12">Cargando…</main>;
-
-  return (
-    <main className="container mx-auto max-w-3xl px-4 py-10 space-y-6">
-      <header className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold">Compra {tx.id.slice(0, 8)}…</h1>
-          <p className="text-sm text-text-muted">Dorsal {tx.dorsal_id.slice(0, 8)}…</p>
-        </div>
-        <DisputeButton transactionId={tx.id} />
-      </header>
-      <Timeline tx={tx} />
-      <ChatThread transactionId={tx.id} />
-    </main>
-  );
-}
-```
+Expected: ≥ 4 tests passing on the new file.
 
 - [ ] **Step 4: Commit**
 
 ```bash
 git add -A
-git commit -m "feat(transactions): UC-07/08 timeline view with role-aware advance buttons"
+git commit -m "feat(schemas): update Transaction schemas to match real backend contract"
 ```
 
 ---
 
-## Task 7: Chat thread + composer (polling-based "real-time")
+## Task 3: Update HTTP adapter, port and mock
 
 **Files:**
-- Create: `apps/web/components/transaction/chat-thread.client.tsx`
-- Create: `apps/web/components/transaction/chat-composer.client.tsx`
+- Modify: `packages/api-client/src/ports/transactions.ts`
+- Modify: `packages/api-client/src/adapters/transactions-http.ts`
+- Modify: `packages/api-client/src/msw/transactions.ts`
+- Modify: `packages/api-client/src/http.ts` (añadir `getAuthToken`)
 
-- [ ] **Step 1: Chat composer**
+- [ ] **Step 1: Ampliar HTTP client para soportar Bearer JWT además de X-User-Id**
 
-```tsx
-'use client';
-import { useState } from 'react';
-import { Send } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { useSendMessage } from '@/features/transactions/hooks/use-messages';
+En `packages/api-client/src/http.ts`, añadir a `HttpClientOptions`:
 
-export function ChatComposer({ transactionId }: { transactionId: string }) {
-  const [text, setText] = useState('');
-  const send = useSendMessage(transactionId);
-  function submit(e: React.FormEvent) {
-    e.preventDefault();
-    if (!text.trim()) return;
-    send.mutate(text, { onSuccess: () => setText('') });
+```ts
+export interface HttpClientOptions {
+  baseUrl: string;
+  getUserId?: () => string | null | undefined;
+  getAuthToken?: () => string | null | undefined;
+}
+```
+
+Y dentro de `request()`, además de `X-User-Id`, set `Authorization: Bearer <token>` si `getAuthToken` devuelve algo. Ambos pueden coexistir mientras dure la migración del backend.
+
+Actualiza `apps/web/lib/api.ts` y `apps/web/lib/api-client.ts` para pasar `getAuthToken` desde la sesión Auth.js (el JWT firmado vive en `session.user.token`, hay que añadirlo en `auth.config.ts` callbacks). Esta parte se coordina con `feat/usuarios` si esa rama también está tocando el callback.
+
+- [ ] **Step 2: New port interface**
+
+`packages/api-client/src/ports/transactions.ts`:
+
+```ts
+import type {
+  BuyerTransactionDetail,
+  Dispute,
+  ProofUploadUrlResponse,
+  ReserveListingResponse,
+  SellerOnboardingResponse,
+  SellerProblemCategory,
+  SellerProblemReport,
+  SellerTransactionDetail,
+  TransactionListResponse,
+} from '@dorsal/schemas';
+
+export interface TransactionsPort {
+  // Onboarding del seller (Stripe Connect)
+  onboardSeller(sellerId: string): Promise<SellerOnboardingResponse>;
+
+  // UC-06 Reserva
+  reserveListing(input: { dorsalId: string; buyerId: string }): Promise<ReserveListingResponse>;
+
+  // Tracking — vistas separadas buyer/seller
+  getBuyerTransaction(id: string): Promise<BuyerTransactionDetail>;
+  getSellerTransaction(id: string): Promise<SellerTransactionDetail>;
+
+  // Upload de prueba — dos rutas
+  getProofUploadUrl(id: string, input: { sellerId: string; contentType: string }): Promise<ProofUploadUrlResponse>;
+  uploadProofMultipart(id: string, file: File): Promise<{ proof_file_url: string }>;
+  submitProofUrl(id: string, input: { proofFileUrl: string; sellerId: string }): Promise<SellerTransactionDetail>;
+
+  // Acciones del seller
+  markTransferInProgress(id: string, sellerId: string): Promise<SellerTransactionDetail>;
+
+  // Acciones del buyer
+  confirmTransfer(id: string, buyerId: string): Promise<BuyerTransactionDetail>;
+  openDispute(id: string, input: { buyerId: string; reason: string }): Promise<Dispute>;
+
+  // Seller problem reports (post-final)
+  createSellerProblemReport(input: {
+    transactionId: string;
+    category: SellerProblemCategory;
+    message: string;
+    files?: File[];
+  }): Promise<SellerProblemReport>;
+
+  // History (UC-10)
+  listMyPurchases(query?: { status?: string; limit?: number; offset?: number }): Promise<TransactionListResponse>;
+  listMySales(query?: { status?: string; limit?: number; offset?: number }): Promise<TransactionListResponse>;
+}
+```
+
+- [ ] **Step 3: Rewrite HTTP adapter**
+
+`packages/api-client/src/adapters/transactions-http.ts`:
+
+```ts
+import {
+  BuyerTransactionDetail,
+  Dispute,
+  ProofUploadUrlResponse,
+  ReserveListingResponse,
+  SellerOnboardingResponse,
+  type SellerProblemCategory,
+  SellerProblemReport,
+  SellerTransactionDetail,
+  TransactionListResponse,
+} from '@dorsal/schemas';
+import { z } from 'zod';
+import type { HttpClient } from '../http';
+import type { TransactionsPort } from '../ports';
+
+export class TransactionsHttpAdapter implements TransactionsPort {
+  constructor(private http: HttpClient, private baseUrl: string) {}
+
+  async onboardSeller(sellerId: string) {
+    return SellerOnboardingResponse.parse(
+      await this.http.post('api/v1/sellers/onboard', { body: { user_id: sellerId } }),
+    );
   }
-  return (
-    <form onSubmit={submit} className="flex gap-2">
-      <Input value={text} onChange={(e) => setText(e.target.value)} placeholder="Escribe un mensaje…" />
-      <Button type="submit" size="icon" disabled={send.isPending}><Send className="h-4 w-4" /></Button>
-    </form>
-  );
-}
-```
 
-- [ ] **Step 2: Chat thread**
+  async reserveListing(input: { dorsalId: string; buyerId: string }) {
+    return ReserveListingResponse.parse(
+      await this.http.post('api/v1/transactions', {
+        body: { dorsal_id: input.dorsalId, buyer_id: input.buyerId },
+      }),
+    );
+  }
 
-```tsx
-'use client';
-import { useSession } from 'next-auth/react';
-import { useMessages } from '@/features/transactions/hooks/use-messages';
-import { cn } from '@/lib/utils';
-import { ChatComposer } from './chat-composer.client';
+  async getBuyerTransaction(id: string) {
+    return BuyerTransactionDetail.parse(await this.http.get(`api/v1/transactions/buyer/${id}`));
+  }
 
-export function ChatThread({ transactionId }: { transactionId: string }) {
-  const { data: session } = useSession();
-  const { data: messages } = useMessages(transactionId);
-  const me = session?.user?.id;
+  async getSellerTransaction(id: string) {
+    return SellerTransactionDetail.parse(await this.http.get(`api/v1/transactions/seller/${id}`));
+  }
 
-  return (
-    <section className="space-y-4 rounded-lg border border-border bg-bg-card p-6">
-      <h2 className="font-semibold">Soporte</h2>
-      <div className="max-h-96 space-y-2 overflow-y-auto rounded-md bg-bg-elevated p-3">
-        {(!messages || messages.length === 0) && <p className="text-sm text-text-muted">Aún no hay mensajes.</p>}
-        {messages?.map((m) => {
-          const mine = m.sender_id === me;
-          return (
-            <div key={m.id} className={cn('flex', mine ? 'justify-end' : 'justify-start')}>
-              <div className={cn(
-                'max-w-[75%] rounded-lg px-3 py-1.5 text-sm',
-                mine ? 'bg-coral text-white' : 'bg-bg-card border border-border',
-              )}>
-                {m.content}
-              </div>
-            </div>
-          );
-        })}
-      </div>
-      <ChatComposer transactionId={transactionId} />
-    </section>
-  );
-}
-```
+  async getProofUploadUrl(id: string, input: { sellerId: string; contentType: string }) {
+    return ProofUploadUrlResponse.parse(
+      await this.http.post(`api/v1/transactions/${id}/proof-upload-url`, {
+        body: { seller_id: input.sellerId, content_type: input.contentType },
+      }),
+    );
+  }
 
-- [ ] **Step 3: Commit**
-
-```bash
-git add -A
-git commit -m "feat(transactions): UC-08 chat thread with polling and message composer"
-```
-
----
-
-## Task 8: Dispute button + form (UC-03 minimal)
-
-**Files:**
-- Create: `apps/web/components/transaction/dispute-button.client.tsx`
-- Create: `apps/web/components/transaction/dispute-form.client.tsx`
-
-- [ ] **Step 1: Dispute form (inside a Dialog)**
-
-```tsx
-'use client';
-import { useState } from 'react';
-import { toast } from 'sonner';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Label } from '@/components/ui/label';
-import { Input } from '@/components/ui/input';
-import { useOpenDispute } from '@/features/transactions/hooks/use-open-dispute';
-
-export function DisputeButton({ transactionId }: { transactionId: string }) {
-  const [open, setOpen] = useState(false);
-  const [reason, setReason] = useState('');
-  const dispute = useOpenDispute(transactionId);
-
-  function submit() {
-    if (reason.trim().length < 20) { toast.error('Describe el motivo (mínimo 20 caracteres)'); return; }
-    dispute.mutate({ reason, evidenceUrls: [] }, {
-      onSuccess: () => { toast.success('Disputa abierta. Te contactaremos.'); setOpen(false); },
-      onError: (e) => toast.error(e.message),
+  async uploadProofMultipart(id: string, file: File) {
+    // Multipart bypasses el http client JSON serializer y va directo vía fetch.
+    const fd = new FormData();
+    fd.append('file', file);
+    const res = await fetch(`${this.baseUrl}/api/v1/transactions/${id}/upload-proof`, {
+      method: 'POST',
+      body: fd,
     });
+    if (!res.ok) throw new Error(`upload-proof failed: ${res.status}`);
+    return z.object({ proof_file_url: z.string().url() }).parse(await res.json());
   }
 
-  return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild><Button variant="outline" size="sm">Abrir disputa</Button></DialogTrigger>
-      <DialogContent>
-        <DialogHeader><DialogTitle>Abrir disputa</DialogTitle></DialogHeader>
-        <div className="space-y-3">
-          <Label htmlFor="reason">Describe el problema</Label>
-          <Input id="reason" value={reason} onChange={(e) => setReason(e.target.value)} placeholder="Ej. el vendedor no responde…" />
-          <Button onClick={submit} disabled={dispute.isPending}>{dispute.isPending ? 'Enviando…' : 'Enviar disputa'}</Button>
-        </div>
-      </DialogContent>
-    </Dialog>
-  );
+  async submitProofUrl(id: string, input: { proofFileUrl: string; sellerId: string }) {
+    return SellerTransactionDetail.parse(
+      await this.http.post(`api/v1/transactions/${id}/proof`, {
+        body: { proof_file_url: input.proofFileUrl, seller_id: input.sellerId },
+      }),
+    );
+  }
+
+  async markTransferInProgress(id: string, sellerId: string) {
+    return SellerTransactionDetail.parse(
+      await this.http.post(`api/v1/transactions/${id}/transfer-in-progress`, {
+        body: { seller_id: sellerId },
+      }),
+    );
+  }
+
+  async confirmTransfer(id: string, buyerId: string) {
+    return BuyerTransactionDetail.parse(
+      await this.http.post(`api/v1/transactions/${id}/confirm`, { body: { buyer_id: buyerId } }),
+    );
+  }
+
+  async openDispute(id: string, input: { buyerId: string; reason: string }) {
+    return Dispute.parse(
+      await this.http.post(`api/v1/transactions/${id}/dispute`, {
+        body: { buyer_id: input.buyerId, reason: input.reason },
+      }),
+    );
+  }
+
+  async createSellerProblemReport(input: {
+    transactionId: string;
+    category: SellerProblemCategory;
+    message: string;
+    files?: File[];
+  }) {
+    const fd = new FormData();
+    fd.append('category', input.category);
+    fd.append('message', input.message);
+    for (const f of input.files ?? []) fd.append('files', f);
+    const res = await fetch(
+      `${this.baseUrl}/api/v1/transactions/${input.transactionId}/seller-problem-reports`,
+      { method: 'POST', body: fd },
+    );
+    if (!res.ok) throw new Error(`seller-problem-report failed: ${res.status}`);
+    return SellerProblemReport.parse(await res.json());
+  }
+
+  async listMyPurchases(query?: { status?: string; limit?: number; offset?: number }) {
+    return TransactionListResponse.parse(
+      await this.http.get('api/v1/me/purchases', { query: query ?? {} }),
+    );
+  }
+
+  async listMySales(query?: { status?: string; limit?: number; offset?: number }) {
+    return TransactionListResponse.parse(
+      await this.http.get('api/v1/me/sales', { query: query ?? {} }),
+    );
+  }
 }
 ```
 
-(Evidence upload is a follow-up — the UI passes empty `evidenceUrls`; backend stub accepts that.)
+Actualiza también `packages/api-client/src/factory.ts` para pasar `baseUrl` al constructor de `TransactionsHttpAdapter`.
 
-- [ ] **Step 2: Commit**
+- [ ] **Step 4: Update MSW mock with same shape**
+
+`packages/api-client/src/msw/transactions.ts` — reescribir para responder los nuevos paths con datos en memoria. Estructura análoga a la actual; cada endpoint mockea su shape exacto. Mantén `mockStore.transactions` pero reemplaza el `timeline` por `TimelineEvent[]`. Añade endpoint mock para `/sellers/onboard` que devuelve `{ account_id: 'acct_mock', onboarding_url: null, charges_enabled: true }` para no bloquear el flow en dev.
+
+- [ ] **Step 5: Tests**
+
+Adaptar `packages/api-client/src/__tests__/http.test.ts` para cubrir el nuevo header `Authorization: Bearer`.
+
+- [ ] **Step 6: Commit**
 
 ```bash
 git add -A
-git commit -m "feat(transactions): UC-03 minimal dispute opening flow"
+git commit -m "feat(api-client): rewrite Transaction adapter and port for real backend endpoints"
 ```
 
 ---
 
-## Task 9: E2E for purchase happy path
+## Task 4: Hooks (TanStack Query wrappers)
+
+**Files:**
+- Create: `apps/web/features/transactions/hooks/*.ts`
+
+Crea un hook por método del port. Patrón:
+
+- `useReserveListing()` — useMutation → devuelve `client_secret` y `transaction_id`.
+- `useBuyerTransaction(id)` — useQuery con `refetchInterval: 10_000`.
+- `useSellerTransaction(id)` — idem.
+- `useTransferInProgress(id)` — useMutation, invalida `['transactions', 'seller', id]`.
+- `useSubmitProof(id)` — useMutation que pide presigned URL → sube a S3 → llama a `submitProofUrl()`.
+- `useConfirmTransfer(id)` — useMutation, invalida `['transactions', 'buyer', id]`.
+- `useOpenDispute(id)` — useMutation.
+- `useSellerProblemReport(id)` — useMutation.
+- `useMyPurchases(query)` y `useMySales(query)` — useQuery con `keepPreviousData`.
+- `useOnboardSeller()` — useMutation, abre `onboarding_url` en nueva pestaña si viene.
+
+Una vez creados, commit:
+
+```bash
+git add -A
+git commit -m "feat(transactions): TanStack Query hooks for all transaction endpoints"
+```
+
+---
+
+## Task 5: Seller onboarding page (UC-03 prerequisito)
+
+**Files:**
+- Create: `apps/web/app/(app)/vender/onboarding/page.tsx`
+- Modify: `apps/web/app/(app)/vender/page.tsx` (redirect a onboarding si `charges_enabled=false`)
+
+Pantalla simple con:
+- Estado actual de la cuenta Stripe Connect (`charges_enabled` true/false).
+- Botón "Configurar pagos" → llama `useOnboardSeller()` → abre `onboarding_url` o redirect.
+- Banner explicando "Antes de poder vender necesitas conectar tu cuenta bancaria con Stripe (proceso de 2 minutos)".
+
+Commit: `feat(transactions): UC-03 seller Stripe Connect onboarding`.
+
+---
+
+## Task 6: Buy button + checkout page (UC-06)
+
+**Files:**
+- Create: `apps/web/components/dorsal/buy-button.client.tsx`
+- Modify: `apps/web/app/(app)/dorsales/[id]/page.tsx` (insertar BuyButton). **Atención:** coordinar con `feat/dorsales` si ya editó esta página.
+- Create: `apps/web/app/(app)/compra/checkout/[dorsalId]/page.tsx`
+- Create: `apps/web/features/transactions/components/checkout-form.client.tsx`
+
+Flow:
+1. Detalle de dorsal → `<BuyButton />` (Client Component que chequea `canBuyDorsal()` de `@dorsal/domain`).
+2. `/compra/checkout/[dorsalId]` (Server Component) hace `getDorsalDetail()` para mostrar resumen.
+3. `<CheckoutForm dorsalId>` (Client):
+   - Llama `useReserveListing()` para obtener `client_secret`.
+   - Monta `<Elements stripe={getStripe()} options={{ clientSecret }}>`.
+   - Dentro, `<PaymentElement />` + botón "Pagar".
+   - Al confirmar, Stripe redirige (`if_required: false`) → vuelve la pantalla con success → redirect a `/compra/confirmada?tx=<id>`.
+
+Si `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` está vacío (dev sin Stripe), muestra modo mock con botón "Simular pago" que avanza directamente al estado paid.
+
+Commit: `feat(transactions): UC-06 reserve + Stripe checkout flow`.
+
+---
+
+## Task 7: Confirmation page
+
+**Files:**
+- Modify: `apps/web/app/(app)/compra/confirmada/page.tsx`
+
+Lee `?tx=` del query string, hace `useBuyerTransaction(tx)`, muestra:
+- Confirmación visual (CheckCircle).
+- Estado actual del envío de datos al seller.
+- Link "Ver estado completo de la compra" → `/compra/[transactionId]`.
+- Link "Mi historial" → `/perfil/historial`.
+
+Commit: `feat(transactions): post-payment confirmation page`.
+
+---
+
+## Task 8: Tracking page (UC-07/08) — rol-aware
+
+**Files:**
+- Create: `apps/web/components/transaction/tracking-timeline.client.tsx`
+- Create: `apps/web/components/transaction/tracking-step.tsx`
+- Create: `apps/web/components/transaction/transfer-actions.client.tsx`
+- Create: `apps/web/components/transaction/confirm-action.client.tsx`
+- Create: `apps/web/components/transaction/proof-uploader.client.tsx`
+- Modify: `apps/web/app/(app)/compra/[transactionId]/page.tsx`
+
+La página detecta el rol del usuario actual contra `buyer_id`/`seller_id` y pide el endpoint correspondiente:
+- Si soy buyer → `useBuyerTransaction(id)`. Acciones disponibles: `confirmTransfer`, `openDispute` (este último solo si `status ∈ {paid, transfer_in_progress, transfer_proof_submitted}`).
+- Si soy seller → `useSellerTransaction(id)`. Acciones: `markTransferInProgress`, `proofUploader` (subir prueba), y si la transacción está `released_to_seller` o `refunded_to_buyer`, mostrar `<SellerProblemReport />`.
+
+El timeline se renderiza desde `timeline: TimelineEvent[]` mapeando cada tipo a un label y un icono.
+
+`<ProofUploader />` interno:
+1. Llama `getProofUploadUrl()` con el `contentType` del file (image/pdf).
+2. Hace PUT/POST directo a S3 con el archivo.
+3. Llama `submitProofUrl()` con el `final_url`.
+4. Alternativa más sencilla si el dev quiere: `uploadProofMultipart()` (un solo round-trip).
+
+Commit: `feat(transactions): UC-07/08 rol-aware tracking with proof upload`.
+
+---
+
+## Task 9: Dispute dialog (UC-03 buyer)
+
+**Files:**
+- Create: `apps/web/components/transaction/dispute-dialog.client.tsx`
+
+Dialog con `<Textarea>` (mínimo 20 caracteres), botón "Abrir disputa". Llama `useOpenDispute()`. Tras éxito, muestra toast y cierra dialog. La transacción pasa a `disputed` y el siguiente refetch lo refleja.
+
+Commit: `feat(transactions): UC-03 buyer dispute dialog`.
+
+---
+
+## Task 10: Seller problem report (post-final support)
+
+**Files:**
+- Create: `apps/web/components/transaction/seller-problem-report.client.tsx`
+
+Form con:
+- `Select` categoría (4 opciones del enum).
+- `Textarea` mensaje (10-1000 caracteres).
+- Multifile `<Input type="file" multiple>` (max 3 archivos, 10MB cada uno; jpeg/png/webp/pdf).
+- Solo visible para el seller cuando `status ∈ ['released_to_seller', 'refunded_to_buyer']`.
+
+Commit: `feat(transactions): seller problem report post-final flow`.
+
+---
+
+## Task 11: History page integration (UC-10)
+
+**Files:**
+- Modify: `apps/web/app/(app)/perfil/historial/page.tsx` (o crearla si `feat/usuarios` no la ha tocado todavía)
+
+Si `feat/usuarios` ya creó la página, esta rama solo añade los hooks que la página consume (`useMyPurchases`, `useMySales`). Si no la creó, esta rama renderiza la página entera. **Coordinar con el dev de `feat/usuarios`** para evitar conflicto: quien abra el PR primero, deja anotado en la descripción que tocó esta página; el segundo PR resuelve el merge en local antes de abrir.
+
+Commit: `feat(transactions): UC-10 wire purchases/sales hooks into history page`.
+
+---
+
+## Task 12: E2E happy path
 
 **Files:**
 - Create: `apps/web/e2e/purchase.spec.ts`
 
-- [ ] **Step 1: Test**
+Test E2E que ejecuta:
+1. Login con seed user.
+2. Navega a `/dorsales` y pincha un dorsal NO propio.
+3. Click "Comprar".
+4. En checkout, si Stripe está mockeado, click "Simular pago"; si no, rellena tarjeta test 4242 4242 4242 4242.
+5. Espera redirect a `/compra/confirmada`.
+6. Navega a `/compra/[tx]` y verifica timeline con `payment_succeeded`.
 
-```ts
-import { expect, test } from '@playwright/test';
-
-test('logged-in user can buy a dorsal end-to-end', async ({ page }) => {
-  // Login first
-  await page.goto('/login');
-  await page.fill('#email', 'demo@dorsal.market');
-  await page.fill('#password', 'demo1234');
-  await page.getByRole('button', { name: 'Entrar' }).click();
-  await page.waitForURL('/');
-
-  // Pick a dorsal NOT owned by demo user. Seed user is the seller of all backend seeds; we publish a new one from a different mocked path:
-  // Workaround for MVP: use any dorsal — the canBuyDorsal mock returns the same seller_id, so for E2E we use the buy-button on a card published by another seed user.
-  // The Postman seed user is 550e8400-...001 (= demo). To buy, we need a dorsal whose seller != demo. In feat/dorsales we publish "E2E Race" via the test user. Use a dorsal published in the E2E publish test.
-  await page.goto('/dorsales');
-  // Click any non-own dorsal (mock backend returns several seed dorsals — sellers are seed UUIDs, not demo).
-  await page.locator('a[href^="/dorsales/"]').first().click();
-
-  await page.getByRole('button', { name: 'Comprar dorsal' }).click();
-  await page.waitForURL(/\/compra\/checkout\/[a-f0-9-]+/);
-  await page.getByRole('button', { name: /Pagar/ }).click();
-  await page.waitForURL(/\/compra\/confirmada\?tx=[a-f0-9-]+/);
-  await expect(page.getByText(/¡Compra confirmada!/)).toBeVisible();
-});
-```
-
-- [ ] **Step 2: Run e2e**
-
-```bash
-pnpm --filter @dorsal/web test:e2e
-```
-
-- [ ] **Step 3: Commit**
-
-```bash
-git add -A
-git commit -m "test(transactions): E2E for purchase happy path"
-```
+Commit: `test(transactions): E2E purchase happy path`.
 
 ---
 
-## Task 10: Final verification + PR
+## Task 13: Final verification + PR
 
-- [ ] **Step 1: Local CI**
+- [ ] **Step 1: Local pipeline**
 
 ```bash
 pnpm turbo run lint typecheck test build
 pnpm --filter @dorsal/web test:e2e
 ```
 
-- [ ] **Step 2: PR**
+- [ ] **Step 2: Push y abrir PR**
 
 ```bash
 git push -u origin feat/transacciones
-# PR title: "feat(transacciones): UC-03, UC-06, UC-07, UC-08 — Transaction module (mocked)"
-# Base: feat/usuarios
+# PR title: "feat(transacciones): UC-03, UC-06, UC-07, UC-08 — Transaction module"
+# Base: feat/react-native-development
 ```
 
 PR description:
-- List UCs and their tasks.
-- Screenshots: checkout page, timeline, chat, dispute dialog.
-- Note: Stripe runs in **mock mode** until `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` is provided. Set `NEXT_PUBLIC_REAL_API_MODULES=dorsals,users,transactions` to swap to real backend (when exposed).
+- UCs cubiertos con tasks correspondientes.
+- Captura de checkout + tracking + dispute + seller problem report.
+- Nota: requiere backend Transaction levantado o `NEXT_PUBLIC_REAL_API_MODULES` sin `transactions` para correr con mock.
 
 ---
 
@@ -851,27 +807,43 @@ PR description:
 
 **Spec coverage:**
 
-| UC | Task |
+| UC | Tasks |
 |---|---|
-| UC-06 compra | Tasks 3, 4 (CheckoutForm + BuyButton) |
-| UC-03 escrow + disputas | Tasks 4 (escrow status), 8 (disputas mínimas) |
-| UC-07 timeline post-venta | Task 6 |
-| UC-08 chat soporte | Task 7 |
+| UC-03 escrow + disputas | Tasks 5 (onboarding), 9 (dispute), 10 (seller problem reports) |
+| UC-06 compra | Tasks 6, 7 |
+| UC-07/08 timeline + soporte | Task 8 |
+| UC-10 historial (compras+ventas) | Task 11 |
 
-**ADR coverage:**
-- ADR-007 TanStack Query → Tasks 2, 6, 7 use polling via `refetchInterval`.
-- ADR-015 observabilidad → Task 1 wires Sentry no-op (DSN-driven).
-- Section 9 spec → real-time chat uses **polling** as planned (defer WebSocket).
+**Backend contract coverage:**
 
-**Placeholder scan:** none. Each step has concrete code.
+| Endpoint Postman | Task |
+|---|---|
+| `POST /sellers/onboard` | Task 5 |
+| `POST /transactions` (reserve) | Task 6 |
+| `GET /transactions/buyer/{id}` | Task 8 |
+| `GET /transactions/seller/{id}` | Task 8 |
+| `POST /transactions/{id}/proof-upload-url` | Task 8 |
+| `POST /transactions/{id}/transfer-in-progress` | Task 8 |
+| `POST /transactions/{id}/upload-proof` | Task 8 |
+| `POST /transactions/{id}/proof` | Task 8 |
+| `POST /transactions/{id}/confirm` | Task 8 |
+| `POST /transactions/{id}/dispute` | Task 9 |
+| `POST /transactions/{id}/seller-problem-reports` | Task 10 |
+| `GET /me/purchases`, `GET /me/sales` | Task 11 |
 
-**Type consistency:** `Transaction`, `TimelineStep`, `TimelineStepKey`, `PurchaseInput`, `Dispute`, `ChatMessage` referenced consistently from `@dorsal/schemas`.
+**ADRs:**
+- ADR-006 Server Components: tasks 6 y 7 son SC, el resto Client (interactividad heavy).
+- ADR-007 TanStack Query: Task 4 cubre todos los hooks; polling 10s en tracking.
+- ADR-011 Presigned uploads: Task 8 implementa flujo presign + upload directo a S3.
+- ADR-015 Observabilidad: Task 1 wire Sentry no-op.
 
-**Open follow-ups (post-MVP):**
-- WebSocket-based chat (replace polling).
-- Evidence upload on dispute (reuses PhotoUpload component from feat/dorsales).
-- Stripe webhook handler in backend (mock side handled by MSW; real webhooks require backend route).
-- Refund flow (UC-03 advanced) — UI button hidden until backend exposes endpoint.
-- Notifications email (escalation when no response after N days) — backend concern.
+**Placeholder scan:** none.
 
-**MVP done. Done is done.**
+**Type consistency:** los nombres `TransactionStatus`, `BuyerTransactionDetail`, `SellerTransactionDetail`, `TimelineEvent`, `SellerProblemReport` se usan de manera consistente entre schemas → port → adapter → hooks → componentes.
+
+**Open follow-ups (post-MVP, fuera de scope):**
+- Admin panel: list/resolve disputes y seller problem reports. El backend ya expone estos endpoints; cuando se necesite, sale como `feat/admin`.
+- Real-time chat: el contrato actual no incluye mensajería bidireccional dentro de la transacción. Si se añade, el frontend usará polling primero y WebSocket cuando el backend lo exponga.
+- Reseñas (UC-11) tras `confirmed` o `released_to_seller`: depende del módulo Review (mock por ahora).
+
+**Migración del Auth header.** El backend está migrando de `X-User-Id` (Catalog) a `Authorization: Bearer <JWT>` (Transaction). El http client de foundation se amplía en Task 3 step 1 para enviar ambos cuando hay sesión Auth.js; cada módulo del backend usa el suyo.

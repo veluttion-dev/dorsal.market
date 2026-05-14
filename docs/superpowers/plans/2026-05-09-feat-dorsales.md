@@ -12,10 +12,12 @@
 
 **Pre-flight branching:**
 ```bash
-git switch feat/foundation
+git switch feat/foundation       # parte de foundation, en paralelo con feat/usuarios y feat/transacciones
 git pull
 git switch -c feat/dorsales
 ```
+
+**Parallel work note (ADR-012).** Esta rama es **independiente** de `feat/usuarios` y `feat/transacciones`. Tu slice de archivos no toca los suyos. Si necesitas un usuario logueado para probar publicar, usa el seed user del mock de Identity (`demo@dorsal.market` / `demo1234`). Coordina con `feat/transacciones` el botón "Comprar" en `dorsales/[id]/page.tsx` (ver Task 6 de transacciones).
 
 **Backend prerequisite:** the Catalog API must be reachable. For local dev:
 ```bash

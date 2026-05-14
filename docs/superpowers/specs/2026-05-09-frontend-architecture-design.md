@@ -22,13 +22,16 @@
 - Existen 6 mockups HTML en la raíz (`index`, `dorsales`, `dorsal-detalle`, `vender-dorsal`, `compra-confirmada`, `perfil`) con paleta coral (#e8552d) + oliva (#6dab5e/#c8f542), tipografías Outfit + Space Mono, modo dark/light vía `data-theme`.
 - No hay código de aplicación todavía — los mockups son solo referencia visual.
 
-**Backend en repositorio paralelo.** Stack: Python 3.12 + FastAPI + SQLModel + opyoid (DI) + PostgreSQL + Stripe + S3, arquitectura **hexagonal (Ports & Adapters)**. A 2026-05-09 solo el módulo **Catalog** está implementado y expuesto en HTTP:
-- `POST /api/v1/dorsals` — UC-02 publicar dorsal
-- `GET  /api/v1/dorsals` — UC-04 buscar/filtrar/paginar
-- `GET  /api/v1/dorsals/{id}` — UC-05 detalle
-- `GET  /health`, `GET /ready`
+**Backend en repositorio paralelo.** Stack: Python 3.12 + FastAPI + SQLModel + opyoid (DI) + PostgreSQL + Stripe Connect + S3, arquitectura **hexagonal (Ports & Adapters)**. Estado actualizado a 2026-05-14:
 
-Auth provisional: header `X-User-Id` con UUID de usuario. JWT y endpoints de Identity, Transaction y Review **están en el roadmap del backend, todavía no expuestos**.
+| Bounded context | Estado backend | Auth | Postman ref |
+|---|---|---|---|
+| **Catalog** (UC-02, UC-04, UC-05) | ✅ vivo | header `X-User-Id` | `postman/dorsales-api.postman_collection.json` |
+| **Transaction** (UC-03, UC-06, UC-07, UC-08) | ✅ vivo | header `Authorization: Bearer <JWT>` | `postman/transaction_bounded_context.postman_collection.json` |
+| **Identity** (UC-01, UC-09) | ⏳ pendiente — frontend usa mock MSW | — | — |
+| **Review** (UC-11) | ⏳ pendiente — frontend usa mock MSW | — | — |
+
+**Auth.** El backend está migrando hacia JWT. Catalog aún acepta `X-User-Id` provisional; Transaction ya exige `Authorization: Bearer <jwt>`. La capa HTTP del frontend (ADR-005) inyecta ambos headers a la vez mientras dure la transición — el backend acepta el que corresponda a su módulo y descarta el otro.
 
 **Casos de uso del backend (README).** UC-01 a UC-11. Resumidos por módulo:
 - **Identity:** UC-01 registro/login (email + Google + Facebook, con DNI/género/edad), UC-09 perfil corredor, UC-10 historial, UC-11 reseñas cruzadas.
@@ -266,33 +269,46 @@ Mientras el backend no exponga el endpoint de presign, el mock adapter devuelve 
 
 ---
 
-### ADR-012 — Modelo de ramas secuenciales partiendo de feat/foundation
+### ADR-012 — Modelo de ramas paralelas partiendo de feat/foundation
 
-**Decidido.**
+**Decidido (actualizado 2026-05-14 para soportar varios devs en paralelo).**
+
 ```
 main
- └── feat/react-native-development          (rama base)
-      └── feat/foundation                   PR #1
-           └── feat/dorsales                PR #2
-                └── feat/usuarios           PR #3
-                     └── feat/transacciones PR #4
+ └── feat/react-native-development          (rama base, integración)
+      └── feat/foundation                   PR #1 (scaffolding compartido)
+           ├── feat/dorsales                PR #2 ─┐
+           ├── feat/usuarios                PR #3 ─┼─ se desarrollan EN PARALELO,
+           └── feat/transacciones           PR #4 ─┘  cada una sale directamente de feat/foundation
 ```
 
-Cada rama parte de la anterior. PRs pequeñas, revisables, secuenciales. Squash merge.
+Las tres ramas de features parten de `feat/foundation` **directamente y en paralelo**. Cada dev coge la rama de su slice y avanza sin esperar al resto. La integración la hace cada PR contra `feat/react-native-development` (no entre ellas). Squash merge.
 
-**Por qué este orden.**
-- **`feat/foundation` primero**: monorepo, packages compartidos, design system, auth scaffolding, MSW. Sin esto, las otras ramas chocan en cada conflicto.
-- **`feat/dorsales` segundo**: módulo Catalog **ya tiene backend real**. Validamos arquitectura end-to-end (HTTP adapter, Server Components, ISR, OG metadata, formularios, upload de fotos) con datos reales antes de meter mocks.
-- **`feat/usuarios` tercero**: depende de `feat/foundation` (auth scaffolding) y se beneficia de `feat/dorsales` (los componentes de listing/detail ya existen para reutilizar en perfil → "mis dorsales").
-- **`feat/transacciones` último**: depende de auth + dorsales (necesita user_id + dorsal_id).
+**Por qué paralelo y no secuencial.**
+- Se incorporan varios desarrolladores al proyecto y no pueden bloquearse entre sí.
+- Todos los módulos del backend (Catalog, Identity, Transaction) tienen contrato definido — Catalog y Transaction están **vivos** en el backend; Identity sigue mockeado pero su shape ya está acordado.
+- La capa **mock intercambiable** (ADR-004) permite a cada rama desarrollar contra mocks sin necesitar que el backend del resto esté terminado.
+- Foundation entrega todo lo compartido: design system, auth scaffolding, cliente API tipado, MSW para los módulos mockeados, layouts, providers. **Después de foundation, cada feature solo toca su slice.**
+
+**Cómo evitamos conflictos al hacer PR.**
+
+Cada rama es **dueña** de unos directorios y solo toca esos:
+
+| Rama | Owns (cambia libremente) | Shared (avisar antes de tocar) |
+|---|---|---|
+| `feat/dorsales` | `apps/web/app/(app)/dorsales/**`, `apps/web/app/(app)/vender/**`, `apps/web/features/dorsals/**`, `apps/web/components/dorsal/**` | `packages/schemas/src/dorsal.ts`, `packages/api-client/src/{ports,adapters,msw}/dorsals*`, `packages/api-client/src/adapters/uploads-mock.ts` |
+| `feat/usuarios` | `apps/web/app/(auth)/**`, `apps/web/app/(app)/perfil/**`, `apps/web/features/users/**`, `apps/web/components/user/**` | `packages/schemas/src/user.ts`, `packages/api-client/src/{ports,adapters,msw}/users*`, `apps/web/lib/auth.ts`, `apps/web/middleware.ts` |
+| `feat/transacciones` | `apps/web/app/(app)/compra/**`, `apps/web/features/transactions/**`, `apps/web/components/transaction/**` | `packages/schemas/src/transaction.ts`, `packages/api-client/src/{ports,adapters,msw}/transactions*` |
+
+Áreas verdaderamente compartidas (toque con coordinación, en un PR aparte si posible): `apps/web/components/layout/nav.tsx`, `apps/web/components/providers.tsx`, `apps/web/lib/http.ts`, `packages/api-client/src/factory.ts`, `packages/api-client/src/http.ts`, `packages/domain/**`.
+
+**Convenciones.** Conventional Commits (`feat(dorsals):`, `fix(auth):`). PR descriptiva con UCs cubiertos, screenshots, follow-up. **Cada PR contra `feat/react-native-development`, no entre ramas.**
 
 **Alternativas evaluadas.**
-1. **3 ramas en paralelo tras foundation** — más conflictos al integrar, requiere definir interfaces antes.
-2. **Sin foundation explícita: scaffolding dentro de feat/usuarios** — retrasa validación con backend real (Catalog).
+1. **Secuencial** (versión original, descartada el 2026-05-14): bloqueaba a cada dev hasta que el anterior mergeaba.
+2. **Una mega-rama con todo dentro**: peores conflictos, PR ingobernable.
 
-**Convenciones.** Conventional Commits (`feat(dorsals):`, `fix(auth):`). PR descriptiva con UCs cubiertos, screenshots, follow-up.
-
-**Cuándo reconsiderar.** Si entra un segundo dev al frontend, paralelizar tras foundation. Cada rama puede salir directamente de `feat/foundation` y rebasar al integrar.
+**Cuándo reconsiderar.** Si un único dev se ocupa de las tres áreas, vuelve a tener sentido secuencial para reducir context-switching.
 
 ---
 
@@ -516,7 +532,7 @@ Scaffolding del monorepo y todo lo compartido. Sin features de usuario.
 - Mover mockups a `mockups/`.
 - Rama: se crea `feat/foundation` explícita partiendo de `feat/react-native-development`, según ADR-012. No se hacen commits directos sobre la rama base.
 
-### feat/dorsales — PR #2
+### feat/dorsales — PR #2 (paralelo)
 
 UCs 02, 04, 05 contra backend Catalog **real** (`localhost:8000` o staging).
 - `/dorsales` (lista + filtros + paginación).
@@ -525,35 +541,38 @@ UCs 02, 04, 05 contra backend Catalog **real** (`localhost:8000` o staging).
 - HTTP adapter `DorsalsHttpAdapter` con contract tests.
 - Tests de integración con backend en local.
 
-### feat/usuarios — PR #3
+### feat/usuarios — PR #3 (paralelo)
 
-UCs 01, 09, 10, 11. **Backend mock** (Identity no expuesto aún).
+UCs 01, 09, 10, 11. **Backend Identity mockeado** vía MSW (la historia de uso completa con datos de demo persistidos en `localStorage` para la sesión de dev).
 - `/login`, `/registro` (Credentials + OAuth opcionales).
 - `/perfil` (datos identidad + contacto + corredor).
-- `/perfil/historial` (compras + ventas).
+- `/perfil/historial` (compras + ventas) — UC-10 hidrata desde el módulo Transaction real (ver siguiente rama) en cuanto el dev configura JWT.
 - UC-11 (reseñas) — versión mínima en MVP.
 - Mock adapter `UsersMockAdapter` con datos persistidos en localStorage por sesión de dev.
 
-### feat/transacciones — PR #4
+### feat/transacciones — PR #4 (paralelo)
 
-UCs 03, 06, 07, 08. **Backend mock** (Transaction no expuesto aún).
-- `/dorsales/[id]` enchufa botón "comprar" → flujo de pago (Stripe Elements en modo test).
-- `/compra/confirmada` post-pago.
-- `/compra/[transactionId]` timeline 5 pasos + chat soporte (mock WebSocket o polling).
-- UC-03 disputas — versión mínima (formulario, sin resolución completa).
-- Mock adapter `TransactionsMockAdapter`.
+UCs 03, 06, 07, 08 contra backend Transaction **real** (`localhost:8000`). El backend de Transaction está vivo desde 2026-05-14; el contrato real está en `postman/transaction_bounded_context.postman_collection.json`.
+- **Seller onboarding** (`POST /api/v1/sellers/onboard`) — prerequisito para vender, lanza Stripe Connect.
+- **Reserva** (`POST /api/v1/transactions`) — body `{dorsal_id, buyer_id}` devuelve reservation + Stripe PaymentIntent → Stripe Elements en modo test.
+- **Tracking buyer/seller** — vistas diferenciadas (`GET /api/v1/transactions/buyer/{id}` vs `seller/{id}`). El timeline se compone de eventos: `transfer-in-progress`, `upload-proof`/`proof`, `confirm`, `dispute`.
+- **Upload de prueba de transferencia** — dos rutas: presigned URL (`proof-upload-url` + `proof`) o multipart directo (`upload-proof`).
+- **Disputas** (`POST /api/v1/transactions/{id}/dispute`) — buyer abre disputa; resolución la maneja admin (fuera de scope MVP).
+- **Seller problem reports** (`POST /api/v1/transactions/{id}/seller-problem-reports`) — soporte post-resolución para el vendedor (race rechazó cambio, problema de payout, etc.). Categorías: `buyer_data_issue, race_rejected_transfer, payment_or_payout_issue, other`.
+- **Webhooks Stripe** los maneja el backend; el frontend solo refresca via polling (`refetchInterval: 10s`) hasta que el estado avance.
 
 ---
 
 ## 8. Cómo se incorpora un nuevo dev al proyecto
 
-1. Lee este documento entero (`docs/superpowers/specs/2026-05-09-frontend-architecture-design.md`).
-2. Lee el README del backend (`/path/to/backend/README.md`) para entender los UCs y el contrato.
-3. Lee la Postman collection (`dorsales-api.postman_collection.json`) para ver el contrato real del módulo Catalog.
-4. `pnpm install` en raíz, `cp .env.example .env`, configurar al menos `NEXTAUTH_SECRET`.
-5. `pnpm dev` arranca `apps/web` con MSW activo para módulos no liberados.
-6. Para conectar un módulo al backend real: cambiar `NEXT_PUBLIC_REAL_API_MODULES` y arrancar el backend en `localhost:8000`.
-7. Cualquier feature nueva no trivial: invocar `superpowers:brainstorming` primero (ver `feedback_superpowers` en memoria del proyecto).
+1. Lee el [`README.md`](../../../README.md) (visión general + comandos).
+2. Lee este documento entero para entender la arquitectura (`docs/superpowers/specs/2026-05-09-frontend-architecture-design.md`).
+3. Lee el README del backend (repo paralelo) y las dos Postman: `postman/dorsales-api.postman_collection.json` (Catalog), `postman/transaction_bounded_context.postman_collection.json` (Transaction).
+4. Elige la rama que vas a tomar y lee su doc en [`docs/branches/`](../../branches/).
+5. `pnpm install`, copia `.env.example` a `apps/web/.env.local`, configura al menos `NEXTAUTH_SECRET`.
+6. `pnpm dev` arranca `apps/web` con MSW activo para módulos mockeados.
+7. Para conectar un módulo real, edita `NEXT_PUBLIC_REAL_API_MODULES` en `apps/web/.env.local` y levanta el backend en `localhost:8000`.
+8. Cualquier feature nueva no trivial: invocar `superpowers:brainstorming` primero (ver `feedback_superpowers` en memoria del proyecto).
 
 ---
 
