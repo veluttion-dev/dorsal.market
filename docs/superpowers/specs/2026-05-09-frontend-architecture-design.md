@@ -18,7 +18,7 @@
 **Producto.** Dorsal-market es un marketplace de dorsales de carreras populares con pago en custodia (escrow), modelo BlaBlaCar. Los corredores que no pueden asistir publican su dorsal; los compradores pagan vía Stripe; el dinero se libera cuando ambos confirman el cambio de titularidad.
 
 **Estado de partida del repositorio.**
-- Rama base: `feat/react-native-development` (a partir de `main`).
+- Rama de integración: `feat/foundation` (a partir de `main`). Hasta el 2026-05-14 existió una rama intermedia `feat/react-native-development` que se eliminó al confirmar el stack Next.js+Expo monorepo: foundation pasa a ser directamente la rama "next" sobre la que se mergean las features.
 - Existen 6 mockups HTML en la raíz (`index`, `dorsales`, `dorsal-detalle`, `vender-dorsal`, `compra-confirmada`, `perfil`) con paleta coral (#e8552d) + oliva (#6dab5e/#c8f542), tipografías Outfit + Space Mono, modo dark/light vía `data-theme`.
 - No hay código de aplicación todavía — los mockups son solo referencia visual.
 
@@ -275,14 +275,13 @@ Mientras el backend no exponga el endpoint de presign, el mock adapter devuelve 
 
 ```
 main
- └── feat/react-native-development          (rama base, integración)
-      └── feat/foundation                   PR #1 (scaffolding compartido)
-           ├── feat/dorsales                PR #2 ─┐
-           ├── feat/usuarios                PR #3 ─┼─ se desarrollan EN PARALELO,
-           └── feat/transacciones           PR #4 ─┘  cada una sale directamente de feat/foundation
+ └── feat/foundation                        (rama de integración / "next", long-lived)
+      ├── feat/dorsales                     PR ─┐
+      ├── feat/usuarios                     PR ─┼─ se desarrollan EN PARALELO,
+      └── feat/transacciones                PR ─┘  cada una sale directamente de feat/foundation
 ```
 
-Las tres ramas de features parten de `feat/foundation` **directamente y en paralelo**. Cada dev coge la rama de su slice y avanza sin esperar al resto. La integración la hace cada PR contra `feat/react-native-development` (no entre ellas). Squash merge.
+Las tres ramas de features parten de `feat/foundation` **directamente y en paralelo**. Cada dev coge la rama de su slice y avanza sin esperar al resto. Cada PR de feature va **contra `feat/foundation`**. Cuando se acumule un MVP estable en foundation, se abre un PR de foundation → `main` para release. Squash merge en todas las direcciones.
 
 **Por qué paralelo y no secuencial.**
 - Se incorporan varios desarrolladores al proyecto y no pueden bloquearse entre sí.
@@ -302,7 +301,7 @@ Cada rama es **dueña** de unos directorios y solo toca esos:
 
 Áreas verdaderamente compartidas (toque con coordinación, en un PR aparte si posible): `apps/web/components/layout/nav.tsx`, `apps/web/components/providers.tsx`, `apps/web/lib/http.ts`, `packages/api-client/src/factory.ts`, `packages/api-client/src/http.ts`, `packages/domain/**`.
 
-**Convenciones.** Conventional Commits (`feat(dorsals):`, `fix(auth):`). PR descriptiva con UCs cubiertos, screenshots, follow-up. **Cada PR contra `feat/react-native-development`, no entre ramas.**
+**Convenciones.** Conventional Commits (`feat(dorsals):`, `fix(auth):`). PR descriptiva con UCs cubiertos, screenshots, follow-up. **Cada PR de feature va contra `feat/foundation`, no entre ramas.** Foundation → `main` es PR aparte cuando hay release.
 
 **Alternativas evaluadas.**
 1. **Secuencial** (versión original, descartada el 2026-05-14): bloqueaba a cada dev hasta que el anterior mergeaba.
@@ -530,7 +529,7 @@ Scaffolding del monorepo y todo lo compartido. Sin features de usuario.
 - CI GitHub Actions con turbo cache.
 - Vercel preview deployments.
 - Mover mockups a `mockups/`.
-- Rama: se crea `feat/foundation` explícita partiendo de `feat/react-native-development`, según ADR-012. No se hacen commits directos sobre la rama base.
+- Rama: `feat/foundation` parte de `main` y queda como rama de integración long-lived. Las tres features ramifican directamente desde aquí.
 
 ### feat/dorsales — PR #2 (paralelo)
 
@@ -586,7 +585,6 @@ UCs 03, 06, 07, 08 contra backend Transaction **real** (`localhost:8000`). El ba
 | PWA / manifest / offline | Después de MVP, si valida web |
 | Server Actions de Next.js | Si TanStack Query+adapter resulta verbose |
 | Real-time chat (UC-08): WebSocket vs polling vs Pusher | En `feat/transacciones` |
-| Sustituir `feat/react-native-development` por nombre que refleje el stack actual | Conversación con Alex antes de mergear `feat/foundation` |
 
 ---
 

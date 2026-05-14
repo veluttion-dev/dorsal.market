@@ -111,12 +111,13 @@ El proyecto está diseñado para que **varios desarrolladores trabajen sin pisar
 
 ```
 main
- └── feat/react-native-development          (rama base, integración)
-      └── feat/foundation                   PR #1 — ya mergeable
-           ├── feat/dorsales                ─┐
-           ├── feat/usuarios                ─┼─ EN PARALELO
-           └── feat/transacciones           ─┘
+ └── feat/foundation                        (rama de integración / "next", long-lived)
+      ├── feat/dorsales                     ─┐
+      ├── feat/usuarios                     ─┼─ EN PARALELO
+      └── feat/transacciones                ─┘
 ```
+
+Las features mergean a `feat/foundation`. Cuando foundation acumule un MVP estable, se abre un PR foundation → `main` para release.
 
 Cada rama es **dueña** de un slice del codebase. Si todos respetamos esa ownership, los PRs se mergean sin conflicto:
 
@@ -204,9 +205,9 @@ El HTTP client del frontend inyecta tanto `X-User-Id` como `Authorization: Beare
 
 ## Convenciones
 
-- **Branches**: `feat/<nombre>` para features, `fix/<nombre>` para bugs, `chore/<nombre>` para tooling, `docs/<nombre>` para docs sueltas. Salen de `feat/react-native-development` (la rama base de integración).
+- **Branches**: `feat/<nombre>` para features, `fix/<nombre>` para bugs, `chore/<nombre>` para tooling, `docs/<nombre>` para docs sueltas. Salen de `feat/foundation` (la rama de integración long-lived).
 - **Commits**: [Conventional Commits](https://www.conventionalcommits.org/) — `feat(scope): mensaje`, `fix(scope): mensaje`. Scope = paquete o área (`web`, `api-client`, `schemas`, `dorsals`, `users`, `transactions`, ...).
-- **PRs**: contra `feat/react-native-development`. Squash merge. Descripción incluye: UCs cubiertos, screenshots (si es UI), checklist de test.
+- **PRs**: features → `feat/foundation`. Cuando foundation esté lista para release: `feat/foundation` → `main`. Squash merge. Descripción incluye: UCs cubiertos, screenshots (si es UI), checklist de test.
 - **Tests**: pirámide pragmática. Siempre: dominio puro, schemas (válidos+inválidos), adapters HTTP. Casi siempre: hooks de mutación con invalidación. E2E: 4-6 happy paths.
 - **Skills de superpowers**: para features no triviales, invocar `superpowers:brainstorming` antes de codear, luego `superpowers:writing-plans` para el plan, y `superpowers:executing-plans` (o subagent-driven) para ejecutar.
 

@@ -793,7 +793,7 @@ pnpm --filter @dorsal/web test:e2e
 ```bash
 git push -u origin feat/transacciones
 # PR title: "feat(transacciones): UC-03, UC-06, UC-07, UC-08 — Transaction module"
-# Base: feat/react-native-development
+# Base: feat/foundation
 ```
 
 PR description:

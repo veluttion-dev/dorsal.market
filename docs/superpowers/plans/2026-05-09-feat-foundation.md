@@ -10,13 +10,15 @@
 
 **Spec reference:** `docs/superpowers/specs/2026-05-09-frontend-architecture-design.md` (ADR-001 through ADR-016).
 
+> **Nota histórica (2026-05-14):** este plan se ejecutó originalmente partiendo de `feat/foundation`. Esa rama se eliminó al confirmar el stack; ahora `feat/foundation` es la rama de integración long-lived que sale directamente de `main`.
+
 **Pre-flight branching:**
 ```bash
-git switch feat/react-native-development
+git switch main
 git pull
 git switch -c feat/foundation
 ```
-All commits in this plan land on `feat/foundation`. Final PR target: `feat/react-native-development`.
+All commits in this plan land on `feat/foundation`. Final PR target: `main` (cuando foundation acumule el MVP completo).
 
 ---
 
@@ -3196,9 +3198,9 @@ git commit -m "test(web): add Playwright e2e harness with smoke tests"
 name: CI
 on:
   push:
-    branches: [main, feat/react-native-development, "feat/**"]
+    branches: [main, feat/foundation, "feat/**"]
   pull_request:
-    branches: [main, feat/react-native-development]
+    branches: [main, feat/foundation]
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -3289,7 +3291,7 @@ All four steps must pass.
 git push -u origin feat/foundation
 # Then via GitHub UI (or `gh pr create` if available) open PR
 # Title: "feat(foundation): bootstrap monorepo, web scaffold and mock layer"
-# Base branch: feat/react-native-development
+# Base branch: main
 ```
 
 PR description should reference `docs/superpowers/specs/2026-05-09-frontend-architecture-design.md` and list ADRs covered.

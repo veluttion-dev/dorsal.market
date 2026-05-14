@@ -1,9 +1,9 @@
 name: CI
 on:
   push:
-    branches: [main, feat/react-native-development, "feat/**"]
+    branches: [main, feat/foundation, "feat/**"]
   pull_request:
-    branches: [main, feat/react-native-development]
+    branches: [main, feat/foundation]
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}

@@ -22,7 +22,7 @@ Para entender el modelo de ramas paralelas, lee [ADR-012](../superpowers/specs/2
 
 ## Antes de tomar una rama
 
-1. Asegúrate de que `feat/foundation` está mergeada en `feat/react-native-development` (o como mínimo es la base de tu rama).
+1. Asegúrate de partir de la última versión de `feat/foundation` (`git switch feat/foundation && git pull`).
 2. Lee el [README del proyecto](../../README.md) y el [spec de arquitectura](../superpowers/specs/2026-05-09-frontend-architecture-design.md).
 3. Lee el doc de **tu rama** entero antes de empezar a programar.
 4. Lee el plan correspondiente (`docs/superpowers/plans/2026-05-09-feat-<rama>.md`) cuando vayas a implementar cada task.
