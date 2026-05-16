@@ -1,10 +1,11 @@
 'use client';
-import { Toaster } from '@/components/ui/sonner';
 import { QueryProvider } from '@dorsal/api-client';
 import { SessionProvider } from 'next-auth/react';
-import { ThemeProvider } from 'next-themes';
 import dynamic from 'next/dynamic';
+import { ThemeProvider } from 'next-themes';
+import { NuqsAdapter } from 'nuqs/adapters/next/app';
 import type { ReactNode } from 'react';
+import { Toaster } from '@/components/ui/sonner';
 
 // Client-only: msw/browser must never enter the server bundle.
 const MswBootstrap = dynamic(
@@ -21,11 +22,13 @@ export function Providers({ children }: { children: ReactNode }) {
       disableTransitionOnChange
     >
       <SessionProvider>
-        <QueryProvider>
-          {process.env.NODE_ENV === 'development' && <MswBootstrap />}
-          {children}
-          <Toaster richColors position="bottom-right" />
-        </QueryProvider>
+        <NuqsAdapter>
+          <QueryProvider>
+            {process.env.NODE_ENV === 'development' && <MswBootstrap />}
+            {children}
+            <Toaster richColors position="bottom-right" />
+          </QueryProvider>
+        </NuqsAdapter>
       </SessionProvider>
     </ThemeProvider>
   );
