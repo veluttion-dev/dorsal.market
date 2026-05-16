@@ -1,4 +1,10 @@
-import { ChatMessage, Dispute, PurchaseInput, Transaction, type TimelineStep } from '@dorsal/schemas';
+import {
+  ChatMessage,
+  Dispute,
+  PurchaseInput,
+  type TimelineStep,
+  Transaction,
+} from '@dorsal/schemas';
 import { z } from 'zod';
 import type { HttpClient } from '../http';
 import type { PurchaseResult, TransactionsPort } from '../ports';
@@ -35,11 +41,7 @@ export class TransactionsHttpAdapter implements TransactionsPort {
     );
   }
 
-  async openDispute(
-    id: string,
-    reason: string,
-    evidenceUrls: string[],
-  ): Promise<Dispute> {
+  async openDispute(id: string, reason: string, evidenceUrls: string[]): Promise<Dispute> {
     return Dispute.parse(
       await this.http.post(`api/v1/transactions/${id}/dispute`, {
         body: { reason, evidence_urls: evidenceUrls },
@@ -48,9 +50,7 @@ export class TransactionsHttpAdapter implements TransactionsPort {
   }
 
   async listMessages(id: string): Promise<ChatMessage[]> {
-    return z
-      .array(ChatMessage)
-      .parse(await this.http.get(`api/v1/transactions/${id}/messages`));
+    return z.array(ChatMessage).parse(await this.http.get(`api/v1/transactions/${id}/messages`));
   }
 
   async sendMessage(id: string, content: string): Promise<ChatMessage> {

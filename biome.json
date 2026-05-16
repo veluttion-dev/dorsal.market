@@ -3,7 +3,15 @@
   "vcs": { "enabled": true, "clientKind": "git", "useIgnoreFile": true },
   "files": {
     "ignoreUnknown": true,
-    "ignore": ["**/.next", "**/dist", "**/node_modules", "**/.turbo", "mockups/**"]
+    "ignore": [
+      "**/.next",
+      "**/dist",
+      "**/node_modules",
+      "**/.turbo",
+      "mockups/**",
+      "postman/**",
+      "**/mockServiceWorker.js"
+    ]
   },
   "formatter": { "enabled": true, "indentStyle": "space", "indentWidth": 2, "lineWidth": 100 },
   "javascript": {

@@ -10,7 +10,10 @@
 
 **Spec reference:** `docs/superpowers/specs/2026-05-09-frontend-architecture-design.md` (ADR-001 through ADR-016).
 
-> **Nota histórica (2026-05-14):** este plan se ejecutó originalmente partiendo de `feat/foundation`. Esa rama se eliminó al confirmar el stack; ahora `feat/foundation` es la rama de integración long-lived que sale directamente de `main`.
+> **Nota histórica (2026-05-14):** este plan ya se ejecutó. Es un registro de cómo se hizo, no algo a re-ejecutar. Desde entonces han cambiado varias cosas — el código actual del repo es la verdad, no este plan:
+> - La rama intermedia `feat/react-native-development` se eliminó: `feat/foundation` sale ahora directamente de `main` y es la rama de integración long-lived.
+> - **Next.js 15.0.3 → 16.2.6** (fix del CVE-2026-44578). Con Next 16, Turbopack es el bundler por defecto: el script `dev` ya **no** lleva `--turbo` y `next.config.ts` no tiene hook `webpack` (la exclusión de `msw/browser` se resuelve con `next/dynamic({ ssr: false })` en `components/msw-bootstrap.tsx`).
+> - `apps/web/middleware.ts` se renombró a `apps/web/proxy.ts` (convención de Next 16).
 
 **Pre-flight branching:**
 ```bash

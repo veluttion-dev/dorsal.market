@@ -1,7 +1,7 @@
+import { Providers } from '@/components/providers';
 import type { Metadata } from 'next';
 import { Outfit, Space_Mono } from 'next/font/google';
 import type { ReactNode } from 'react';
-import { Providers } from '@/components/providers';
 import './globals.css';
 
 const outfit = Outfit({ subsets: ['latin'], variable: '--font-outfit', display: 'swap' });
@@ -20,11 +20,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html
-      lang="es"
-      className={`${outfit.variable} ${spaceMono.variable}`}
-      suppressHydrationWarning
-    >
+    <html lang="es" className={`${outfit.variable} ${spaceMono.variable}`} suppressHydrationWarning>
       <body>
         <Providers>{children}</Providers>
       </body>

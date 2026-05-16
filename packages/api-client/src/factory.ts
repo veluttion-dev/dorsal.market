@@ -5,14 +5,8 @@ import {
   UploadsMockAdapter,
   UsersHttpAdapter,
 } from './adapters';
-import { createHttp, type HttpClient, type HttpClientOptions } from './http';
-import type {
-  DorsalsPort,
-  ReviewsPort,
-  TransactionsPort,
-  UploadsPort,
-  UsersPort,
-} from './ports';
+import { type HttpClient, type HttpClientOptions, createHttp } from './http';
+import type { DorsalsPort, ReviewsPort, TransactionsPort, UploadsPort, UsersPort } from './ports';
 
 export interface Api {
   http: HttpClient;

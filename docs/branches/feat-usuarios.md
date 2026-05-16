@@ -58,7 +58,7 @@ packages/api-client/src/{ports,adapters,msw}/reviews*.ts
 ## Zonas compartidas (coordina antes de tocar)
 
 - `apps/web/lib/auth.ts` y `apps/web/auth.config.ts` — auth scaffolding ya viene de foundation. Si necesitas añadir el `token` al JWT callback (por ejemplo, para que `feat/transacciones` lo lea), **acordadlo** y mejor hacerlo en un PR aparte `chore/auth-jwt-token`.
-- `apps/web/middleware.ts` — el matcher ya existe. Si añades rutas protegidas nuevas, ajusta `authConfig.callbacks.authorized` en `auth.config.ts`.
+- `apps/web/proxy.ts` — el matcher ya existe. Si añades rutas protegidas nuevas, ajusta `authConfig.callbacks.authorized` en `auth.config.ts`.
 - `apps/web/app/(app)/layout.tsx` — si añades el redirect a `/perfil/completar` cuando el perfil está incompleto, ese cambio es **compartido** (afecta a las tres ramas). Tu PR debe documentarlo y los demás se rebasan.
 - `apps/web/app/(app)/perfil/historial/page.tsx` — la comparte con `feat/transacciones` (ver UC-10 arriba).
 - `apps/web/components/layout/nav.tsx` — solo si quieres mostrar avatar/nombre del user logueado.

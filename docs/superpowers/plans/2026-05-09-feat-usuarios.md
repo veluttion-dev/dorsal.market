@@ -613,27 +613,28 @@ export default async function AppLayout({ children }: { children: React.ReactNod
 }
 ```
 
-Add an `x-pathname` header in `middleware.ts` so the layout sees the URL:
+Add an `x-pathname` header in `apps/web/proxy.ts` so the layout sees the URL.
+Foundation already ships a `proxy.ts` (the Next.js 16 successor to `middleware.ts`)
+that wires NextAuth — **merge** the header injection into it, don't overwrite:
 
 ```ts
-// middleware.ts (additions)
+// apps/web/proxy.ts
+import NextAuth from 'next-auth';
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
-import NextAuth from 'next-auth';
 import { authConfig } from './auth.config';
 
-const { auth: middleware } = NextAuth(authConfig);
+const { auth: authProxy } = NextAuth(authConfig);
 
-export default async function (req: NextRequest) {
-  const res = NextResponse.next();
+export default async function proxy(req: NextRequest) {
+  // Run the NextAuth proxy, then attach the pathname for server layouts.
+  const res = (await authProxy(req as never, undefined as never)) as unknown as NextResponse;
   res.headers.set('x-pathname', req.nextUrl.pathname);
   return res;
 }
 
 export const config = { matcher: ['/((?!api/auth|_next/static|_next/image|favicon.ico).*)'] };
 ```
-
-(If `middleware.ts` already exists from foundation, merge the header injection into it.)
 
 - [ ] **Step 3: Verify**
 

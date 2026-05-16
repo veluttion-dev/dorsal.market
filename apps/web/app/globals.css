@@ -23,7 +23,7 @@
   --shadow-elevated: 0 12px 40px rgba(0, 0, 0, 0.4);
 }
 
-[data-theme='light'] {
+[data-theme="light"] {
   --bg-primary: #fafaf8;
   --bg-secondary: #f2f1ed;
   --bg-card: #ffffff;
@@ -40,9 +40,7 @@
   --olive-subtle: rgba(74, 124, 63, 0.1);
   --border: rgba(0, 0, 0, 0.08);
   --border-hover: rgba(0, 0, 0, 0.15);
-  --shadow-card:
-    0 2px 12px rgba(0, 0, 0, 0.06),
-    0 1px 3px rgba(0, 0, 0, 0.04);
+  --shadow-card: 0 2px 12px rgba(0, 0, 0, 0.06), 0 1px 3px rgba(0, 0, 0, 0.04);
   --shadow-elevated: 0 12px 40px rgba(0, 0, 0, 0.1);
 }
 

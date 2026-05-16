@@ -1,10 +1,4 @@
-import type {
-  LoginInput,
-  RegisterInput,
-  RunnerProfile,
-  SessionUser,
-  User,
-} from '@dorsal/schemas';
+import type { RegisterInput, RunnerProfile, SessionUser, User } from '@dorsal/schemas';
 
 export interface UpdateProfileInput {
   contact?: User['contact'];

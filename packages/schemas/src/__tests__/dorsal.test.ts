@@ -83,13 +83,17 @@ describe('DorsalListResponse', () => {
 
 describe('PublishDorsalInput', () => {
   it('accepts a draft (publish=false) with only photo_url', () => {
-    expect(PublishDorsalInput.parse({ publish: false, photo_url: 'https://x/y.jpg' })).toMatchObject({
+    expect(
+      PublishDorsalInput.parse({ publish: false, photo_url: 'https://x/y.jpg' }),
+    ).toMatchObject({
       publish: false,
     });
   });
 
   it('rejects publish=true without required fields', () => {
-    expect(() => PublishDorsalInput.parse({ publish: true, photo_url: 'https://x/y.jpg' })).toThrow();
+    expect(() =>
+      PublishDorsalInput.parse({ publish: true, photo_url: 'https://x/y.jpg' }),
+    ).toThrow();
   });
 });
 

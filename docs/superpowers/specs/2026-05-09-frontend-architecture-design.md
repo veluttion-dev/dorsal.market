@@ -70,7 +70,7 @@ Cada decisión sigue el formato:
 
 ### ADR-001 — Stack dual web + móvil en monorepo (no React Native Web)
 
-**Decidido.** Next.js 15 (App Router, TypeScript) para web en `apps/web`. Expo (React Native) para móvil en `apps/mobile`, scaffolded inicialmente vacío y desarrollado en una fase posterior. Compartimos paquetes en `packages/`.
+**Decidido.** Next.js 16 (App Router, TypeScript) para web en `apps/web`. Expo (React Native) para móvil en `apps/mobile`, scaffolded inicialmente vacío y desarrollado en una fase posterior. Compartimos paquetes en `packages/`.
 
 **Alternativas evaluadas.**
 1. **Expo + React Native Web como única base.** Habría dado un solo codebase para web y móvil.
@@ -296,7 +296,7 @@ Cada rama es **dueña** de unos directorios y solo toca esos:
 | Rama | Owns (cambia libremente) | Shared (avisar antes de tocar) |
 |---|---|---|
 | `feat/dorsales` | `apps/web/app/(app)/dorsales/**`, `apps/web/app/(app)/vender/**`, `apps/web/features/dorsals/**`, `apps/web/components/dorsal/**` | `packages/schemas/src/dorsal.ts`, `packages/api-client/src/{ports,adapters,msw}/dorsals*`, `packages/api-client/src/adapters/uploads-mock.ts` |
-| `feat/usuarios` | `apps/web/app/(auth)/**`, `apps/web/app/(app)/perfil/**`, `apps/web/features/users/**`, `apps/web/components/user/**` | `packages/schemas/src/user.ts`, `packages/api-client/src/{ports,adapters,msw}/users*`, `apps/web/lib/auth.ts`, `apps/web/middleware.ts` |
+| `feat/usuarios` | `apps/web/app/(auth)/**`, `apps/web/app/(app)/perfil/**`, `apps/web/features/users/**`, `apps/web/components/user/**` | `packages/schemas/src/user.ts`, `packages/api-client/src/{ports,adapters,msw}/users*`, `apps/web/lib/auth.ts`, `apps/web/proxy.ts` |
 | `feat/transacciones` | `apps/web/app/(app)/compra/**`, `apps/web/features/transactions/**`, `apps/web/components/transaction/**` | `packages/schemas/src/transaction.ts`, `packages/api-client/src/{ports,adapters,msw}/transactions*` |
 
 Áreas verdaderamente compartidas (toque con coordinación, en un PR aparte si posible): `apps/web/components/layout/nav.tsx`, `apps/web/components/providers.tsx`, `apps/web/lib/http.ts`, `packages/api-client/src/factory.ts`, `packages/api-client/src/http.ts`, `packages/domain/**`.
@@ -372,7 +372,7 @@ Sentry y analytics en `feat/foundation` con env vars vacías por defecto (no env
 ```
 dorsal.market/
 ├── apps/
-│   ├── web/                        # Next.js 15 — App Router (PRIORIDAD MVP)
+│   ├── web/                        # Next.js 16 — App Router (PRIORIDAD MVP)
 │   └── mobile/                     # Expo + React Native (fase posterior, scaffold vacío)
 ├── packages/
 │   ├── api-client/                 # Puertos + adapters HTTP/mock + hooks TanStack Query
@@ -523,7 +523,7 @@ NEXT_PUBLIC_SENTRY_DSN=
 
 Scaffolding del monorepo y todo lo compartido. Sin features de usuario.
 - Monorepo pnpm + Turborepo + tsconfig + Biome.
-- `apps/web` con Next.js 15, App Router, Tailwind+shadcn, next-themes, Auth.js v5 con mock provider.
+- `apps/web` con Next.js 16, App Router, Tailwind+shadcn, next-themes, Auth.js v5 con mock provider.
 - `packages/{schemas, api-client, domain, ui-tokens}` con interfaces y schemas base.
 - MSW dev server con handlers vacíos.
 - CI GitHub Actions con turbo cache.

@@ -1,7 +1,7 @@
 import { colors, fonts, radius, shadows } from '@dorsal/ui-tokens';
+import forms from '@tailwindcss/forms';
 import type { Config } from 'tailwindcss';
 import animate from 'tailwindcss-animate';
-import forms from '@tailwindcss/forms';
 
 const config: Config = {
   darkMode: ['class', '[data-theme="dark"]'],

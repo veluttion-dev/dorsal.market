@@ -1,4 +1,4 @@
-import { fromHttpStatus, NetworkError } from './errors';
+import { NetworkError, fromHttpStatus } from './errors';
 
 export type GetUserId = () => string | null | undefined;
 
@@ -27,8 +27,11 @@ function buildUrl(base: string, path: string, query?: HttpRequest['query']): str
   if (query) {
     for (const [k, v] of Object.entries(query)) {
       if (v === undefined) continue;
-      if (Array.isArray(v)) v.forEach((item) => url.searchParams.append(k, String(item)));
-      else url.searchParams.append(k, String(v));
+      if (Array.isArray(v)) {
+        for (const item of v) url.searchParams.append(k, String(item));
+      } else {
+        url.searchParams.append(k, String(v));
+      }
     }
   }
   return url.toString();

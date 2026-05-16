@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'vitest';
 import type { TimelineStep } from '@dorsal/schemas';
+import { describe, expect, it } from 'vitest';
 import { computeTimelineProgress } from '../timeline';
 
 describe('computeTimelineProgress', () => {

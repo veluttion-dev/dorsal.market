@@ -26,7 +26,7 @@ Marketplace de **dorsales de carreras populares** con pago en custodia (escrow).
 | **Monorepo** | pnpm workspaces + Turborepo | `node_modules` minimalista, cache de build/test por paquete |
 | **Lenguaje** | TypeScript 5.6 estricto (`exactOptionalPropertyTypes`, `noUncheckedIndexedAccess`) | Tipado serio en límites entre módulos |
 | **Runtime** | Node 20 LTS | Definido en `.nvmrc` y `package.json#engines` |
-| **Web framework** | Next.js 15 (App Router, Server Components) | SSR/SSG real → SEO crítico para un marketplace |
+| **Web framework** | Next.js 16 (App Router, Server Components) | SSR/SSG real → SEO crítico para un marketplace |
 | **Estilos** | Tailwind CSS + shadcn/ui + CSS vars | Tokens del mockup mapeados a Tailwind theme; primitivos accesibles (Radix) |
 | **Theming** | next-themes (atributo `data-theme`) | Dark/light sin flash en SSR |
 | **Auth** | Auth.js v5 (Credentials + Google + Facebook) | Sesión por cookie HTTP-only firmada (mejor que localStorage) |
@@ -53,7 +53,7 @@ Cualquier decisión arquitectónica está documentada como ADR en [`docs/superpo
 ```
 dorsal.market/
 ├── apps/
-│   ├── web/                          # Next.js 15 — la app web (prioritaria)
+│   ├── web/                          # Next.js 16 — la app web (prioritaria)
 │   └── mobile/                       # Expo (placeholder; se implementará después)
 ├── packages/
 │   ├── api-client/                   # Cliente HTTP + puertos + adapters (HTTP/Mock) + MSW + TanStack Query provider

@@ -13,15 +13,15 @@ const INTEGRITY_CHECKSUM = '00729d72e3b82faf54ca8b9621dbb96f';
 const IS_MOCKED_RESPONSE = Symbol('isMockedResponse');
 const activeClientIds = new Set();
 
-self.addEventListener('install', function () {
+self.addEventListener('install', () => {
   self.skipWaiting();
 });
 
-self.addEventListener('activate', function (event) {
+self.addEventListener('activate', (event) => {
   event.waitUntil(self.clients.claim());
 });
 
-self.addEventListener('message', async function (event) {
+self.addEventListener('message', async (event) => {
   const clientId = event.source.id;
   if (!clientId || !self.clients) return;
   const client = await self.clients.get(clientId);
@@ -42,7 +42,10 @@ self.addEventListener('message', async function (event) {
     }
     case 'MOCK_ACTIVATE': {
       activeClientIds.add(clientId);
-      sendToClient(client, { type: 'MOCKING_ENABLED', payload: { client: { id: client.id, frameType: client.frameType } } });
+      sendToClient(client, {
+        type: 'MOCKING_ENABLED',
+        payload: { client: { id: client.id, frameType: client.frameType } },
+      });
       break;
     }
     case 'MOCK_DEACTIVATE': {
@@ -58,7 +61,7 @@ self.addEventListener('message', async function (event) {
   }
 });
 
-self.addEventListener('fetch', function (event) {
+self.addEventListener('fetch', (event) => {
   const { request } = event;
   if (request.mode === 'navigate') return;
   if (request.cache === 'only-if-cached' && request.mode !== 'same-origin') return;
@@ -72,20 +75,24 @@ async function handleRequest(event, requestId) {
   const client = await resolveMainClient(event);
   const response = await getResponse(event, client, requestId);
   if (client && activeClientIds.has(client.id)) {
-    (async function () {
+    (async () => {
       const responseClone = response.clone();
-      sendToClient(client, {
-        type: 'RESPONSE',
-        payload: {
-          requestId,
-          isMockedResponse: IS_MOCKED_RESPONSE in response,
-          type: responseClone.type,
-          status: responseClone.status,
-          statusText: responseClone.statusText,
-          body: responseClone.body,
-          headers: Object.fromEntries(responseClone.headers.entries()),
+      sendToClient(
+        client,
+        {
+          type: 'RESPONSE',
+          payload: {
+            requestId,
+            isMockedResponse: IS_MOCKED_RESPONSE in response,
+            type: responseClone.type,
+            status: responseClone.status,
+            statusText: responseClone.statusText,
+            body: responseClone.body,
+            headers: Object.fromEntries(responseClone.headers.entries()),
+          },
         },
-      }, [responseClone.body]);
+        [responseClone.body],
+      );
     })();
   }
   return response;

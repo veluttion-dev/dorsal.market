@@ -45,10 +45,9 @@ describe('createHttp', () => {
 
   it('throws ValidationError on 422 with detail', async () => {
     fetchMock.mockResolvedValueOnce(
-      new Response(
-        '{"detail":[{"loc":["body","email"],"msg":"invalid","type":"value_error"}]}',
-        { status: 422 },
-      ),
+      new Response('{"detail":[{"loc":["body","email"],"msg":"invalid","type":"value_error"}]}', {
+        status: 422,
+      }),
     );
     await expect(http.post('/x', { body: {} })).rejects.toBeInstanceOf(ValidationError);
   });
