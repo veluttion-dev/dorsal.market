@@ -1,9 +1,15 @@
 'use client';
-import type { Distance, PaymentMethod } from '@dorsal/schemas';
-import { parseAsArrayOf, parseAsInteger, parseAsString, parseAsStringEnum, useQueryStates } from 'nuqs';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import type { Distance, PaymentMethod } from '@dorsal/schemas';
+import {
+  parseAsArrayOf,
+  parseAsInteger,
+  parseAsString,
+  parseAsStringEnum,
+  useQueryStates,
+} from 'nuqs';
 import { DistanceChips } from './distance-chips.client';
 import { PriceRange } from './price-range.client';
 

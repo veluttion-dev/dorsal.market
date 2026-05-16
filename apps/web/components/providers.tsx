@@ -1,11 +1,11 @@
 'use client';
+import { Toaster } from '@/components/ui/sonner';
 import { QueryProvider } from '@dorsal/api-client';
 import { SessionProvider } from 'next-auth/react';
-import dynamic from 'next/dynamic';
 import { ThemeProvider } from 'next-themes';
+import dynamic from 'next/dynamic';
 import { NuqsAdapter } from 'nuqs/adapters/next/app';
 import type { ReactNode } from 'react';
-import { Toaster } from '@/components/ui/sonner';
 
 // Client-only: msw/browser must never enter the server bundle.
 const MswBootstrap = dynamic(

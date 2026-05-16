@@ -1,8 +1,8 @@
+import { distanceLabel } from '@/features/dorsals/lib/distances';
 import { formatPrice, formatRaceDate } from '@dorsal/domain';
 import type { DorsalSummary } from '@dorsal/schemas';
 import Image from 'next/image';
 import Link from 'next/link';
-import { distanceLabel } from '@/features/dorsals/lib/distances';
 import { PaymentMethodPills } from './payment-method-pills';
 
 export function DorsalCard({ dorsal }: { dorsal: DorsalSummary }) {

@@ -26,9 +26,10 @@ describe('parseFiltersFromSearchParams', () => {
   });
 
   it('parses page and page_size with defaults absent', () => {
-    expect(
-      parseFiltersFromSearchParams(new URLSearchParams('page=2&page_size=12')),
-    ).toMatchObject({ page: 2, page_size: 12 });
+    expect(parseFiltersFromSearchParams(new URLSearchParams('page=2&page_size=12'))).toMatchObject({
+      page: 2,
+      page_size: 12,
+    });
   });
 });
 
