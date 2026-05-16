@@ -1,3 +1,4 @@
+import type { SearchDorsalsQuery } from '@dorsal/schemas';
 import { describe, expect, it } from 'vitest';
 import { parseFiltersFromSearchParams, serializeFiltersToSearchParams } from '../lib/filters-url';
 
@@ -44,12 +45,12 @@ describe('serializeFiltersToSearchParams', () => {
   });
 
   it('round-trips', () => {
-    const filters = {
+    const filters: SearchDorsalsQuery = {
       race_name: 'valencia',
-      distance: ['10k', '21k'] as const,
+      distance: ['10k', '21k'],
       price_max: 80,
-      sort_by: 'price' as const,
-      sort_order: 'asc' as const,
+      sort_by: 'price',
+      sort_order: 'asc',
     };
     const back = parseFiltersFromSearchParams(serializeFiltersToSearchParams(filters));
     expect(back).toMatchObject(filters);
