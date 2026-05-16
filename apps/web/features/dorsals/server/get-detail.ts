@@ -1,6 +1,6 @@
 import 'server-only';
-import { NotFoundError } from '@dorsal/api-client';
 import { getServerApi } from '@/lib/api';
+import { NotFoundError } from '@dorsal/api-client';
 
 export async function getDorsalDetail(id: string) {
   const api = await getServerApi();

@@ -1,7 +1,7 @@
 'use client';
-import type { Distance } from '@dorsal/schemas';
 import { distanceLabel } from '@/features/dorsals/lib/distances';
 import { cn } from '@/lib/utils';
+import type { Distance } from '@dorsal/schemas';
 
 const ALL: Distance[] = ['5k', '10k', '21k', '42k', 'trail', 'ultra'];
 

@@ -1,9 +1,9 @@
 'use client';
+import { usePresignPhoto } from '@/features/dorsals/hooks/use-presign-photo';
+import { cn } from '@/lib/utils';
 import { Image as ImageIcon, Upload, X } from 'lucide-react';
 import { useCallback, useState } from 'react';
 import { useDropzone } from 'react-dropzone';
-import { usePresignPhoto } from '@/features/dorsals/hooks/use-presign-photo';
-import { cn } from '@/lib/utils';
 
 /**
  * Photo dropzone. `value` is the persisted photo URL; `onChange` fires with the
@@ -44,8 +44,7 @@ export function PhotoUpload({
     <div className="space-y-2">
       {preview ? (
         <div className="relative aspect-video overflow-hidden rounded-lg border border-border bg-bg-elevated">
-          {/* Preview is a local object URL or a remote URL — plain <img> is fine. */}
-          {/* biome-ignore lint/a11y/useAltText: decorative preview of the uploaded file */}
+          {/* Preview may be a blob: object URL — plain <img>, not next/image. */}
           <img src={preview} alt="Vista previa del dorsal" className="h-full w-full object-cover" />
           <button
             type="button"

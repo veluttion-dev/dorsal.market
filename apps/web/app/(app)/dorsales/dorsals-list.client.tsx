@@ -1,8 +1,19 @@
 'use client';
-import type { Distance, DorsalListResponse, PaymentMethod, SearchDorsalsQuery } from '@dorsal/schemas';
-import { parseAsArrayOf, parseAsInteger, parseAsString, parseAsStringEnum, useQueryStates } from 'nuqs';
 import { DorsalGrid } from '@/components/dorsal/dorsal-grid';
 import { useDorsalsList } from '@/features/dorsals/hooks/use-dorsals-list';
+import type {
+  Distance,
+  DorsalListResponse,
+  PaymentMethod,
+  SearchDorsalsQuery,
+} from '@dorsal/schemas';
+import {
+  parseAsArrayOf,
+  parseAsInteger,
+  parseAsString,
+  parseAsStringEnum,
+  useQueryStates,
+} from 'nuqs';
 import { Pagination } from './pagination';
 
 const distances: Distance[] = ['5k', '10k', '21k', '42k', 'trail', 'ultra'];

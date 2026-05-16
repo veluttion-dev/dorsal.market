@@ -1,7 +1,7 @@
 'use client';
+import { useApi } from '@/lib/api-client';
 import type { PublishDorsalInput } from '@dorsal/schemas';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { useApi } from '@/lib/api-client';
 
 export function usePublishDorsal() {
   const api = useApi();

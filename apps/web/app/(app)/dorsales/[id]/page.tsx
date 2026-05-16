@@ -1,13 +1,13 @@
-import { formatPrice, formatRaceDate } from '@dorsal/domain';
-import type { Metadata } from 'next';
-import Image from 'next/image';
-import { notFound } from 'next/navigation';
 import { IncludedItemsList } from '@/components/dorsal/included-items-list';
 import { PaymentMethodPills } from '@/components/dorsal/payment-method-pills';
 import { SellerCard } from '@/components/dorsal/seller-card';
 import { distanceLabel } from '@/features/dorsals/lib/distances';
 import { getDorsalDetail } from '@/features/dorsals/server/get-detail';
 import { getServerApi } from '@/lib/api';
+import { formatPrice, formatRaceDate } from '@dorsal/domain';
+import type { Metadata } from 'next';
+import Image from 'next/image';
+import { notFound } from 'next/navigation';
 
 export const revalidate = 300;
 

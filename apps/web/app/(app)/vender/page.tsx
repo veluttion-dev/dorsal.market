@@ -1,5 +1,5 @@
-import type { Metadata } from 'next';
 import { PublishWizard } from '@/features/dorsals/components/publish-wizard.client';
+import type { Metadata } from 'next';
 
 export const metadata: Metadata = { title: 'Vender dorsal' };
 

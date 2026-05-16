@@ -1,15 +1,14 @@
-import type { Metadata } from 'next';
 import { DorsalFilters } from '@/components/dorsal/dorsal-filters.client';
 import { parseFiltersFromSearchParams } from '@/features/dorsals/lib/filters-url';
 import { searchDorsals } from '@/features/dorsals/server/search';
+import type { Metadata } from 'next';
 import { DorsalsListClient } from './dorsals-list.client';
 
 type SearchParams = { [k: string]: string | string[] | undefined };
 
 export const metadata: Metadata = {
   title: 'Explorar dorsales',
-  description:
-    'Encuentra dorsales en venta de las principales carreras populares en España.',
+  description: 'Encuentra dorsales en venta de las principales carreras populares en España.',
 };
 
 export default async function DorsalesPage({

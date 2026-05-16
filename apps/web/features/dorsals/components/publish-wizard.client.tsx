@@ -1,10 +1,4 @@
 'use client';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { type Distance, type PaymentMethod, PublishDorsalInput } from '@dorsal/schemas';
-import { Camera, CreditCard, MapPin, Phone, Trophy } from 'lucide-react';
-import { useRouter } from 'next/navigation';
-import { useForm } from 'react-hook-form';
-import { toast } from 'sonner';
 import { FormSection } from '@/components/form/form-section';
 import { PhotoUpload } from '@/components/form/photo-upload.client';
 import { Button } from '@/components/ui/button';
@@ -13,6 +7,12 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { usePublishDorsal } from '@/features/dorsals/hooks/use-publish-dorsal';
 import { distanceLabel } from '@/features/dorsals/lib/distances';
+import { type Distance, type PaymentMethod, PublishDorsalInput } from '@dorsal/schemas';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { Camera, CreditCard, MapPin, Phone, Trophy } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { useForm } from 'react-hook-form';
+import { toast } from 'sonner';
 
 type FormValues = PublishDorsalInput;
 
@@ -113,9 +113,11 @@ export function PublishWizard() {
           {itemKeys.map((k) => (
             <label
               key={k}
+              htmlFor={`item-${k}`}
               className="flex items-center gap-2 rounded-md border border-border bg-bg-elevated px-3 py-2.5 text-sm"
             >
               <Checkbox
+                id={`item-${k}`}
                 checked={form.watch(`included_items.${k}`)}
                 onCheckedChange={(c) => form.setValue(`included_items.${k}`, c === true)}
               />
@@ -146,9 +148,11 @@ export function PublishWizard() {
               {payments.map((p) => (
                 <label
                   key={p}
+                  htmlFor={`pay-${p}`}
                   className="flex items-center gap-1.5 rounded-full border border-border bg-bg-elevated px-3 py-1 text-sm"
                 >
                   <Checkbox
+                    id={`pay-${p}`}
                     checked={form.watch('payment_methods')?.includes(p) ?? false}
                     onCheckedChange={(c) => {
                       const current = form.getValues('payment_methods') ?? [];
@@ -176,15 +180,17 @@ export function PublishWizard() {
             <Label htmlFor="contact_email">Email</Label>
             <Input id="contact_email" type="email" {...form.register('contact.email')} />
           </div>
-          <label className="flex items-center gap-2 text-sm">
+          <label htmlFor="phone_visible" className="flex items-center gap-2 text-sm">
             <Checkbox
+              id="phone_visible"
               checked={form.watch('contact.phone_visible')}
               onCheckedChange={(c) => form.setValue('contact.phone_visible', c === true)}
             />
             Mostrar teléfono
           </label>
-          <label className="flex items-center gap-2 text-sm">
+          <label htmlFor="email_visible" className="flex items-center gap-2 text-sm">
             <Checkbox
+              id="email_visible"
               checked={form.watch('contact.email_visible')}
               onCheckedChange={(c) => form.setValue('contact.email_visible', c === true)}
             />
@@ -203,7 +209,12 @@ export function PublishWizard() {
       </FormSection>
 
       <div className="flex items-center justify-end gap-3">
-        <Button type="button" variant="outline" disabled={publish.isPending} onClick={submitAsDraft}>
+        <Button
+          type="button"
+          variant="outline"
+          disabled={publish.isPending}
+          onClick={submitAsDraft}
+        >
           Guardar borrador
         </Button>
         <Button type="submit" disabled={publish.isPending}>
