@@ -2,7 +2,7 @@
 import { usePresignPhoto } from '@/features/dorsals/hooks/use-presign-photo';
 import { cn } from '@/lib/utils';
 import { Image as ImageIcon, Upload, X } from 'lucide-react';
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useDropzone } from 'react-dropzone';
 
 /**
@@ -17,7 +17,22 @@ export function PhotoUpload({
   onChange: (url: string | null) => void;
 }) {
   const [preview, setPreview] = useState<string | null>(value);
+  const objectUrlRef = useRef<string | null>(null);
   const presign = usePresignPhoto();
+
+  const setPreviewUrl = useCallback((next: string | null) => {
+    if (objectUrlRef.current && objectUrlRef.current !== next) {
+      URL.revokeObjectURL(objectUrlRef.current);
+    }
+    objectUrlRef.current = next?.startsWith('blob:') ? next : null;
+    setPreview(next);
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (objectUrlRef.current) URL.revokeObjectURL(objectUrlRef.current);
+    };
+  }, []);
 
   const onDrop = useCallback(
     (accepted: File[]) => {
@@ -25,12 +40,12 @@ export function PhotoUpload({
       if (!file) return;
       presign.mutate(file, {
         onSuccess: ({ finalUrl, previewUrl }) => {
-          setPreview(previewUrl);
+          setPreviewUrl(previewUrl);
           onChange(finalUrl);
         },
       });
     },
-    [presign, onChange],
+    [presign, onChange, setPreviewUrl],
   );
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
@@ -49,7 +64,7 @@ export function PhotoUpload({
           <button
             type="button"
             onClick={() => {
-              setPreview(null);
+              setPreviewUrl(null);
               onChange(null);
             }}
             className="absolute right-2 top-2 rounded-full bg-bg-primary/80 p-1.5 text-text-primary hover:bg-bg-primary"

@@ -90,10 +90,68 @@ describe('PublishDorsalInput', () => {
     });
   });
 
+  it('normalizes empty form fields before validating optional draft data', () => {
+    const parsed = PublishDorsalInput.parse({
+      publish: false,
+      photo_url: 'https://x/y.jpg',
+      race_name: '',
+      bib_number: '',
+      race_date: '',
+      location: '',
+      distance: '',
+      start_corral: '',
+      included_items: { chip: false, shirt: false, bag: false, medal: false, refreshments: false },
+      price_amount: Number.NaN,
+      payment_methods: [],
+      contact: { phone: '', email: '', phone_visible: true, email_visible: true },
+      sale_reason: '',
+    });
+
+    expect(parsed).toMatchObject({
+      publish: false,
+      contact: { phone: null, email: null, phone_visible: true, email_visible: true },
+      start_corral: null,
+      sale_reason: null,
+    });
+    expect(parsed.race_name).toBeUndefined();
+    expect(parsed.price_amount).toBeUndefined();
+  });
+
+  it('accepts publishing with phone contact and an empty email input', () => {
+    const parsed = PublishDorsalInput.parse({
+      publish: true,
+      photo_url: 'https://example.com/race.jpg',
+      race_name: 'Madrid Corre',
+      bib_number: '777',
+      race_date: '2027-04-15',
+      location: 'Madrid',
+      distance: '10k',
+      included_items: { chip: true, shirt: false, bag: false, medal: true, refreshments: false },
+      price_amount: 35,
+      payment_methods: ['bizum'],
+      contact: { phone: '611111111', email: '', phone_visible: true, email_visible: false },
+      sale_reason: 'Schedule conflict',
+    });
+
+    expect(parsed.contact?.email).toBeNull();
+  });
+
   it('rejects publish=true without required fields', () => {
     expect(() =>
       PublishDorsalInput.parse({ publish: true, photo_url: 'https://x/y.jpg' }),
     ).toThrow();
+  });
+
+  it('reports missing publish fields on their own paths', () => {
+    const result = PublishDorsalInput.safeParse({ publish: true, photo_url: 'https://x/y.jpg' });
+
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      const paths = result.error.issues.map((issue) => issue.path.join('.'));
+      expect(paths).toContain('race_name');
+      expect(paths).toContain('race_date');
+      expect(paths).toContain('payment_methods');
+    }
   });
 });
 

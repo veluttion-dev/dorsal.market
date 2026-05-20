@@ -20,15 +20,28 @@ describe('parseFiltersFromSearchParams', () => {
     expect(out.price_max).toBe(50);
   });
 
-  it('drops invalid values', () => {
-    const sp = new URLSearchParams('distance=marathon&sort_by=relevance');
-    expect(parseFiltersFromSearchParams(sp)).toEqual({});
+  it('drops invalid values while keeping valid filters', () => {
+    const sp = new URLSearchParams('distance=10k&distance=marathon&sort_by=relevance');
+    expect(parseFiltersFromSearchParams(sp)).toEqual({ distance: ['10k'] });
   });
 
   it('parses page and page_size with defaults absent', () => {
     expect(parseFiltersFromSearchParams(new URLSearchParams('page=2&page_size=12'))).toMatchObject({
       page: 2,
       page_size: 12,
+    });
+  });
+
+  it('parses date and sort filters used by shared URLs', () => {
+    expect(
+      parseFiltersFromSearchParams(
+        new URLSearchParams('date_from=2027-01-01&date_to=2027-12-31&sort_by=price&sort_order=asc'),
+      ),
+    ).toMatchObject({
+      date_from: '2027-01-01',
+      date_to: '2027-12-31',
+      sort_by: 'price',
+      sort_order: 'asc',
     });
   });
 });

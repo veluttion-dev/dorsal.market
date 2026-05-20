@@ -2,7 +2,7 @@
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import type { Distance, PaymentMethod } from '@dorsal/schemas';
+import type { Distance, PaymentMethod, SearchDorsalsQuery } from '@dorsal/schemas';
 import {
   parseAsArrayOf,
   parseAsInteger,
@@ -15,6 +15,8 @@ import { PriceRange } from './price-range.client';
 
 const distances: Distance[] = ['5k', '10k', '21k', '42k', 'trail', 'ultra'];
 const payments: PaymentMethod[] = ['bizum', 'paypal', 'card'];
+const sortBy: NonNullable<SearchDorsalsQuery['sort_by']>[] = ['price', 'race_date', 'created_at'];
+const sortOrder: NonNullable<SearchDorsalsQuery['sort_order']>[] = ['asc', 'desc'];
 
 /**
  * Filter sidebar. State lives entirely in the URL searchParams via nuqs, so the
@@ -29,7 +31,12 @@ export function DorsalFilters() {
       price_min: parseAsInteger,
       price_max: parseAsInteger,
       payment_method: parseAsStringEnum(payments),
+      date_from: parseAsString,
+      date_to: parseAsString,
+      sort_by: parseAsStringEnum(sortBy),
+      sort_order: parseAsStringEnum(sortOrder),
       page: parseAsInteger,
+      page_size: parseAsInteger,
     },
     { history: 'push', shallow: false },
   );
@@ -42,7 +49,12 @@ export function DorsalFilters() {
       price_min: null,
       price_max: null,
       payment_method: null,
+      date_from: null,
+      date_to: null,
+      sort_by: null,
+      sort_order: null,
       page: null,
+      page_size: null,
     });
   }
 
