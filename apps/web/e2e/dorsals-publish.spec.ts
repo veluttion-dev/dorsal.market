@@ -1,7 +1,14 @@
 import path from 'node:path';
 import { expect, test } from '@playwright/test';
+import { signInAsDemoUser } from './helpers/auth';
+
+test('unauthenticated users are redirected away from publishing', async ({ page }) => {
+  await page.goto('/vender');
+  await expect(page).toHaveURL(/\/login/);
+});
 
 test('publishing a dorsal redirects to its detail page', async ({ page }) => {
+  await signInAsDemoUser(page);
   await page.goto('/vender');
 
   await page.setInputFiles('input[type="file"]', path.join(__dirname, 'fixtures/dorsal.jpg'));
