@@ -1,3 +1,4 @@
+import { BuyButton } from '@/components/dorsal/buy-button.client';
 import { IncludedItemsList } from '@/components/dorsal/included-items-list';
 import { PaymentMethodPills } from '@/components/dorsal/payment-method-pills';
 import { SellerCard } from '@/components/dorsal/seller-card';
@@ -84,12 +85,7 @@ export default async function DorsalDetailPage({ params }: { params: Promise<Par
             <div className="mt-3">
               <PaymentMethodPills methods={d.payment_methods} />
             </div>
-            <button
-              type="button"
-              className="mt-5 w-full rounded-md bg-coral py-3 font-semibold text-white hover:bg-coral-hover"
-            >
-              Comprar dorsal
-            </button>
+            <BuyButton dorsalId={d.id} sellerId={d.seller_id} status={d.status} />
             <p className="mt-2 text-center text-xs text-text-muted">
               Pago en custodia · feat/transacciones
             </p>
