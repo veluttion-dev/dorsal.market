@@ -8,5 +8,6 @@ export async function getServerApi() {
   return createApi({
     baseUrl: env.BACKEND_API_URL,
     getUserId: () => session?.user?.id ?? null,
+    getAuthToken: () => session?.user?.token ?? null,
   });
 }
