@@ -120,12 +120,15 @@ export const transactionsHandlers = [
       dorsal_id: body.dorsal_id,
       buyer_id: buyerId,
       seller_id: SELLER_ID,
-      status: 'reserved',
+      status: 'paid',
       amount: 45,
       currency: 'EUR',
       stripe_payment_intent_client_secret: `pi_mock_${transactionId}_secret_mock`,
       proof_file_url: null,
-      timeline: [{ type: 'reservation_created', at: now, actor: 'buyer' }],
+      timeline: [
+        { type: 'reservation_created', at: now, actor: 'buyer' },
+        { type: 'payment_succeeded', at: now, actor: 'system' },
+      ],
       dorsal_snapshot: {
         race_name: 'San Silvestre Madrid',
         race_date: '2026-12-31',
