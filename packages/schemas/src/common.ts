@@ -4,7 +4,7 @@ export const Uuid = z.string().uuid();
 export type Uuid = z.infer<typeof Uuid>;
 
 export const IsoDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'must be YYYY-MM-DD');
-export const IsoDateTime = z.string().datetime();
+export const IsoDateTime = z.string().datetime({ local: true, offset: true });
 
 export const Pagination = z.object({
   total: z.number().int().nonnegative(),
