@@ -72,6 +72,31 @@ describe('DorsalDetail', () => {
     });
     expect(parsed.price_amount).toBe(45);
   });
+
+  it('accepts backend datetime values without timezone offsets', () => {
+    const parsed = DorsalDetail.parse({
+      id: '550e8400-e29b-41d4-a716-446655440010',
+      seller_id: '550e8400-e29b-41d4-a716-446655440001',
+      photo_url: 'https://example.com/p.jpg',
+      race_name: 'San Silvestre Madrid',
+      race_date: '2027-12-31',
+      location: 'Madrid',
+      distance: '10k',
+      bib_number: '1274',
+      start_corral: null,
+      included_items: { chip: true, shirt: true, bag: true, medal: false, refreshments: true },
+      price_amount: '35.00',
+      payment_methods: ['bizum', 'card'],
+      contact_phone: null,
+      contact_email: 'seller@example.com',
+      sale_reason: 'No puedo viajar ese fin de semana.',
+      status: 'published',
+      created_at: '2026-05-21T13:25:02.328044',
+      updated_at: '2026-05-21T13:25:02.328044',
+    });
+
+    expect(parsed.created_at).toBe('2026-05-21T13:25:02.328044');
+  });
 });
 
 describe('DorsalListResponse', () => {
