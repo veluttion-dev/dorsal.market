@@ -1,20 +1,53 @@
-import type { ChatMessage, Dispute, PurchaseInput, Transaction } from '@dorsal/schemas';
-
-export interface PurchaseResult {
-  transaction_id: string;
-  client_secret: string;
-}
+import type {
+  BuyerTransactionDetail,
+  Dispute,
+  ProofUploadUrlResponse,
+  ReserveListingResponse,
+  SellerOnboardingResponse,
+  SellerProblemCategory,
+  SellerProblemReport,
+  SellerTransactionDetail,
+  TransactionListResponse,
+} from '@dorsal/schemas';
 
 export interface TransactionsPort {
-  purchase(input: PurchaseInput): Promise<PurchaseResult>;
-  confirmPayment(transactionId: string): Promise<Transaction>;
-  getById(id: string): Promise<Transaction>;
-  listMine(): Promise<Transaction[]>;
-  advanceStep(
-    transactionId: string,
-    step: Transaction['timeline'][number]['step'],
-  ): Promise<Transaction>;
-  openDispute(transactionId: string, reason: string, evidenceUrls: string[]): Promise<Dispute>;
-  listMessages(transactionId: string): Promise<ChatMessage[]>;
-  sendMessage(transactionId: string, content: string): Promise<ChatMessage>;
+  onboardSeller(sellerId: string): Promise<SellerOnboardingResponse>;
+
+  reserveListing(input: { dorsalId: string; buyerId: string }): Promise<ReserveListingResponse>;
+
+  getBuyerTransaction(id: string): Promise<BuyerTransactionDetail>;
+  getSellerTransaction(id: string): Promise<SellerTransactionDetail>;
+
+  getProofUploadUrl(
+    id: string,
+    input: { sellerId: string; contentType: string },
+  ): Promise<ProofUploadUrlResponse>;
+  uploadProofMultipart(id: string, file: File): Promise<{ proof_file_url: string }>;
+  submitProofUrl(
+    id: string,
+    input: { proofFileUrl: string; sellerId: string },
+  ): Promise<SellerTransactionDetail>;
+
+  markTransferInProgress(id: string, sellerId: string): Promise<SellerTransactionDetail>;
+
+  confirmTransfer(id: string, buyerId: string): Promise<BuyerTransactionDetail>;
+  openDispute(id: string, input: { buyerId: string; reason: string }): Promise<Dispute>;
+
+  createSellerProblemReport(input: {
+    transactionId: string;
+    category: SellerProblemCategory;
+    message: string;
+    files?: File[];
+  }): Promise<SellerProblemReport>;
+
+  listMyPurchases(query?: {
+    status?: string;
+    limit?: number;
+    offset?: number;
+  }): Promise<TransactionListResponse>;
+  listMySales(query?: {
+    status?: string;
+    limit?: number;
+    offset?: number;
+  }): Promise<TransactionListResponse>;
 }

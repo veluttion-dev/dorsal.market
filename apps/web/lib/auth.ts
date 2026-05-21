@@ -18,7 +18,13 @@ const providers: NextAuthConfig['providers'] = [
       const api = createApi({ baseUrl: env.BACKEND_API_URL, getUserId: () => null });
       try {
         const u = await api.users.login(parsed.data.email, parsed.data.password);
-        return { id: u.id, email: u.email, name: u.name, image: u.image ?? null };
+        return {
+          id: u.id,
+          email: u.email,
+          name: u.name,
+          image: u.image ?? null,
+          ...(u.token ? { token: u.token } : {}),
+        };
       } catch {
         return null;
       }

@@ -1,4 +1,9 @@
-import type { Review, Transaction, User } from '@dorsal/schemas';
+import type {
+  BuyerTransactionDetail,
+  Review,
+  SellerTransactionDetail,
+  User,
+} from '@dorsal/schemas';
 
 const SEED_USER_ID = '550e8400-e29b-41d4-a716-446655440001';
 
@@ -30,10 +35,14 @@ const seedUser: User = {
   updated_at: '2026-04-19T20:00:00Z',
 };
 
+export type MockTransaction = BuyerTransactionDetail & {
+  buyer_snapshot: SellerTransactionDetail['buyer_snapshot'];
+};
+
 export const mockStore = {
   users: new Map<string, User>([[SEED_USER_ID, seedUser]]),
   passwords: new Map<string, string>([['demo@dorsal.market', 'demo1234']]),
-  transactions: new Map<string, Transaction>(),
+  transactions: new Map<string, MockTransaction>(),
   reviews: new Map<string, Review>(),
   SEED_USER_ID,
 };
