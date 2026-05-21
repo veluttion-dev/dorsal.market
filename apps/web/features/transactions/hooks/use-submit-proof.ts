@@ -1,0 +1,43 @@
+'use client';
+import { useApi } from '@/lib/api-client';
+import type { ProofUploadUrlResponse } from '@dorsal/schemas';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { transactionKeys } from './keys';
+
+async function uploadToPresignedUrl(
+  file: File,
+  upload: Pick<ProofUploadUrlResponse, 'upload_url' | 'upload_method' | 'fields'>,
+) {
+  if (upload.upload_method === 'POST') {
+    const fd = new FormData();
+    for (const [key, value] of Object.entries(upload.fields ?? {})) fd.append(key, value);
+    fd.append('file', file);
+    const res = await fetch(upload.upload_url, { method: 'POST', body: fd });
+    if (!res.ok) throw new Error(`proof upload failed: ${res.status}`);
+    return;
+  }
+
+  const res = await fetch(upload.upload_url, { method: 'PUT', body: file });
+  if (!res.ok) throw new Error(`proof upload failed: ${res.status}`);
+}
+
+export function useSubmitProof(id: string) {
+  const api = useApi();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: { sellerId: string; file: File }) => {
+      const upload = await api.transactions.getProofUploadUrl(id, {
+        sellerId: input.sellerId,
+        contentType: input.file.type || 'application/octet-stream',
+      });
+      await uploadToPresignedUrl(input.file, upload);
+      return api.transactions.submitProofUrl(id, {
+        proofFileUrl: upload.final_url,
+        sellerId: input.sellerId,
+      });
+    },
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: transactionKeys.seller(id) });
+    },
+  });
+}

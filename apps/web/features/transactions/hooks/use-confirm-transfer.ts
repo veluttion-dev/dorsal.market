@@ -1,0 +1,16 @@
+'use client';
+import { useApi } from '@/lib/api-client';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { transactionKeys } from './keys';
+
+export function useConfirmTransfer(id: string) {
+  const api = useApi();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (buyerId: string) => api.transactions.confirmTransfer(id, buyerId),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: transactionKeys.buyer(id) });
+      void qc.invalidateQueries({ queryKey: ['transactions', 'purchases'] });
+    },
+  });
+}
