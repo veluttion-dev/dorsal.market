@@ -3,7 +3,6 @@ import { Button } from '@/components/ui/button';
 import { useOnboardSeller } from '@/features/transactions/hooks/use-onboard-seller';
 import { isTransactionsMocked } from '@/features/transactions/lib/environment';
 import { getTransactionErrorMessage } from '@/features/transactions/lib/errors';
-import { DEV_AUTH_BYPASS_ENABLED, DEV_PREVIEW_SELLER_ID } from '@/lib/dev-preview';
 import type { SellerOnboardingResponse } from '@dorsal/schemas';
 import { CheckCircle2, ExternalLink, Loader2 } from 'lucide-react';
 import { useSession } from 'next-auth/react';
@@ -17,7 +16,7 @@ export default function SellerOnboardingPage() {
   const mockedTransactions = isTransactionsMocked();
 
   async function start() {
-    const sellerId = data?.user?.id ?? (DEV_AUTH_BYPASS_ENABLED ? DEV_PREVIEW_SELLER_ID : null);
+    const sellerId = data?.user?.id;
     if (!sellerId) {
       toast.error('Inicia sesion para configurar pagos');
       return;
