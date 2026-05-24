@@ -7,10 +7,16 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { usePublishDorsal } from '@/features/dorsals/hooks/use-publish-dorsal';
 import { distanceLabel } from '@/features/dorsals/lib/distances';
+import {
+  clearPublishDraft,
+  loadPublishDraft,
+  savePublishDraft,
+} from '@/features/dorsals/lib/publish-draft-storage';
 import { type Distance, type PaymentMethod, PublishDorsalInput } from '@dorsal/schemas';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Camera, CreditCard, MapPin, Phone, Trophy } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 import type { z } from 'zod';
@@ -37,6 +43,7 @@ function FieldError({ message }: { message: string | undefined }) {
 export function PublishWizard() {
   const router = useRouter();
   const publish = usePublishDorsal();
+  const persistedDraft = loadPublishDraft();
   const form = useForm<FormInput, unknown, FormValues>({
     resolver: zodResolver(PublishDorsalInput),
     defaultValues: {
@@ -45,14 +52,23 @@ export function PublishWizard() {
       included_items: { chip: false, shirt: false, bag: false, medal: false, refreshments: false },
       payment_methods: [],
       contact: { phone: '', email: '', phone_visible: true, email_visible: true },
+      ...persistedDraft,
     },
   });
+
+  useEffect(() => {
+    const subscription = form.watch((value) => {
+      savePublishDraft(value);
+    });
+    return () => subscription.unsubscribe();
+  }, [form]);
 
   function publishValues(values: FormValues, publishMode: boolean) {
     const payload = { ...values, publish: publishMode };
     publish.mutate(payload, {
       onSuccess: ({ dorsal_id }) => {
-        toast.success(publishMode ? '¡Dorsal publicado!' : 'Borrador guardado');
+        clearPublishDraft();
+        toast.success(publishMode ? 'Dorsal publicado' : 'Borrador guardado');
         router.push(`/dorsales/${dorsal_id}`);
       },
       onError: (e) => toast.error(e.message ?? 'No se pudo publicar el dorsal'),
