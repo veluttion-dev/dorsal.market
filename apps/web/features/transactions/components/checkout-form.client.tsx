@@ -1,5 +1,6 @@
 'use client';
 import { Button } from '@/components/ui/button';
+import { BuyerDataNotice } from '@/features/transactions/components/buyer-data-notice.client';
 import { useReserveListing } from '@/features/transactions/hooks/use-reserve-listing';
 import { getTransactionErrorMessage } from '@/features/transactions/lib/errors';
 import { getStripe } from '@/features/transactions/lib/stripe';
@@ -88,6 +89,8 @@ export function CheckoutForm({
         <h2 className="mt-1 text-xl font-semibold">{raceName}</h2>
         <p className="mt-3 text-3xl font-bold">{formatPrice(amount)}</p>
       </div>
+
+      <BuyerDataNotice isAuthenticated={Boolean(data?.user?.id)} />
 
       {!clientSecret || !transactionId ? (
         <Button
