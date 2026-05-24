@@ -1,7 +1,9 @@
 'use client';
 import { Button } from '@/components/ui/button';
 import { useReserveListing } from '@/features/transactions/hooks/use-reserve-listing';
+import { getTransactionErrorMessage } from '@/features/transactions/lib/errors';
 import { getStripe } from '@/features/transactions/lib/stripe';
+import { DEV_AUTH_BYPASS_ENABLED, DEV_PREVIEW_USER_ID } from '@/lib/dev-preview';
 import { formatPrice } from '@dorsal/domain';
 import { Elements, PaymentElement, useElements, useStripe } from '@stripe/react-stripe-js';
 import { CreditCard, Loader2 } from 'lucide-react';
@@ -63,16 +65,20 @@ export function CheckoutForm({
   const [transactionId, setTransactionId] = useState<string | null>(null);
 
   async function startCheckout() {
-    const buyerId = data?.user?.id;
+    const buyerId = data?.user?.id ?? (DEV_AUTH_BYPASS_ENABLED ? DEV_PREVIEW_USER_ID : null);
     if (!buyerId) {
       toast.error('Inicia sesion para comprar');
       return;
     }
-    const result = await reserve.mutateAsync({ dorsalId, buyerId });
-    setTransactionId(result.transaction_id);
-    setClientSecret(result.stripe_payment_intent_client_secret);
-    const stripe = await stripePromise;
-    if (!stripe) router.push(`/compra/confirmada?tx=${result.transaction_id}`);
+    try {
+      const result = await reserve.mutateAsync({ dorsalId, buyerId });
+      setTransactionId(result.transaction_id);
+      setClientSecret(result.stripe_payment_intent_client_secret);
+      const stripe = await stripePromise;
+      if (!stripe) router.push(`/compra/confirmada?tx=${result.transaction_id}`);
+    } catch (error) {
+      toast.error(getTransactionErrorMessage(error));
+    }
   }
 
   return (

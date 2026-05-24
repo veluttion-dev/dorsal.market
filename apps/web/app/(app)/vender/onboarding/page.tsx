@@ -2,6 +2,7 @@
 import { Button } from '@/components/ui/button';
 import { useOnboardSeller } from '@/features/transactions/hooks/use-onboard-seller';
 import { isTransactionsMocked } from '@/features/transactions/lib/environment';
+import { getTransactionErrorMessage } from '@/features/transactions/lib/errors';
 import { DEV_AUTH_BYPASS_ENABLED, DEV_PREVIEW_SELLER_ID } from '@/lib/dev-preview';
 import type { SellerOnboardingResponse } from '@dorsal/schemas';
 import { CheckCircle2, ExternalLink, Loader2 } from 'lucide-react';
@@ -21,15 +22,19 @@ export default function SellerOnboardingPage() {
       toast.error('Inicia sesion para configurar pagos');
       return;
     }
-    const result = await onboard.mutateAsync(sellerId);
-    setLastResult(result);
-    if (result.onboarding_url) {
-      window.open(result.onboarding_url, '_blank', 'noopener,noreferrer');
-      toast.success('Hemos abierto Stripe Connect en una nueva pestana');
-      return;
-    }
-    if (result.charges_enabled && !result.onboarding_url) {
-      toast.success('Cuenta de cobros lista');
+    try {
+      const result = await onboard.mutateAsync(sellerId);
+      setLastResult(result);
+      if (result.onboarding_url) {
+        window.open(result.onboarding_url, '_blank', 'noopener,noreferrer');
+        toast.success('Hemos abierto Stripe Connect en una nueva pestana');
+        return;
+      }
+      if (result.charges_enabled) {
+        toast.success('Cuenta de cobros lista');
+      }
+    } catch (error) {
+      toast.error(getTransactionErrorMessage(error));
     }
   }
 
