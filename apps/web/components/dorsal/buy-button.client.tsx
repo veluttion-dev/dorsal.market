@@ -22,7 +22,11 @@ export function BuyButton({
   status: DorsalStatus;
 }) {
   const { data } = useSession();
-  const result = canBuyDorsal({ userId: data?.user?.id ?? null, sellerId, status });
+  const result = canBuyDorsal({
+    userId: data?.user?.id ?? null,
+    sellerId,
+    status,
+  });
 
   if (!result.ok) {
     return (
