@@ -12,6 +12,9 @@ export default function VenderPage() {
           Vender <em className="not-italic text-coral">dorsal</em>
         </h1>
         <p className="mt-1 text-text-secondary">Rellena los datos. La publicacion es gratis.</p>
+        <p className="mt-2 text-sm text-text-secondary">
+          Puedes configurar cobros ahora y volver al formulario sin perder lo que hayas escrito.
+        </p>
         <Link
           href="/vender/onboarding"
           className="mt-4 inline-flex rounded-md border border-border px-4 py-2 text-sm font-medium hover:bg-bg-elevated"
