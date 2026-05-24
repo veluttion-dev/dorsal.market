@@ -22,7 +22,7 @@ describe('TransactionsHttpAdapter', () => {
       expires_at: '2026-05-14T12:00:00Z',
     }));
     const http = createHttpStub({ post });
-    const adapter = new TransactionsHttpAdapter(http, 'http://api.test');
+    const adapter = new TransactionsHttpAdapter(http);
 
     const result = await adapter.reserveListing({
       dorsalId: '55555555-5555-4555-8555-555555555555',
@@ -61,7 +61,7 @@ describe('TransactionsHttpAdapter', () => {
       updated_at: '2026-05-14T10:00:00Z',
     }));
     const http = createHttpStub({ get });
-    const adapter = new TransactionsHttpAdapter(http, 'http://api.test');
+    const adapter = new TransactionsHttpAdapter(http);
 
     const result = await adapter.getBuyerTransaction('11111111-1111-4111-8111-111111111111');
 
@@ -79,12 +79,35 @@ describe('TransactionsHttpAdapter', () => {
       offset: 0,
     }));
     const http = createHttpStub({ get });
-    const adapter = new TransactionsHttpAdapter(http, 'http://api.test');
+    const adapter = new TransactionsHttpAdapter(http);
 
     await adapter.listMyPurchases({ status: 'paid', limit: 20, offset: 0 });
 
     expect(get).toHaveBeenCalledWith('api/v1/me/purchases', {
       query: { status: 'paid', limit: 20, offset: 0 },
+    });
+  });
+
+  it('does not invent availability state when reserving a listing', async () => {
+    const post = vi.fn(async () => ({
+      transaction_id: '11111111-1111-4111-8111-111111111111',
+      stripe_payment_intent_client_secret: 'pi_secret_x',
+      amount: '35.00',
+      expires_at: '2026-05-24T18:33:20Z',
+    }));
+    const http = createHttpStub({ post });
+    const adapter = new TransactionsHttpAdapter(http);
+
+    await adapter.reserveListing({
+      dorsalId: '55555555-5555-4555-8555-555555555555',
+      buyerId: '22222222-2222-4222-8222-222222222222',
+    });
+
+    expect(post).toHaveBeenCalledWith('api/v1/transactions', {
+      body: {
+        dorsal_id: '55555555-5555-4555-8555-555555555555',
+        buyer_id: '22222222-2222-4222-8222-222222222222',
+      },
     });
   });
 });

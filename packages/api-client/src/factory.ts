@@ -25,7 +25,7 @@ export function createApi(opts: ApiFactoryOptions): Api {
     http,
     dorsals: new DorsalsHttpAdapter(http),
     users: new UsersHttpAdapter(http),
-    transactions: new TransactionsHttpAdapter(http, opts.baseUrl),
+    transactions: new TransactionsHttpAdapter(http),
     reviews: new ReviewsHttpAdapter(http),
     uploads: new UploadsMockAdapter(),
   };
