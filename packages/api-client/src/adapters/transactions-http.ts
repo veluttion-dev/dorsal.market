@@ -16,10 +16,7 @@ import type { TransactionsPort } from '../ports';
 const ProofUploadMultipartResponse = z.object({ proof_file_url: z.string().url() });
 
 export class TransactionsHttpAdapter implements TransactionsPort {
-  constructor(
-    private http: HttpClient,
-    private baseUrl: string,
-  ) {}
+  constructor(private http: HttpClient) {}
 
   async onboardSeller(sellerId: string) {
     return SellerOnboardingResponse.parse(
@@ -116,9 +113,5 @@ export class TransactionsHttpAdapter implements TransactionsPort {
     return TransactionListResponse.parse(
       await this.http.get('api/v1/me/sales', { query: query ?? {} }),
     );
-  }
-
-  getBackendBaseUrl() {
-    return this.baseUrl;
   }
 }
