@@ -5,7 +5,22 @@
     "build": {
       "dependsOn": ["^build"],
       "outputs": [".next/**", "!.next/cache/**", "dist/**"],
-      "env": ["NODE_ENV"]
+      "env": [
+        "NODE_ENV",
+        "BACKEND_API_URL",
+        "FACEBOOK_CLIENT_ID",
+        "FACEBOOK_CLIENT_SECRET",
+        "GOOGLE_CLIENT_ID",
+        "GOOGLE_CLIENT_SECRET",
+        "NEXT_PUBLIC_BACKEND_API_URL",
+        "NEXT_PUBLIC_REAL_API_MODULES",
+        "NEXT_PUBLIC_SENTRY_DSN",
+        "NEXT_PUBLIC_SITE_URL",
+        "NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY",
+        "NEXTAUTH_SECRET",
+        "NEXTAUTH_URL",
+        "SENTRY_DSN"
+      ]
     },
     "dev": { "cache": false, "persistent": true },
     "lint": { "outputs": [] },
