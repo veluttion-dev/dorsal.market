@@ -4,6 +4,8 @@ import { BuyerDataNotice } from '@/features/transactions/components/buyer-data-n
 import { useReserveListing } from '@/features/transactions/hooks/use-reserve-listing';
 import { getTransactionErrorMessage } from '@/features/transactions/lib/errors';
 import { getStripe } from '@/features/transactions/lib/stripe';
+import { useMe } from '@/features/users/hooks/use-me';
+import { canBuyWithProfile } from '@/features/users/lib/profile-completion';
 import { formatPrice } from '@dorsal/domain';
 import { Elements, PaymentElement, useElements, useStripe } from '@stripe/react-stripe-js';
 import { CreditCard, Loader2 } from 'lucide-react';
@@ -60,6 +62,7 @@ export function CheckoutForm({
 }) {
   const router = useRouter();
   const { data } = useSession();
+  const me = useMe();
   const reserve = useReserveListing();
   const [clientSecret, setClientSecret] = useState<string | null>(null);
   const [transactionId, setTransactionId] = useState<string | null>(null);
@@ -70,10 +73,21 @@ export function CheckoutForm({
       toast.error('Inicia sesion para comprar');
       return;
     }
+    if (me.isLoading) {
+      toast.error('Estamos comprobando tu perfil');
+      return;
+    }
+    if (!canBuyWithProfile(me.data)) {
+      toast.error('Completa tus datos de corredor antes de comprar');
+      router.push(
+        `/perfil/completar?callbackUrl=${encodeURIComponent(`/compra/checkout/${dorsalId}`)}`,
+      );
+      return;
+    }
     try {
       const result = await reserve.mutateAsync({ dorsalId, buyerId });
       setTransactionId(result.transaction_id);
-      setClientSecret(result.stripe_payment_intent_client_secret);
+      setClientSecret(result.payment_client_secret);
       const stripe = await stripePromise;
       if (!stripe) router.push(`/compra/confirmada?tx=${result.transaction_id}`);
     } catch (error) {
@@ -89,13 +103,17 @@ export function CheckoutForm({
         <p className="mt-3 text-3xl font-bold">{formatPrice(amount)}</p>
       </div>
 
-      <BuyerDataNotice isAuthenticated={Boolean(data?.user?.id)} />
+      <BuyerDataNotice
+        isAuthenticated={Boolean(data?.user?.id)}
+        isLoading={me.isLoading}
+        profile={me.data}
+      />
 
       {!clientSecret || !transactionId ? (
         <Button
           type="button"
           className="w-full"
-          disabled={reserve.isPending}
+          disabled={reserve.isPending || me.isLoading}
           onClick={startCheckout}
         >
           {reserve.isPending ? <Loader2 className="animate-spin" /> : <CreditCard />}

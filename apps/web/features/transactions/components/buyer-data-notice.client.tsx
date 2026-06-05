@@ -1,9 +1,25 @@
 'use client';
 import { Button } from '@/components/ui/button';
+import {
+  canBuyWithProfile,
+  getMissingProfileFields,
+} from '@/features/users/lib/profile-completion';
+import type { UserProfile } from '@dorsal/schemas';
 import { IdCard } from 'lucide-react';
 import Link from 'next/link';
 
-export function BuyerDataNotice({ isAuthenticated }: { isAuthenticated: boolean }) {
+export function BuyerDataNotice({
+  isAuthenticated,
+  isLoading = false,
+  profile,
+}: {
+  isAuthenticated: boolean;
+  isLoading?: boolean;
+  profile?: UserProfile | null | undefined;
+}) {
+  const isComplete = canBuyWithProfile(profile);
+  const missingFields = getMissingProfileFields(profile);
+
   return (
     <section className="rounded-lg border border-border bg-bg-card p-5">
       <div className="flex items-start gap-3">
@@ -16,11 +32,20 @@ export function BuyerDataNotice({ isAuthenticated }: { isAuthenticated: boolean 
           </p>
           {!isAuthenticated && (
             <p className="mt-2 text-sm text-text-muted">
-              Cuando el login este listo, este paso validara el perfil antes del pago.
+              Inicia sesion para validar tu perfil antes del pago.
+            </p>
+          )}
+          {isAuthenticated && isLoading && (
+            <p className="mt-2 text-sm text-text-muted">Comprobando tu perfil...</p>
+          )}
+          {isAuthenticated && !isLoading && !isComplete && (
+            <p className="mt-2 text-sm text-text-muted">
+              Completa los datos pendientes antes de reservar
+              {missingFields.length ? `: ${missingFields.join(', ')}` : '.'}
             </p>
           )}
           <Button asChild variant="outline" className="mt-4">
-            <Link href="/perfil">Revisar perfil</Link>
+            <Link href={isComplete ? '/perfil' : '/perfil/completar'}>Revisar perfil</Link>
           </Button>
         </div>
       </div>
