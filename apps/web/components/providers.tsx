@@ -1,4 +1,5 @@
 'use client';
+import { FeedbackTab } from '@/components/feedback/feedback-tab.client';
 import { Toaster } from '@/components/ui/sonner';
 import { QueryProvider } from '@dorsal/api-client';
 import { SessionProvider } from 'next-auth/react';
@@ -26,6 +27,7 @@ export function Providers({ children }: { children: ReactNode }) {
           <QueryProvider>
             {process.env.NODE_ENV === 'development' && <MswBootstrap />}
             {children}
+            <FeedbackTab />
             <Toaster richColors position="bottom-right" />
           </QueryProvider>
         </NuqsAdapter>
