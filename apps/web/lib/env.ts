@@ -12,6 +12,9 @@ const ServerEnvSchema = z.object({
   GOOGLE_CLIENT_SECRET: z.string().optional(),
   FACEBOOK_CLIENT_ID: z.string().optional(),
   FACEBOOK_CLIENT_SECRET: z.string().optional(),
+  RESEND_API_KEY: z.string().optional(),
+  FEEDBACK_TO_EMAIL: z.string().email().optional(),
+  FEEDBACK_FROM_EMAIL: z.string().optional(),
 });
 
 const PublicEnvSchema = z.object({
