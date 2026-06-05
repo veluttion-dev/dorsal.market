@@ -37,10 +37,9 @@ export default async function DorsalDetailPage({ params }: { params: Promise<Par
   const d = await getDorsalDetail(id);
   if (!d) notFound();
 
-  // Identity module is mocked client-side only; on the server this resolves to
-  // null until the backend exposes /users/{id}. The seller card degrades gracefully.
+  // Identity may still be mocked in local mode; the seller card degrades gracefully.
   const api = await getServerApi();
-  const seller = await api.users.getById(d.seller_id).catch(() => null);
+  const seller = await api.users.getPublicProfile(d.seller_id).catch(() => null);
 
   return (
     <main className="container mx-auto px-4 py-8">
