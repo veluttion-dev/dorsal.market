@@ -17,6 +17,7 @@ build/
 coverage/
 playwright-report/
 .playwright/
+.superpowers/
 
 # Environment
 .env
