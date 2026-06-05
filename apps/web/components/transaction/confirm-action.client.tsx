@@ -10,6 +10,10 @@ const DISPUTABLE: TransactionStatus[] = [
   'paid',
   'transfer_in_progress',
   'transfer_proof_submitted',
+  'PAYMENT_RECEIVED',
+  'TRANSFER_IN_PROGRESS',
+  'TRANSFER_SUBMITTED',
+  'IN_DISPUTE',
 ];
 
 export function ConfirmAction({
@@ -22,7 +26,11 @@ export function ConfirmAction({
   status: TransactionStatus;
 }) {
   const confirm = useConfirmTransfer(transactionId);
-  const canConfirm = status === 'transfer_proof_submitted' || status === 'transfer_in_progress';
+  const canConfirm =
+    status === 'transfer_proof_submitted' ||
+    status === 'transfer_in_progress' ||
+    status === 'TRANSFER_SUBMITTED' ||
+    status === 'TRANSFER_IN_PROGRESS';
 
   async function submit() {
     await confirm.mutateAsync(buyerId);

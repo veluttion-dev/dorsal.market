@@ -17,7 +17,7 @@ async function uploadToPresignedUrl(
     return;
   }
 
-  const res = await fetch(upload.upload_url, { method: 'PUT', body: file });
+  const res = await fetch(upload.upload_url, { method: upload.upload_method ?? 'PUT', body: file });
   if (!res.ok) throw new Error(`proof upload failed: ${res.status}`);
 }
 
@@ -32,7 +32,7 @@ export function useSubmitProof(id: string) {
       });
       await uploadToPresignedUrl(input.file, upload);
       return api.transactions.submitProofUrl(id, {
-        proofFileUrl: upload.final_url,
+        proofFileUrl: upload.file_url,
         sellerId: input.sellerId,
       });
     },

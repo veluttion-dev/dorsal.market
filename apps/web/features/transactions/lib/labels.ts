@@ -11,6 +11,14 @@ export const STATUS_LABEL: Record<TransactionStatus, string> = {
   disputed: 'Disputa abierta',
   expired: 'Reserva expirada',
   cancelled: 'Cancelada',
+  PENDING_PAYMENT: 'Pendiente de pago',
+  PAYMENT_RECEIVED: 'Pago recibido',
+  TRANSFER_IN_PROGRESS: 'Cambio iniciado',
+  TRANSFER_SUBMITTED: 'Prueba enviada',
+  IN_DISPUTE: 'Disputa abierta',
+  RELEASED_TO_SELLER: 'Fondos liberados',
+  REFUNDED_TO_BUYER: 'Reembolsada',
+  CANCELLED: 'Cancelada',
 };
 
 export const EVENT_LABEL: Record<TimelineEventType, string> = {
