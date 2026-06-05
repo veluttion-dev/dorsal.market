@@ -1,14 +1,13 @@
-import { LoginInput, RegisterInput, SessionUser, User } from '@dorsal/schemas';
+import {
+  LoginInput,
+  PatchUserProfileInput,
+  PublicUserProfile,
+  RegisterInput,
+  SessionUser,
+  UserProfile,
+} from '@dorsal/schemas';
 import type { HttpClient } from '../http';
-import type { UpdateProfileInput, UserCardInfo, UsersPort } from '../ports';
-
-const UserCardSchema = User.pick({
-  id: true,
-  full_name: true,
-  avatar_url: true,
-  rating_average: true,
-  total_sales: true,
-});
+import type { UsersPort } from '../ports';
 
 export class UsersHttpAdapter implements UsersPort {
   constructor(private http: HttpClient) {}
@@ -25,15 +24,17 @@ export class UsersHttpAdapter implements UsersPort {
     );
   }
 
-  async getMe(): Promise<User> {
-    return User.parse(await this.http.get('api/v1/users/me'));
+  async getMe(): Promise<UserProfile> {
+    return UserProfile.parse(await this.http.get('api/v1/me'));
   }
 
-  async updateProfile(input: UpdateProfileInput): Promise<User> {
-    return User.parse(await this.http.patch('api/v1/users/me', { body: input }));
+  async patchMe(input: PatchUserProfileInput): Promise<UserProfile> {
+    return UserProfile.parse(
+      await this.http.patch('api/v1/me', { body: PatchUserProfileInput.parse(input) }),
+    );
   }
 
-  async getById(id: string): Promise<UserCardInfo> {
-    return UserCardSchema.parse(await this.http.get(`api/v1/users/${id}`));
+  async getPublicProfile(id: string): Promise<PublicUserProfile> {
+    return PublicUserProfile.parse(await this.http.get(`api/v1/users/${id}/public`));
   }
 }

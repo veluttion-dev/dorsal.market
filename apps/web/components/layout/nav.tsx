@@ -1,5 +1,6 @@
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
+import { SignOutButton } from './sign-out-button.client';
 import { ThemeToggle } from './theme-toggle';
 
 export function Nav({
@@ -22,15 +23,23 @@ export function Nav({
           </Link>
           <ThemeToggle />
           {session?.user ? (
-            <Link href="/perfil">
-              <Button variant="secondary" size="sm">
-                {session.user.name ?? 'Perfil'}
-              </Button>
-            </Link>
+            <div className="flex items-center gap-2">
+              <Link href="/perfil">
+                <Button variant="secondary" size="sm">
+                  {session.user.name ?? 'Perfil'}
+                </Button>
+              </Link>
+              <SignOutButton />
+            </div>
           ) : (
-            <Link href="/login">
-              <Button size="sm">Entrar</Button>
-            </Link>
+            <div className="flex items-center gap-2">
+              <Link href="/registro" className="text-text-secondary hover:text-text-primary">
+                Crear cuenta
+              </Link>
+              <Link href="/login">
+                <Button size="sm">Entrar</Button>
+              </Link>
+            </div>
           )}
         </div>
       </div>
