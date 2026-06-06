@@ -5,7 +5,8 @@ const LABELS: Record<Distance, string> = {
   '10k': '10K',
   '21k': '21K',
   '42k': '42K',
-  other: 'Otra',
+  trail: 'Trail',
+  ultra: 'Ultra',
 };
 
 export function distanceLabel(d: Distance): string {

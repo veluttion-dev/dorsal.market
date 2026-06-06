@@ -13,7 +13,7 @@ import {
 import { DistanceChips } from './distance-chips.client';
 import { PriceRange } from './price-range.client';
 
-const distances: Distance[] = ['5k', '10k', '21k', '42k', 'other'];
+const distances: Distance[] = ['5k', '10k', '21k', '42k', 'trail', 'ultra'];
 const payments: PaymentMethod[] = ['bizum', 'paypal', 'card'];
 const sortBy: NonNullable<SearchDorsalsQuery['sort_by']>[] = ['price', 'race_date', 'created_at'];
 const sortOrder: NonNullable<SearchDorsalsQuery['sort_order']>[] = ['asc', 'desc'];

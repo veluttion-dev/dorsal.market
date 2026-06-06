@@ -10,7 +10,8 @@ export function useApi() {
       createApi({
         baseUrl: process.env.NEXT_PUBLIC_BACKEND_API_URL as string,
         getUserId: () => data?.user?.id ?? null,
+        getAuthToken: () => data?.user?.token ?? null,
       }),
-    [data?.user?.id],
+    [data?.user?.id, data?.user?.token],
   );
 }

@@ -1,100 +1,413 @@
 # feat/usuarios Implementation Plan
 
+> **Superseded note (2026-05-30):** keep this file as historical context. The executable plan is now [`2026-05-30-feat-usuarios-backend-sync.md`](2026-05-30-feat-usuarios-backend-sync.md), after reviewing `MVP-Dorsales` `origin/feature/identity`, `origin/feature/UC-09-runner-profile`, and AWS pre outputs. The key changes are Cognito/OIDC real auth, `GET/PATCH /api/v1/me`, `GET /api/v1/users/{user_id}/public`, flat profile fields, and `runner_data_complete`.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Implement Identity feature surface (UC-01 registro/login, UC-09 perfil, UC-10 historial, UC-11 reseñas) against the **mocked Identity adapter** (backend not exposed yet) using MSW handlers established in `feat/foundation`. Users can sign up, log in (email + optional Google/Facebook), complete their runner profile, browse purchase/sale history and leave reviews.
+**Goal:** Implement the Identity feature surface (UC-01 registro/login, UC-09 perfil, UC-10 historial integration, UC-11 resenas) on top of the current `feat/transacciones` work, without breaking the Transaction contracts that already exist.
 
-**Architecture:** Auth flows go through Auth.js v5 (already wired in foundation). Profile and history pages are Client Components with TanStack Query reads + mutations. A "profile guard" Server Component layout redirects users with incomplete `RunnerProfile` to `/perfil/completar` before they can publish or buy. Cross-reviews appear on the post-transaction confirmation page.
+**Architecture:** Auth.js remains the session boundary. Because `MVP-Dorsales` still has no real Identity or Review REST controllers, `users` and `reviews` stay mocked in development, but Credentials login needs an explicit server-side mock bridge because browser MSW does not intercept `apps/web/lib/auth.ts`. Profile completion is enforced where it matters for Transaction (`/compra/checkout` and seller-facing flows), not as a broad `(app)` layout redirect. UC-10 history reuses the page and hooks already created in `feat/transacciones`.
 
-**Tech Stack:** Inherits from foundation. No new deps.
+**Tech Stack:** Next.js App Router, Auth.js v5, React Hook Form, Zod, TanStack Query, MSW, Vitest, Playwright, Biome, `@dorsal/api-client`, `@dorsal/schemas`.
 
-**Spec reference:** ADR-005 (Auth.js + datos extra), ADR-007 (TanStack Query), ADR-010 (RHF + Zod), spec section 6 (route mapping).
+**Reviewed against:** `feat/transacciones` after optimization commit `1d0a363` and backend folder `../MVP-Dorsales` on 2026-05-24.
 
-**Pre-flight branching:**
+---
+
+## Current Reality Check
+
+The original users plan was created before `feat/transacciones` was implemented. These are now hard constraints:
+
+- `apps/web/app/(app)/perfil/historial/page.tsx` already exists and is owned by `feat/transacciones`.
+- Transaction history uses `useMyPurchases()` and `useMySales()`, not `api.transactions.listMine()`.
+- `apps/web/features/transactions/components/buyer-data-notice.client.tsx` already reserves the buyer-profile integration point.
+- `apps/web/features/transactions/components/checkout-form.client.tsx` already starts reservation using the logged-in `session.user.id`.
+- `apps/web/lib/auth.ts` calls `api.users.login()` on the server. Browser MSW cannot mock this request.
+- `../MVP-Dorsales` exposes Transaction and Catalog, but Identity and Review controllers are still empty placeholders.
+
+Backend Transaction currently expects these Identity fields through SQL queries:
+
+```text
+users.id
+users.email
+users.full_name
+users.phone_number
+users.dni
+users.connect_account_id
+users.onboarding_complete
+
+runner_profiles.user_id
+runner_profiles.whatsapp_number
+runner_profiles.t_shirt_size
+runner_profiles.estimated_time
+runner_profiles.medical_info
+runner_profiles.emergency_contact
+```
+
+Do not design the frontend profile around `runner.club` or `runner.allergies`; those fields do not feed the current backend transfer profile.
+
+---
+
+## Branching
+
+Preferred path after `feat/transacciones` is merged:
+
 ```bash
-git switch feat/foundation    # parte directamente de foundation, en paralelo con feat/dorsales y feat/transacciones
+git switch feat/foundation
 git pull
 git switch -c feat/usuarios
 ```
 
-**Parallel work note (ADR-012).** Esta rama es **independiente** de `feat/dorsales` y `feat/transacciones`. Tu slice de archivos no toca los suyos. La página de historial (UC-10) la coordinas con `feat/transacciones` — quien abra el PR primero la crea, el segundo solo enchufa hooks (ver Task 11 del plan de transacciones).
-
-**Mock note:** the `users` module is **mocked** by MSW in `feat/foundation` (`packages/api-client/src/msw/users.ts`). Seed user is `demo@dorsal.market` / `demo1234`. To switch to the real backend later, set `NEXT_PUBLIC_REAL_API_MODULES=dorsals,users` and the same `UsersHttpAdapter` already shipped in foundation will take over.
-
----
-
-## File Structure (additions on top of foundation + dorsales)
-
-```
-apps/web/
-├── app/
-│   ├── (auth)/
-│   │   ├── login/page.tsx                # UC-01 login
-│   │   ├── registro/page.tsx             # UC-01 register
-│   │   └── verificar-email/page.tsx      # placeholder for future flow
-│   └── (app)/
-│       └── perfil/
-│           ├── page.tsx                  # UC-09 dashboard
-│           ├── completar/page.tsx        # UC-09 forced-completion flow
-│           └── historial/page.tsx        # UC-10
-└── features/
-    └── users/
-        ├── components/
-        │   ├── login-form.client.tsx
-        │   ├── register-form.client.tsx
-        │   ├── oauth-buttons.client.tsx
-        │   ├── profile-identity-form.client.tsx
-        │   ├── profile-contact-form.client.tsx
-        │   ├── profile-runner-form.client.tsx
-        │   ├── history-tabs.client.tsx
-        │   ├── transaction-row.tsx
-        │   └── review-form.client.tsx
-        ├── hooks/
-        │   ├── use-me.ts
-        │   ├── use-update-profile.ts
-        │   ├── use-create-review.ts
-        │   └── use-user-reviews.ts
-        ├── lib/
-        │   └── profile-completion.ts     # isProfileComplete()
-        └── __tests__/
-            └── profile-completion.test.ts
-```
-
----
-
-## Task 1: Branch setup
-
-- [ ] **Step 1: Create branch and verify foundation packages**
+Temporary path if users starts before the merge:
 
 ```bash
+git switch feat/transacciones
+git pull
 git switch -c feat/usuarios
-pnpm install
+```
+
+Open the PR against `feat/foundation` once `feat/transacciones` is already in it. If users is branched from `feat/transacciones`, rebase onto the updated `feat/foundation` before opening the PR.
+
+---
+
+## Ownership
+
+Freely owned by this branch:
+
+```text
+apps/web/app/(auth)/login/page.tsx
+apps/web/app/(auth)/registro/page.tsx
+apps/web/app/(app)/perfil/page.tsx
+apps/web/app/(app)/perfil/completar/page.tsx
+apps/web/features/users/**
+apps/web/e2e/auth.spec.ts
+apps/web/e2e/profile.spec.ts
+packages/schemas/src/user.ts
+packages/schemas/src/review.ts
+packages/api-client/src/ports/users.ts
+packages/api-client/src/adapters/users-http.ts
+packages/api-client/src/msw/users.ts
+packages/api-client/src/ports/reviews.ts
+packages/api-client/src/adapters/reviews-http.ts
+packages/api-client/src/msw/reviews.ts
+```
+
+Shared files that this branch may touch carefully:
+
+```text
+apps/web/lib/auth.ts
+apps/web/auth.config.ts
+apps/web/features/transactions/components/buyer-data-notice.client.tsx
+apps/web/features/transactions/components/checkout-form.client.tsx
+apps/web/app/(app)/compra/[transactionId]/page.tsx
+apps/web/app/(app)/perfil/historial/page.tsx
+```
+
+Do not overwrite Transaction history. Keep the existing `useMyPurchases` and `useMySales` flow.
+
+---
+
+## File Structure
+
+```text
+apps/web/
+  app/(auth)/
+    login/page.tsx
+    registro/page.tsx
+  app/(app)/perfil/
+    page.tsx
+    completar/page.tsx
+    historial/page.tsx                  # already created by feat/transacciones; only verify/link
+  app/(app)/compra/[transactionId]/page.tsx
+  features/users/
+    components/
+      login-form.client.tsx
+      oauth-buttons.client.tsx
+      register-form.client.tsx
+      profile-identity-form.client.tsx
+      profile-contact-form.client.tsx
+      profile-runner-form.client.tsx
+      profile-completion-notice.client.tsx
+      review-form.client.tsx
+      review-list.tsx
+    hooks/
+      use-me.ts
+      use-update-profile.ts
+      use-create-review.ts
+      use-user-reviews.ts
+    lib/
+      environment.ts
+      profile-completion.ts
+    __tests__/
+      environment.test.ts
+      profile-completion.test.ts
+      review-form.test.tsx
+      register-form.test.tsx
+
+packages/schemas/src/
+  user.ts
+  review.ts
+
+packages/api-client/src/
+  msw/users.ts
+  msw/reviews.ts
+  ports/users.ts
+  ports/reviews.ts
+  adapters/users-http.ts
+  adapters/reviews-http.ts
+```
+
+---
+
+## Task 1: Branch Setup And Contract Baseline
+
+**Files:**
+- Read: `docs/branches/feat-usuarios.md`
+- Read: `docs/superpowers/plans/2026-05-24-feat-transacciones-optimization.md`
+- Read: `../MVP-Dorsales/dorsales_api/infrastructure/adapters/input/rest/schemas/transaction_schemas.py`
+- Read: `../MVP-Dorsales/dorsales_api/infrastructure/adapters/output/persistence/transaction/repositories/user_repository_adapter.py`
+
+- [ ] **Step 1: Create branch from the correct base**
+
+Use the branching commands above. Confirm current branch:
+
+```bash
+git branch --show-current
+```
+
+Expected: `feat/usuarios`.
+
+- [ ] **Step 2: Confirm Transaction files exist**
+
+```bash
+Test-Path "apps/web/app/(app)/perfil/historial/page.tsx"
+Test-Path "apps/web/features/transactions/components/buyer-data-notice.client.tsx"
+Test-Path "apps/web/features/transactions/hooks/use-my-purchases.ts"
+Test-Path "apps/web/features/transactions/hooks/use-my-sales.ts"
+```
+
+Expected: all commands print `True`.
+
+- [ ] **Step 3: Baseline verification**
+
+```bash
+pnpm --filter @dorsal/schemas typecheck
+pnpm --filter @dorsal/api-client typecheck
 pnpm --filter @dorsal/web typecheck
 ```
 
-- [ ] **Step 2: No new deps; commit a marker (optional)**
-
-This task ends without commit if no changes; the next task starts on the new branch.
+Expected: all pass before implementation starts.
 
 ---
 
-## Task 2: Login form (UC-01) with Credentials + optional OAuth
+## Task 2: Align User Schemas With Transaction Backend
 
 **Files:**
-- Create: `apps/web/features/users/components/login-form.client.tsx`
+- Modify: `packages/schemas/src/user.ts`
+- Modify: `packages/api-client/src/msw/store.ts`
+- Modify: `packages/api-client/src/msw/users.ts`
+- Modify: `packages/api-client/src/ports/users.ts`
+
+- [ ] **Step 1: Update `RunnerProfile` and contact naming**
+
+Use backend-compatible field names while keeping the frontend forms readable:
+
+```ts
+export const RunnerProfile = z.object({
+  whatsapp_number: z.string().nullable().optional(),
+  t_shirt_size: ShirtSize.nullable().optional(),
+  estimated_time: z.string().nullable().optional(),
+  medical_info: z.string().nullable().optional(),
+  emergency_contact: z.string().nullable().optional(),
+});
+
+export const ContactAddress = z.object({
+  phone_number: z.string().nullable().optional(),
+  address_line: z.string().nullable().optional(),
+  city: z.string().nullable().optional(),
+  postal_code: z.string().nullable().optional(),
+  country: z.string().nullable().optional(),
+});
+```
+
+Do not keep `runner.club`, `runner.allergies`, `runner.shirt_size`, or `runner.estimated_time_min` in the final schema.
+
+- [ ] **Step 2: Update the MSW seed user**
+
+In `packages/api-client/src/msw/store.ts`, the seed user must contain:
+
+```ts
+contact: {
+  phone_number: '612345678',
+  address_line: 'Calle Mayor 1',
+  city: 'Madrid',
+  postal_code: '28001',
+  country: 'ES',
+},
+runner: {
+  whatsapp_number: '612345678',
+  t_shirt_size: 'L',
+  estimated_time: '01:35:00',
+  medical_info: null,
+  emergency_contact: 'Contacto emergencia +34600999888',
+},
+```
+
+- [ ] **Step 3: Keep `updateProfile` merge behavior**
+
+In `packages/api-client/src/msw/users.ts`, keep the current deep merge, but make sure it merges the renamed fields:
+
+```ts
+const updated: User = {
+  ...user,
+  ...patch,
+  contact: { ...(user.contact ?? {}), ...(patch.contact ?? {}) },
+  runner: { ...(user.runner ?? {}), ...(patch.runner ?? {}) },
+  updated_at: new Date().toISOString(),
+};
+```
+
+- [ ] **Step 4: Verify schemas**
+
+```bash
+pnpm --filter @dorsal/schemas typecheck
+pnpm --filter @dorsal/api-client test -- factory.test.ts
+```
+
+Expected: both pass.
+
+- [ ] **Step 5: Commit**
+
+```bash
+git add packages/schemas/src/user.ts packages/api-client/src/msw/store.ts packages/api-client/src/msw/users.ts packages/api-client/src/ports/users.ts
+git commit -m "feat(users): align profile schema with transaction transfer data"
+```
+
+---
+
+## Task 3: Server-Side Mock Bridge For Auth.js Credentials
+
+**Files:**
+- Create: `apps/web/features/users/lib/environment.ts`
+- Create: `apps/web/features/users/__tests__/environment.test.ts`
+- Modify: `apps/web/lib/auth.ts`
+
+Browser MSW handles `api.users.register()` and `api.users.getMe()` from Client Components, but Auth.js Credentials runs on the server in `apps/web/lib/auth.ts`. Add a small development-only bridge so `/login` works while backend Identity is still absent.
+
+- [ ] **Step 1: Add environment helper tests**
+
+```ts
+import { describe, expect, it } from 'vitest';
+import { isUsersMocked } from '../lib/environment';
+
+describe('users environment helpers', () => {
+  it('detects users mocked when absent from real modules', () => {
+    expect(isUsersMocked('dorsals,transactions')).toBe(true);
+  });
+
+  it('detects users real when present in real modules', () => {
+    expect(isUsersMocked('dorsals,users,transactions')).toBe(false);
+  });
+});
+```
+
+- [ ] **Step 2: Implement helper**
+
+```ts
+export function isUsersMocked(realModules = process.env.NEXT_PUBLIC_REAL_API_MODULES ?? '') {
+  return !realModules
+    .split(',')
+    .map((item) => item.trim())
+    .filter(Boolean)
+    .includes('users');
+}
+```
+
+- [ ] **Step 3: Extend Credentials input**
+
+In `apps/web/lib/auth.ts`, make the credential schema accept a development registration handoff:
+
+```ts
+const Creds = z.object({
+  email: z.string().email(),
+  password: z.string().min(8),
+  dev_user_id: z.string().uuid().optional(),
+  dev_name: z.string().optional(),
+});
+```
+
+- [ ] **Step 4: Add server mock fallback**
+
+In `authorize`, after the real backend attempt fails, return a mock user only in development and only when `users` is mocked:
+
+```ts
+const usersMocked = !process.env.NEXT_PUBLIC_REAL_API_MODULES?.split(',').map((m) => m.trim()).includes('users');
+const allowMock = process.env.NODE_ENV === 'development' && usersMocked;
+
+if (allowMock && parsed.data.dev_user_id) {
+  return {
+    id: parsed.data.dev_user_id,
+    email: parsed.data.email,
+    name: parsed.data.dev_name ?? parsed.data.email,
+    image: null,
+  };
+}
+
+if (allowMock && parsed.data.email === 'demo@dorsal.market' && parsed.data.password === 'demo1234') {
+  return {
+    id: '550e8400-e29b-41d4-a716-446655440001',
+    email: 'demo@dorsal.market',
+    name: 'Carlos Martinez',
+    image: null,
+  };
+}
+```
+
+Do not enable this fallback in production.
+
+- [ ] **Step 5: Verify**
+
+```bash
+pnpm --filter @dorsal/web test -- environment.test.ts
+pnpm --filter @dorsal/web typecheck
+```
+
+Expected: both pass.
+
+- [ ] **Step 6: Commit**
+
+```bash
+git add apps/web/features/users/lib/environment.ts apps/web/features/users/__tests__/environment.test.ts apps/web/lib/auth.ts
+git commit -m "feat(users): support mocked credentials in development"
+```
+
+---
+
+## Task 4: Login Form With Credentials And Optional OAuth
+
+**Files:**
 - Create: `apps/web/features/users/components/oauth-buttons.client.tsx`
+- Create: `apps/web/features/users/components/login-form.client.tsx`
 - Modify: `apps/web/app/(auth)/login/page.tsx`
 
-- [ ] **Step 1: OAuth buttons (render-only-if-configured)**
+- [ ] **Step 1: OAuth buttons**
 
-`apps/web/features/users/components/oauth-buttons.client.tsx`:
+Render OAuth buttons only when the server page passes both required provider env flags:
 
 ```tsx
 'use client';
-import { signIn } from 'next-auth/react';
 import { Button } from '@/components/ui/button';
+import { signIn } from 'next-auth/react';
 
-export function OAuthButtons({ google, facebook, callbackUrl = '/' }: { google: boolean; facebook: boolean; callbackUrl?: string }) {
+export function OAuthButtons({
+  google,
+  facebook,
+  callbackUrl = '/',
+}: {
+  google: boolean;
+  facebook: boolean;
+  callbackUrl?: string;
+}) {
   if (!google && !facebook) return null;
   return (
     <div className="space-y-2">
@@ -108,7 +421,6 @@ export function OAuthButtons({ google, facebook, callbackUrl = '/' }: { google: 
           Continuar con Facebook
         </Button>
       )}
-      <div className="relative my-2"><div className="border-t border-border" /><span className="absolute inset-0 -top-2 mx-auto w-fit bg-bg-primary px-2 text-xs text-text-muted">o</span></div>
     </div>
   );
 }
@@ -116,30 +428,35 @@ export function OAuthButtons({ google, facebook, callbackUrl = '/' }: { google: 
 
 - [ ] **Step 2: Login form**
 
+Use static import, not `require()`:
+
 ```tsx
 'use client';
-import { useState } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
-import { signIn } from 'next-auth/react';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { LoginInput } from '@dorsal/schemas';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { LoginInput } from '@dorsal/schemas';
+import { signIn } from 'next-auth/react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { useState } from 'react';
+import { useForm } from 'react-hook-form';
+import { OAuthButtons } from './oauth-buttons.client';
 
 export function LoginForm({ google, facebook }: { google: boolean; facebook: boolean }) {
   const router = useRouter();
   const sp = useSearchParams();
   const callbackUrl = sp.get('callbackUrl') ?? '/';
   const [error, setError] = useState<string | null>(null);
-  const form = useForm({ resolver: zodResolver(LoginInput) });
-  const { OAuthButtons } = require('./oauth-buttons.client');
+  const form = useForm<LoginInput>({ resolver: zodResolver(LoginInput) });
 
-  async function onSubmit(values: { email: string; password: string }) {
+  async function onSubmit(values: LoginInput) {
     setError(null);
     const res = await signIn('credentials', { ...values, redirect: false, callbackUrl });
-    if (res?.error) { setError('Credenciales incorrectas'); return; }
+    if (res?.error) {
+      setError('Credenciales incorrectas');
+      return;
+    }
     router.push(callbackUrl);
     router.refresh();
   }
@@ -155,27 +472,22 @@ export function LoginForm({ google, facebook }: { google: boolean; facebook: boo
         <div className="space-y-1.5">
           <Label htmlFor="email">Email</Label>
           <Input id="email" type="email" autoComplete="email" {...form.register('email')} />
-          {form.formState.errors.email && <p className="text-sm text-red-500">{form.formState.errors.email.message}</p>}
         </div>
         <div className="space-y-1.5">
-          <Label htmlFor="password">Contraseña</Label>
+          <Label htmlFor="password">Contrasena</Label>
           <Input id="password" type="password" autoComplete="current-password" {...form.register('password')} />
-          {form.formState.errors.password && <p className="text-sm text-red-500">{form.formState.errors.password.message}</p>}
         </div>
         {error && <p className="text-sm text-red-500">{error}</p>}
         <Button type="submit" className="w-full" disabled={form.formState.isSubmitting}>
-          {form.formState.isSubmitting ? 'Entrando…' : 'Entrar'}
+          {form.formState.isSubmitting ? 'Entrando...' : 'Entrar'}
         </Button>
       </form>
-      <p className="text-center text-sm text-text-secondary">
-        ¿No tienes cuenta? <a href="/registro" className="text-coral hover:underline">Regístrate</a>
-      </p>
     </div>
   );
 }
 ```
 
-- [ ] **Step 3: Login page (Server Component checks env)**
+- [ ] **Step 3: Server page**
 
 ```tsx
 import { LoginForm } from '@/features/users/components/login-form.client';
@@ -183,8 +495,8 @@ import { LoginForm } from '@/features/users/components/login-form.client';
 export const metadata = { title: 'Entrar' };
 
 export default function LoginPage() {
-  const google = !!process.env.GOOGLE_CLIENT_ID;
-  const facebook = !!process.env.FACEBOOK_CLIENT_ID;
+  const google = Boolean(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET);
+  const facebook = Boolean(process.env.FACEBOOK_CLIENT_ID && process.env.FACEBOOK_CLIENT_SECRET);
   return <LoginForm google={google} facebook={facebook} />;
 }
 ```
@@ -192,110 +504,88 @@ export default function LoginPage() {
 - [ ] **Step 4: Verify**
 
 ```bash
-pnpm --filter @dorsal/web dev
-# Visit /login — should render. Submit demo@dorsal.market / demo1234 → redirect to /
+pnpm --filter @dorsal/web typecheck
 ```
+
+Expected: pass.
 
 - [ ] **Step 5: Commit**
 
 ```bash
-git add -A
-git commit -m "feat(users): UC-01 login form with Credentials and optional OAuth"
+git add apps/web/features/users/components/oauth-buttons.client.tsx apps/web/features/users/components/login-form.client.tsx "apps/web/app/(auth)/login/page.tsx"
+git commit -m "feat(users): add credentials login form"
 ```
 
 ---
 
-## Task 3: Register form (UC-01) with DNI/gender/birth_date
+## Task 5: Registration Form With Mocked Sign-In Handoff
 
 **Files:**
 - Create: `apps/web/features/users/components/register-form.client.tsx`
+- Create: `apps/web/features/users/components/__tests__/register-form.test.tsx`
 - Modify: `apps/web/app/(auth)/registro/page.tsx`
 
-- [ ] **Step 1: Register form**
+- [ ] **Step 1: Registration behavior**
 
-```tsx
-'use client';
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { signIn } from 'next-auth/react';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { RegisterInput } from '@dorsal/schemas';
-import { useApi } from '@/lib/api-client';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+The form calls `api.users.register(values)`. When `users` is mocked, pass the returned id to Auth.js Credentials:
 
-export function RegisterForm() {
-  const api = useApi();
-  const router = useRouter();
-  const [error, setError] = useState<string | null>(null);
-  const form = useForm({ resolver: zodResolver(RegisterInput), defaultValues: { gender: 'prefer_not_to_say' as const } });
-
-  async function onSubmit(values: { email: string; password: string; full_name: string; dni: string; gender: 'male'|'female'|'other'|'prefer_not_to_say'; birth_date: string }) {
-    setError(null);
-    try {
-      await api.users.register(values);
-      const res = await signIn('credentials', { email: values.email, password: values.password, redirect: false });
-      if (res?.error) { setError('Cuenta creada pero no se pudo iniciar sesión'); return; }
-      router.push('/perfil/completar');
-      router.refresh();
-    } catch (e) {
-      setError(e instanceof Error ? e.message : 'No se pudo crear la cuenta');
-    }
-  }
-
-  return (
-    <div className="w-full max-w-md space-y-5 rounded-lg border border-border bg-bg-card p-8">
-      <header className="space-y-1 text-center">
-        <h1 className="text-2xl font-bold">Crear cuenta</h1>
-        <p className="text-sm text-text-secondary">Necesitamos tu DNI para validar el cambio de titularidad.</p>
-      </header>
-      <form className="space-y-4" onSubmit={form.handleSubmit(onSubmit)}>
-        <div className="space-y-1.5"><Label htmlFor="full_name">Nombre completo</Label><Input id="full_name" {...form.register('full_name')} /></div>
-        <div className="space-y-1.5"><Label htmlFor="email">Email</Label><Input id="email" type="email" {...form.register('email')} /></div>
-        <div className="space-y-1.5"><Label htmlFor="password">Contraseña</Label><Input id="password" type="password" {...form.register('password')} /></div>
-        <div className="grid grid-cols-2 gap-4">
-          <div className="space-y-1.5"><Label htmlFor="dni">DNI / NIE</Label><Input id="dni" {...form.register('dni')} /></div>
-          <div className="space-y-1.5"><Label htmlFor="birth_date">Fecha nacimiento</Label><Input id="birth_date" type="date" {...form.register('birth_date')} /></div>
-        </div>
-        <div className="space-y-1.5">
-          <Label htmlFor="gender">Género</Label>
-          <select id="gender" {...form.register('gender')} className="w-full rounded-md border border-border bg-bg-elevated px-3 py-2 text-sm">
-            <option value="prefer_not_to_say">Prefiero no decirlo</option>
-            <option value="male">Hombre</option>
-            <option value="female">Mujer</option>
-            <option value="other">Otro</option>
-          </select>
-        </div>
-        {error && <p className="text-sm text-red-500">{error}</p>}
-        <Button type="submit" className="w-full" disabled={form.formState.isSubmitting}>
-          {form.formState.isSubmitting ? 'Creando…' : 'Crear cuenta'}
-        </Button>
-      </form>
-    </div>
-  );
-}
+```ts
+const created = await api.users.register(values);
+const res = await signIn('credentials', {
+  email: values.email,
+  password: values.password,
+  dev_user_id: created.id,
+  dev_name: created.name,
+  redirect: false,
+  callbackUrl: '/perfil/completar',
+});
 ```
 
-- [ ] **Step 2: Register page**
+This keeps the NextAuth session id aligned with the MSW user id created in the browser.
+
+- [ ] **Step 2: Fields**
+
+Use the current `RegisterInput` fields:
+
+```text
+email
+password
+full_name
+dni
+gender
+birth_date
+```
+
+Password must satisfy `LoginInput` and `RegisterInput`: minimum 8 characters.
+
+- [ ] **Step 3: Register page**
 
 ```tsx
 import { RegisterForm } from '@/features/users/components/register-form.client';
+
 export const metadata = { title: 'Crear cuenta' };
-export default function RegistroPage() { return <RegisterForm />; }
+
+export default function RegistroPage() {
+  return <RegisterForm />;
+}
 ```
 
-- [ ] **Step 3: Commit**
+- [ ] **Step 4: Regression test**
+
+Mock `useApi().users.register` returning `{ id, email, name, image: null }`, mock `signIn`, submit the form, and assert `signIn` receives `dev_user_id`.
+
+- [ ] **Step 5: Verify and commit**
 
 ```bash
-git add -A
-git commit -m "feat(users): UC-01 registration with DNI, gender and birth date"
+pnpm --filter @dorsal/web test -- register-form.test.tsx
+pnpm --filter @dorsal/web typecheck
+git add apps/web/features/users/components/register-form.client.tsx apps/web/features/users/components/__tests__/register-form.test.tsx "apps/web/app/(auth)/registro/page.tsx"
+git commit -m "feat(users): add registration with mocked sign-in handoff"
 ```
 
 ---
 
-## Task 4: `useMe` hook + profile completion helper (TDD)
+## Task 6: Profile Hooks And Completion Helper
 
 **Files:**
 - Create: `apps/web/features/users/hooks/use-me.ts`
@@ -303,46 +593,71 @@ git commit -m "feat(users): UC-01 registration with DNI, gender and birth date"
 - Create: `apps/web/features/users/lib/profile-completion.ts`
 - Create: `apps/web/features/users/__tests__/profile-completion.test.ts`
 
-- [ ] **Step 1: Failing test for `isProfileComplete`**
+- [ ] **Step 1: Completion tests**
 
 ```ts
+import type { User } from '@dorsal/schemas';
 import { describe, expect, it } from 'vitest';
-import { isProfileComplete } from '../lib/profile-completion';
+import { getMissingProfileFields, isProfileComplete } from '../lib/profile-completion';
 
-const baseUser = {
-  id: 'u1', email: 'a@b.c', full_name: 'A', dni: 'X', gender: 'male' as const, birth_date: '1990-01-01',
-  avatar_url: null, rating_average: null, total_sales: 0, total_purchases: 0,
-  created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z',
+const baseUser: User = {
+  id: '550e8400-e29b-41d4-a716-446655440001',
+  email: 'demo@dorsal.market',
+  full_name: 'Demo User',
+  dni: '12345678X',
+  gender: 'male',
+  birth_date: '1990-01-01',
+  avatar_url: null,
+  rating_average: null,
+  total_sales: 0,
+  total_purchases: 0,
+  created_at: '2026-01-01T00:00:00Z',
+  updated_at: '2026-01-01T00:00:00Z',
 };
 
-describe('isProfileComplete', () => {
-  it('returns false when contact phone is missing', () => {
-    expect(isProfileComplete({ ...baseUser, contact: { phone: null } })).toBe(false);
+describe('profile completion', () => {
+  it('requires phone_number and t_shirt_size', () => {
+    expect(isProfileComplete(baseUser)).toBe(false);
+    expect(getMissingProfileFields(baseUser)).toEqual(['phone_number', 't_shirt_size']);
   });
-  it('returns false when runner shirt_size is missing', () => {
-    expect(isProfileComplete({ ...baseUser, contact: { phone: '6' }, runner: {} })).toBe(false);
-  });
-  it('returns true when contact.phone and runner.shirt_size are set', () => {
-    expect(isProfileComplete({ ...baseUser, contact: { phone: '6' }, runner: { shirt_size: 'M' } })).toBe(true);
+
+  it('accepts a profile ready for Transaction transfer data', () => {
+    expect(
+      isProfileComplete({
+        ...baseUser,
+        contact: { phone_number: '612345678' },
+        runner: { t_shirt_size: 'M' },
+      }),
+    ).toBe(true);
   });
 });
 ```
 
-- [ ] **Step 2: Implement**
+- [ ] **Step 2: Implement helper**
 
 ```ts
 import type { User } from '@dorsal/schemas';
-export function isProfileComplete(u: User): boolean {
-  return !!u.contact?.phone && !!u.runner?.shirt_size;
+
+export type MissingProfileField = 'phone_number' | 't_shirt_size';
+
+export function getMissingProfileFields(user: User): MissingProfileField[] {
+  const missing: MissingProfileField[] = [];
+  if (!user.contact?.phone_number) missing.push('phone_number');
+  if (!user.runner?.t_shirt_size) missing.push('t_shirt_size');
+  return missing;
+}
+
+export function isProfileComplete(user: User): boolean {
+  return getMissingProfileFields(user).length === 0;
 }
 ```
 
-- [ ] **Step 3: `useMe` hook**
+- [ ] **Step 3: Hooks**
 
 ```ts
 'use client';
-import { useQuery } from '@tanstack/react-query';
 import { useApi } from '@/lib/api-client';
+import { useQuery } from '@tanstack/react-query';
 import { useSession } from 'next-auth/react';
 
 export function useMe() {
@@ -351,19 +666,17 @@ export function useMe() {
   return useQuery({
     queryKey: ['users', 'me'],
     queryFn: () => api.users.getMe(),
-    enabled: !!data?.user?.id,
+    enabled: Boolean(data?.user?.id),
     staleTime: 60 * 1000,
   });
 }
 ```
 
-- [ ] **Step 4: `useUpdateProfile` hook**
-
 ```ts
 'use client';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useApi } from '@/lib/api-client';
-import type { User, RunnerProfile } from '@dorsal/schemas';
+import type { RunnerProfile, User } from '@dorsal/schemas';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 
 export function useUpdateProfile() {
   const api = useApi();
@@ -378,615 +691,395 @@ export function useUpdateProfile() {
 }
 ```
 
-- [ ] **Step 5: Run tests + commit**
+- [ ] **Step 4: Verify and commit**
 
 ```bash
-pnpm --filter @dorsal/web test
-git add -A && git commit -m "feat(users): add useMe, useUpdateProfile and profile-completion helper"
+pnpm --filter @dorsal/web test -- profile-completion.test.ts
+pnpm --filter @dorsal/web typecheck
+git add apps/web/features/users/hooks apps/web/features/users/lib/profile-completion.ts apps/web/features/users/__tests__/profile-completion.test.ts
+git commit -m "feat(users): add profile hooks and completion helper"
 ```
 
 ---
 
-## Task 5: Profile dashboard (UC-09) — three sections
+## Task 7: Profile Pages And Forms
 
 **Files:**
 - Create: `apps/web/features/users/components/profile-identity-form.client.tsx`
 - Create: `apps/web/features/users/components/profile-contact-form.client.tsx`
 - Create: `apps/web/features/users/components/profile-runner-form.client.tsx`
 - Modify: `apps/web/app/(app)/perfil/page.tsx`
-
-- [ ] **Step 1: Identity section (read-only DNI/gender/birth_date, editable name)**
-
-```tsx
-'use client';
-import { useForm } from 'react-hook-form';
-import { toast } from 'sonner';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { useUpdateProfile } from '@/features/users/hooks/use-update-profile';
-import type { User } from '@dorsal/schemas';
-
-export function ProfileIdentityForm({ user }: { user: User }) {
-  const update = useUpdateProfile();
-  const form = useForm({ defaultValues: { full_name: user.full_name } });
-
-  function onSubmit(v: { full_name: string }) {
-    update.mutate({ full_name: v.full_name }, {
-      onSuccess: () => toast.success('Perfil actualizado'),
-      onError: (e) => toast.error(e.message),
-    });
-  }
-
-  return (
-    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 rounded-lg border border-border bg-bg-card p-6">
-      <h2 className="font-semibold">Datos de identidad</h2>
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <div className="space-y-1.5"><Label htmlFor="name">Nombre</Label><Input id="name" {...form.register('full_name')} /></div>
-        <div className="space-y-1.5"><Label>Email</Label><Input value={user.email} disabled /></div>
-        <div className="space-y-1.5"><Label>DNI</Label><Input value={user.dni} disabled /></div>
-        <div className="space-y-1.5"><Label>Fecha nacimiento</Label><Input value={user.birth_date} disabled /></div>
-      </div>
-      <Button type="submit" disabled={update.isPending}>{update.isPending ? 'Guardando…' : 'Guardar'}</Button>
-    </form>
-  );
-}
-```
-
-- [ ] **Step 2: Contact section**
-
-```tsx
-'use client';
-import { useForm } from 'react-hook-form';
-import { toast } from 'sonner';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { useUpdateProfile } from '@/features/users/hooks/use-update-profile';
-import type { User } from '@dorsal/schemas';
-
-export function ProfileContactForm({ user }: { user: User }) {
-  const update = useUpdateProfile();
-  const form = useForm({ defaultValues: user.contact ?? {} });
-
-  function onSubmit(v: NonNullable<User['contact']>) {
-    update.mutate({ contact: v }, { onSuccess: () => toast.success('Contacto actualizado'), onError: (e) => toast.error(e.message) });
-  }
-
-  return (
-    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 rounded-lg border border-border bg-bg-card p-6">
-      <h2 className="font-semibold">Contacto y dirección</h2>
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <div className="space-y-1.5"><Label htmlFor="phone">Teléfono</Label><Input id="phone" {...form.register('phone')} /></div>
-        <div className="space-y-1.5"><Label htmlFor="city">Ciudad</Label><Input id="city" {...form.register('city')} /></div>
-        <div className="space-y-1.5 sm:col-span-2"><Label htmlFor="address_line">Dirección</Label><Input id="address_line" {...form.register('address_line')} /></div>
-        <div className="space-y-1.5"><Label htmlFor="postal_code">CP</Label><Input id="postal_code" {...form.register('postal_code')} /></div>
-        <div className="space-y-1.5"><Label htmlFor="country">País</Label><Input id="country" {...form.register('country')} placeholder="ES" /></div>
-      </div>
-      <Button type="submit" disabled={update.isPending}>{update.isPending ? 'Guardando…' : 'Guardar'}</Button>
-    </form>
-  );
-}
-```
-
-- [ ] **Step 3: Runner section**
-
-```tsx
-'use client';
-import { useForm } from 'react-hook-form';
-import { toast } from 'sonner';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { useUpdateProfile } from '@/features/users/hooks/use-update-profile';
-import type { RunnerProfile, User } from '@dorsal/schemas';
-
-const sizes = ['XS', 'S', 'M', 'L', 'XL', 'XXL'] as const;
-
-export function ProfileRunnerForm({ user }: { user: User }) {
-  const update = useUpdateProfile();
-  const form = useForm<RunnerProfile>({ defaultValues: user.runner ?? {} });
-
-  function onSubmit(v: RunnerProfile) {
-    update.mutate({ runner: v }, { onSuccess: () => toast.success('Datos de corredor actualizados'), onError: (e) => toast.error(e.message) });
-  }
-
-  return (
-    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 rounded-lg border border-border bg-bg-card p-6">
-      <h2 className="font-semibold">Datos de corredor</h2>
-      <p className="text-sm text-text-secondary">Estos datos se comparten automáticamente con el vendedor cuando compras.</p>
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <div className="space-y-1.5">
-          <Label htmlFor="estimated_time_min">Tiempo estimado (min)</Label>
-          <Input id="estimated_time_min" type="number" {...form.register('estimated_time_min', { valueAsNumber: true })} />
-        </div>
-        <div className="space-y-1.5">
-          <Label htmlFor="shirt_size">Talla camiseta</Label>
-          <select id="shirt_size" {...form.register('shirt_size')} className="w-full rounded-md border border-border bg-bg-elevated px-3 py-2 text-sm">
-            <option value="">Selecciona</option>
-            {sizes.map((s) => <option key={s} value={s}>{s}</option>)}
-          </select>
-        </div>
-        <div className="space-y-1.5"><Label htmlFor="club">Club</Label><Input id="club" {...form.register('club')} /></div>
-        <div className="space-y-1.5 sm:col-span-2"><Label htmlFor="allergies">Alergias / Notas médicas</Label><Input id="allergies" {...form.register('allergies')} /></div>
-      </div>
-      <Button type="submit" disabled={update.isPending}>{update.isPending ? 'Guardando…' : 'Guardar'}</Button>
-    </form>
-  );
-}
-```
-
-- [ ] **Step 4: Profile page**
-
-```tsx
-'use client';
-import { ProfileIdentityForm } from '@/features/users/components/profile-identity-form.client';
-import { ProfileContactForm } from '@/features/users/components/profile-contact-form.client';
-import { ProfileRunnerForm } from '@/features/users/components/profile-runner-form.client';
-import { useMe } from '@/features/users/hooks/use-me';
-
-export default function PerfilPage() {
-  const { data: user, isLoading } = useMe();
-  if (isLoading || !user) return <main className="container mx-auto py-12">Cargando…</main>;
-  return (
-    <main className="container mx-auto max-w-3xl px-4 py-10 space-y-6">
-      <header>
-        <h1 className="text-3xl font-bold">{user.full_name}</h1>
-        <p className="text-text-secondary">⭐ {user.rating_average?.toFixed(1) ?? '—'} · {user.total_sales} ventas · {user.total_purchases} compras</p>
-      </header>
-      <ProfileIdentityForm user={user} />
-      <ProfileContactForm user={user} />
-      <ProfileRunnerForm user={user} />
-    </main>
-  );
-}
-```
-
-- [ ] **Step 5: Commit**
-
-```bash
-git add -A
-git commit -m "feat(users): UC-09 profile page with identity, contact and runner sections"
-```
-
----
-
-## Task 6: Profile completion guard
-
-**Files:**
 - Create: `apps/web/app/(app)/perfil/completar/page.tsx`
-- Modify: `apps/web/app/(app)/layout.tsx` (add redirect)
 
-- [ ] **Step 1: Forced completion page**
+- [ ] **Step 1: Identity form**
 
-```tsx
-'use client';
-import { useRouter } from 'next/navigation';
-import { ProfileContactForm } from '@/features/users/components/profile-contact-form.client';
-import { ProfileRunnerForm } from '@/features/users/components/profile-runner-form.client';
-import { useMe } from '@/features/users/hooks/use-me';
-import { isProfileComplete } from '@/features/users/lib/profile-completion';
-import { useEffect } from 'react';
+Editable: `full_name`. Read-only: `email`, `dni`, `gender`, `birth_date`.
 
-export default function CompletarPage() {
-  const router = useRouter();
-  const { data: user } = useMe();
-  useEffect(() => { if (user && isProfileComplete(user)) router.push('/perfil'); }, [user, router]);
-  if (!user) return <main className="container mx-auto py-12">Cargando…</main>;
-  return (
-    <main className="container mx-auto max-w-2xl px-4 py-10 space-y-6">
-      <header>
-        <h1 className="text-3xl font-bold">Completa tu perfil</h1>
-        <p className="text-text-secondary">Necesitamos teléfono y talla para que puedas comprar y vender.</p>
-      </header>
-      <ProfileContactForm user={user} />
-      <ProfileRunnerForm user={user} />
-    </main>
-  );
-}
+- [ ] **Step 2: Contact form**
+
+Persist:
+
+```text
+contact.phone_number
+contact.address_line
+contact.city
+contact.postal_code
+contact.country
 ```
 
-- [ ] **Step 2: Update `(app)/layout.tsx` to redirect when incomplete**
+- [ ] **Step 3: Runner form**
 
-Replace the body of `apps/web/app/(app)/layout.tsx` with:
+Persist:
 
-```tsx
-import { redirect } from 'next/navigation';
-import { headers } from 'next/headers';
-import { Nav } from '@/components/layout/nav';
-import { auth } from '@/lib/auth';
-import { getServerApi } from '@/lib/api';
-import { isProfileComplete } from '@/features/users/lib/profile-completion';
-
-export default async function AppLayout({ children }: { children: React.ReactNode }) {
-  const session = await auth();
-  if (session?.user?.id) {
-    const api = await getServerApi();
-    try {
-      const me = await api.users.getMe();
-      const path = (await headers()).get('x-pathname') ?? '';
-      const exempt = path.startsWith('/perfil/completar') || path.startsWith('/dorsales');
-      if (!isProfileComplete(me) && !exempt) redirect('/perfil/completar');
-    } catch { /* ignore — mock might not be ready */ }
-  }
-  return (<><Nav session={session} />{children}</>);
-}
+```text
+runner.whatsapp_number
+runner.t_shirt_size
+runner.estimated_time
+runner.medical_info
+runner.emergency_contact
 ```
 
-Add an `x-pathname` header in `apps/web/proxy.ts` so the layout sees the URL.
-Foundation already ships a `proxy.ts` (the Next.js 16 successor to `middleware.ts`)
-that wires NextAuth — **merge** the header injection into it, don't overwrite:
+Use UI labels in Spanish:
 
-```ts
-// apps/web/proxy.ts
-import NextAuth from 'next-auth';
-import { NextResponse } from 'next/server';
-import type { NextRequest } from 'next/server';
-import { authConfig } from './auth.config';
-
-const { auth: authProxy } = NextAuth(authConfig);
-
-export default async function proxy(req: NextRequest) {
-  // Run the NextAuth proxy, then attach the pathname for server layouts.
-  const res = (await authProxy(req as never, undefined as never)) as unknown as NextResponse;
-  res.headers.set('x-pathname', req.nextUrl.pathname);
-  return res;
-}
-
-export const config = { matcher: ['/((?!api/auth|_next/static|_next/image|favicon.ico).*)'] };
+```text
+WhatsApp
+Talla camiseta
+Tiempo estimado
+Informacion medica
+Contacto de emergencia
 ```
 
-- [ ] **Step 3: Verify**
+- [ ] **Step 4: `/perfil` page**
 
-Log in with `demo@dorsal.market` (mock user has complete profile). Then create a fresh user via `/registro` — after register, you should be at `/perfil/completar`.
+Use `useMe()`. Render loading, empty/error state, then the three form sections. Do not fetch the profile server-side while Identity is mocked.
 
-- [ ] **Step 4: Commit**
+- [ ] **Step 5: `/perfil/completar` page**
+
+Use the same contact and runner forms. If `isProfileComplete(user)` becomes true, redirect to `callbackUrl` query param or `/perfil`.
+
+- [ ] **Step 6: Verify and commit**
 
 ```bash
-git add -A
-git commit -m "feat(users): force profile completion before purchase/sale flows"
+pnpm --filter @dorsal/web typecheck
+pnpm --filter @dorsal/web test -- profile-completion.test.ts
+git add apps/web/features/users/components/profile-*.tsx "apps/web/app/(app)/perfil/page.tsx" "apps/web/app/(app)/perfil/completar/page.tsx"
+git commit -m "feat(users): add profile pages and transfer data forms"
 ```
 
 ---
 
-## Task 7: History page (UC-10)
+## Task 8: Gate Checkout On Complete Profile
 
 **Files:**
-- Create: `apps/web/features/users/components/history-tabs.client.tsx`
-- Create: `apps/web/features/users/components/transaction-row.tsx`
-- Modify: `apps/web/app/(app)/perfil/historial/page.tsx`
+- Create: `apps/web/features/users/components/profile-completion-notice.client.tsx`
+- Modify: `apps/web/features/transactions/components/buyer-data-notice.client.tsx`
+- Modify: `apps/web/features/transactions/components/checkout-form.client.tsx`
 
-**Note:** transactions endpoints are mocked (`feat/foundation` Task 9). They'll return whatever the user has bought/sold during this session. `feat/transacciones` adds the actual purchase mutation.
+Do not add a broad redirect to `apps/web/app/(app)/layout.tsx`. It would run server-side and cannot reliably read mocked users from browser MSW.
 
-- [ ] **Step 1: Transaction row**
+- [ ] **Step 1: Completion notice component**
 
 ```tsx
+'use client';
+import { Button } from '@/components/ui/button';
+import type { MissingProfileField } from '@/features/users/lib/profile-completion';
 import Link from 'next/link';
-import { formatPrice } from '@dorsal/domain';
-import type { Transaction } from '@dorsal/schemas';
 
-const STATUS_LABEL: Record<Transaction['status'], string> = {
-  payment_held: 'Pago retenido',
-  data_sent: 'Datos enviados',
-  change_in_progress: 'Cambio en proceso',
-  change_confirmed: 'Cambio confirmado',
-  released: 'Completada',
-  disputed: 'En disputa',
-  cancelled: 'Cancelada',
-  refunded: 'Reembolsada',
+const LABELS: Record<MissingProfileField, string> = {
+  phone_number: 'Telefono',
+  t_shirt_size: 'Talla camiseta',
 };
 
-export function TransactionRow({ tx, role }: { tx: Transaction; role: 'buyer' | 'seller' }) {
+export function ProfileCompletionNotice({
+  missing,
+  callbackUrl,
+}: {
+  missing: MissingProfileField[];
+  callbackUrl: string;
+}) {
+  if (missing.length === 0) return null;
   return (
-    <Link href={`/compra/${tx.id}`} className="flex items-center justify-between rounded-lg border border-border bg-bg-card p-4 hover:border-border-hover">
-      <div>
-        <p className="font-semibold">Dorsal {tx.dorsal_id.slice(0, 8)}…</p>
-        <p className="text-sm text-text-secondary">{role === 'buyer' ? 'Comprado' : 'Vendido'} · {STATUS_LABEL[tx.status]}</p>
-      </div>
-      <p className="font-semibold">{formatPrice(tx.amount)}</p>
-    </Link>
+    <section className="rounded-lg border border-border bg-bg-card p-5">
+      <h2 className="font-semibold">Completa tus datos para comprar</h2>
+      <p className="mt-1 text-sm text-text-secondary">
+        El vendedor necesita estos datos para tramitar el cambio de titularidad.
+      </p>
+      <p className="mt-2 text-sm text-text-muted">Falta: {missing.map((field) => LABELS[field]).join(', ')}</p>
+      <Button asChild variant="outline" className="mt-4">
+        <Link href={`/perfil/completar?callbackUrl=${encodeURIComponent(callbackUrl)}`}>Completar perfil</Link>
+      </Button>
+    </section>
   );
 }
 ```
 
-- [ ] **Step 2: History tabs**
+- [ ] **Step 2: Checkout integration**
 
-```tsx
-'use client';
-import { useQuery } from '@tanstack/react-query';
-import { useSession } from 'next-auth/react';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useApi } from '@/lib/api-client';
-import { TransactionRow } from './transaction-row';
+In `CheckoutForm`, call `useMe()` and `getMissingProfileFields(user)`. Before `reserve.mutateAsync`, block checkout when the profile is incomplete:
 
-export function HistoryTabs() {
-  const api = useApi();
-  const { data: session } = useSession();
-  const myId = session?.user?.id;
-  const { data } = useQuery({ queryKey: ['transactions', 'mine'], queryFn: () => api.transactions.listMine(), enabled: !!myId });
-  const purchases = data?.filter((t) => t.buyer_id === myId) ?? [];
-  const sales     = data?.filter((t) => t.seller_id === myId) ?? [];
-
-  return (
-    <Tabs defaultValue="purchases" className="space-y-4">
-      <TabsList>
-        <TabsTrigger value="purchases">Compras ({purchases.length})</TabsTrigger>
-        <TabsTrigger value="sales">Ventas ({sales.length})</TabsTrigger>
-      </TabsList>
-      <TabsContent value="purchases" className="space-y-3">
-        {purchases.length === 0 ? <p className="text-sm text-text-muted">Aún no has comprado ningún dorsal.</p> :
-          purchases.map((t) => <TransactionRow key={t.id} tx={t} role="buyer" />)}
-      </TabsContent>
-      <TabsContent value="sales" className="space-y-3">
-        {sales.length === 0 ? <p className="text-sm text-text-muted">Aún no has vendido ningún dorsal.</p> :
-          sales.map((t) => <TransactionRow key={t.id} tx={t} role="seller" />)}
-      </TabsContent>
-    </Tabs>
-  );
+```ts
+if (user && missingProfileFields.length > 0) {
+  toast.error('Completa tu perfil antes de comprar');
+  return;
 }
 ```
 
-- [ ] **Step 3: Page**
+Render `ProfileCompletionNotice` above the payment button when fields are missing. Keep the existing `BuyerDataNotice` copy, but remove the old text that says "Cuando el login este listo".
 
-```tsx
-import { HistoryTabs } from '@/features/users/components/history-tabs.client';
-export const metadata = { title: 'Historial' };
-export default function HistorialPage() {
-  return (
-    <main className="container mx-auto max-w-3xl px-4 py-10">
-      <h1 className="mb-6 text-3xl font-bold">Historial</h1>
-      <HistoryTabs />
-    </main>
-  );
-}
-```
-
-- [ ] **Step 4: Commit**
+- [ ] **Step 3: Verify and commit**
 
 ```bash
-git add -A
-git commit -m "feat(users): UC-10 history page with purchases/sales tabs"
+pnpm --filter @dorsal/web test -- checkout-form.test.tsx profile-completion.test.ts
+pnpm --filter @dorsal/web typecheck
+git add apps/web/features/users/components/profile-completion-notice.client.tsx apps/web/features/transactions/components/buyer-data-notice.client.tsx apps/web/features/transactions/components/checkout-form.client.tsx
+git commit -m "feat(users): require complete profile before checkout"
 ```
 
 ---
 
-## Task 8: Reviews (UC-11) — minimal MVP
+## Task 9: Preserve Transaction History Integration
+
+**Files:**
+- Verify: `apps/web/app/(app)/perfil/historial/page.tsx`
+- Verify: `apps/web/features/transactions/hooks/use-my-purchases.ts`
+- Verify: `apps/web/features/transactions/hooks/use-my-sales.ts`
+
+- [ ] **Step 1: Do not create `HistoryTabs` or `transaction-row` under users**
+
+The old plan asked for:
+
+```text
+apps/web/features/users/components/history-tabs.client.tsx
+apps/web/features/users/components/transaction-row.tsx
+api.transactions.listMine()
+```
+
+Do not implement those. They are obsolete.
+
+- [ ] **Step 2: Verify current history page**
+
+The page should still import:
+
+```ts
+import { useMyPurchases } from '@/features/transactions/hooks/use-my-purchases';
+import { useMySales } from '@/features/transactions/hooks/use-my-sales';
+```
+
+- [ ] **Step 3: Optional profile link**
+
+If profile navigation needs a link to history, add it from `/perfil`, not by replacing the history page.
+
+- [ ] **Step 4: Commit only if files changed**
+
+```bash
+git add "apps/web/app/(app)/perfil/page.tsx" "apps/web/app/(app)/perfil/historial/page.tsx"
+git commit -m "feat(users): link profile to transaction history"
+```
+
+---
+
+## Task 10: Reviews MVP And Transaction Detail Integration
 
 **Files:**
 - Create: `apps/web/features/users/hooks/use-create-review.ts`
 - Create: `apps/web/features/users/hooks/use-user-reviews.ts`
 - Create: `apps/web/features/users/components/review-form.client.tsx`
 - Create: `apps/web/features/users/components/review-list.tsx`
+- Create: `apps/web/features/users/components/__tests__/review-form.test.tsx`
+- Modify: `apps/web/app/(app)/compra/[transactionId]/page.tsx`
+
+Backend Review controllers are not implemented in `MVP-Dorsales`; use MSW until they exist.
 
 - [ ] **Step 1: Hooks**
 
 ```ts
-// use-create-review.ts
 'use client';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useApi } from '@/lib/api-client';
 import type { CreateReviewInput } from '@dorsal/schemas';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 
 export function useCreateReview() {
   const api = useApi();
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (input: CreateReviewInput) => api.reviews.create(input),
-    onSuccess: (review) => qc.invalidateQueries({ queryKey: ['reviews', 'user', review.reviewee_id] }),
+    onSuccess: (review) => {
+      void qc.invalidateQueries({ queryKey: ['reviews', 'user', review.reviewee_id] });
+    },
   });
 }
 ```
 
 ```ts
-// use-user-reviews.ts
 'use client';
-import { useQuery } from '@tanstack/react-query';
 import { useApi } from '@/lib/api-client';
+import { useQuery } from '@tanstack/react-query';
 
 export function useUserReviews(userId: string | null) {
   const api = useApi();
   return useQuery({
     queryKey: ['reviews', 'user', userId],
-    queryFn: () => api.reviews.listForUser(userId!),
-    enabled: !!userId,
+    queryFn: () => api.reviews.listForUser(userId as string),
+    enabled: Boolean(userId),
   });
 }
 ```
 
-- [ ] **Step 2: Review form (rating 1-5 + optional comment)**
+- [ ] **Step 2: Review form**
 
-```tsx
-'use client';
-import { useState } from 'react';
-import { Star } from 'lucide-react';
-import { toast } from 'sonner';
-import { Button } from '@/components/ui/button';
-import { useCreateReview } from '@/features/users/hooks/use-create-review';
-import { cn } from '@/lib/utils';
+Create a 1-5 rating form plus optional comment. Submit:
 
-export function ReviewForm({ transactionId, onDone }: { transactionId: string; onDone?: () => void }) {
-  const [rating, setRating] = useState(0);
-  const [comment, setComment] = useState('');
-  const create = useCreateReview();
-
-  function submit() {
-    if (!rating) return;
-    create.mutate({ transaction_id: transactionId, rating, comment }, {
-      onSuccess: () => { toast.success('Reseña enviada'); onDone?.(); },
-      onError: (e) => toast.error(e.message),
-    });
-  }
-
-  return (
-    <div className="space-y-3 rounded-lg border border-border bg-bg-card p-5">
-      <h3 className="font-semibold">¿Cómo fue la experiencia?</h3>
-      <div className="flex gap-1">
-        {[1, 2, 3, 4, 5].map((n) => (
-          <button key={n} type="button" onClick={() => setRating(n)} aria-label={`${n} estrellas`}>
-            <Star className={cn('h-7 w-7', n <= rating ? 'fill-coral text-coral' : 'text-text-muted')} />
-          </button>
-        ))}
-      </div>
-      <textarea
-        placeholder="Comentario (opcional)"
-        value={comment}
-        onChange={(e) => setComment(e.target.value)}
-        maxLength={500}
-        rows={3}
-        className="w-full rounded-md border border-border bg-bg-elevated px-3 py-2 text-sm"
-      />
-      <Button onClick={submit} disabled={!rating || create.isPending}>
-        {create.isPending ? 'Enviando…' : 'Publicar reseña'}
-      </Button>
-    </div>
-  );
-}
+```ts
+create.mutate({
+  transaction_id: transactionId,
+  rating,
+  comment: comment.trim() || undefined,
+});
 ```
 
-- [ ] **Step 3: Review list (used in seller card on detail later if wanted)**
+- [ ] **Step 3: Attach to transaction tracking**
 
-```tsx
-import { Star } from 'lucide-react';
-import type { Review } from '@dorsal/schemas';
+In `apps/web/app/(app)/compra/[transactionId]/page.tsx`, show `ReviewForm` in the aside when:
 
-export function ReviewList({ reviews }: { reviews: Review[] }) {
-  if (reviews.length === 0) return <p className="text-sm text-text-muted">Aún no hay reseñas.</p>;
-  return (
-    <ul className="space-y-3">
-      {reviews.map((r) => (
-        <li key={r.id} className="rounded-md border border-border bg-bg-card p-4">
-          <div className="flex gap-0.5">
-            {[1, 2, 3, 4, 5].map((n) => (
-              <Star key={n} className={n <= r.rating ? 'h-4 w-4 fill-coral text-coral' : 'h-4 w-4 text-text-muted'} />
-            ))}
-          </div>
-          {r.comment && <p className="mt-2 text-sm">{r.comment}</p>}
-          <p className="mt-1 text-xs text-text-muted">{new Date(r.created_at).toLocaleDateString('es-ES')}</p>
-        </li>
-      ))}
-    </ul>
-  );
-}
+```ts
+['confirmed', 'released_to_seller'].includes(tx.status)
 ```
 
-- [ ] **Step 4: Commit**
+Use the same transaction id for buyer and seller. The backend/MSW decides `reviewee_id`.
+
+- [ ] **Step 4: Verify and commit**
 
 ```bash
-git add -A
-git commit -m "feat(users): UC-11 review form and list (minimal MVP)"
+pnpm --filter @dorsal/web test -- review-form.test.tsx
+pnpm --filter @dorsal/web typecheck
+git add apps/web/features/users/hooks/use-create-review.ts apps/web/features/users/hooks/use-user-reviews.ts apps/web/features/users/components/review-form.client.tsx apps/web/features/users/components/review-list.tsx apps/web/features/users/components/__tests__/review-form.test.tsx "apps/web/app/(app)/compra/[transactionId]/page.tsx"
+git commit -m "feat(users): add review form to completed transactions"
 ```
 
 ---
 
-## Task 9: E2E happy paths
+## Task 11: E2E Auth And Profile
 
 **Files:**
 - Create: `apps/web/e2e/auth.spec.ts`
 - Create: `apps/web/e2e/profile.spec.ts`
 
-- [ ] **Step 1: Auth flow**
+- [ ] **Step 1: Auth E2E**
 
-```ts
-import { expect, test } from '@playwright/test';
+Cover:
 
-test('user can log in with seed credentials', async ({ page }) => {
-  await page.goto('/login');
-  await page.fill('#email', 'demo@dorsal.market');
-  await page.fill('#password', 'demo1234');
-  await page.getByRole('button', { name: 'Entrar' }).click();
-  await page.waitForURL('/');
-  await expect(page.getByRole('button', { name: /carlos|perfil/i })).toBeVisible();
-});
-
-test('register redirects to profile completion', async ({ page }) => {
-  const email = `e2e-${Date.now()}@test.local`;
-  await page.goto('/registro');
-  await page.fill('#full_name', 'E2E User');
-  await page.fill('#email', email);
-  await page.fill('#password', 'pass1234');
-  await page.fill('#dni', '12345678X');
-  await page.fill('#birth_date', '1990-01-01');
-  await page.getByRole('button', { name: 'Crear cuenta' }).click();
-  await page.waitForURL('/perfil/completar');
-});
+```text
+/login with demo@dorsal.market / demo1234 redirects to /
+/registro creates a mocked user and lands on /perfil/completar
 ```
 
-- [ ] **Step 2: Profile flow**
+- [ ] **Step 2: Profile E2E**
 
-```ts
-import { expect, test } from '@playwright/test';
+Cover:
 
-test.use({ storageState: undefined });
-
-test('seed user can edit runner data', async ({ page }) => {
-  await page.goto('/login');
-  await page.fill('#email', 'demo@dorsal.market');
-  await page.fill('#password', 'demo1234');
-  await page.getByRole('button', { name: 'Entrar' }).click();
-  await page.goto('/perfil');
-  await page.fill('#club', 'Atletismo Madrid');
-  await page.getByRole('button', { name: /Guardar/i }).nth(2).click();  // runner section save
-  await expect(page.getByText('Datos de corredor actualizados')).toBeVisible();
-});
+```text
+logged-in user can update phone_number
+logged-in user can update t_shirt_size
+checkout blocks when profile is incomplete
+checkout allows continuing when profile is complete
 ```
 
-- [ ] **Step 3: Run e2e**
+Use the existing E2E auth helper when a test only needs a session cookie.
+
+- [ ] **Step 3: Run**
 
 ```bash
-pnpm --filter @dorsal/web test:e2e
+pnpm --filter @dorsal/web test:e2e -- e2e/auth.spec.ts e2e/profile.spec.ts
 ```
+
+Expected: passes when the dev app is running with MSW and backend Catalog/Transaction state required by checkout tests is available.
 
 - [ ] **Step 4: Commit**
 
 ```bash
-git add -A
-git commit -m "test(users): add E2E for login, register and profile editing"
+git add apps/web/e2e/auth.spec.ts apps/web/e2e/profile.spec.ts
+git commit -m "test(users): cover auth and profile completion flows"
 ```
 
 ---
 
-## Task 10: Final verification + PR
+## Task 12: Final Verification And PR
 
-- [ ] **Step 1: Local CI**
+- [ ] **Step 1: Local verification**
 
 ```bash
-pnpm turbo run lint typecheck test build
-pnpm --filter @dorsal/web test:e2e
+pnpm --filter @dorsal/schemas typecheck
+pnpm --filter @dorsal/api-client typecheck
+pnpm --filter @dorsal/api-client test
+pnpm --filter @dorsal/web typecheck
+pnpm --filter @dorsal/web test
+pnpm --filter @dorsal/web build
 ```
 
-- [ ] **Step 2: Open PR**
+- [ ] **Step 2: Targeted formatting**
+
+```bash
+pnpm exec biome check packages/schemas/src/user.ts packages/schemas/src/review.ts packages/api-client/src/msw/users.ts packages/api-client/src/msw/reviews.ts apps/web/features/users "apps/web/app/(auth)" "apps/web/app/(app)/perfil" "apps/web/app/(app)/compra/[transactionId]/page.tsx" apps/web/features/transactions/components/buyer-data-notice.client.tsx apps/web/features/transactions/components/checkout-form.client.tsx apps/web/lib/auth.ts
+```
+
+If full repo Biome still fails on pre-existing CRLF noise, report that separately and do not format unrelated files.
+
+- [ ] **Step 3: E2E**
+
+```bash
+pnpm --filter @dorsal/web test:e2e -- e2e/auth.spec.ts e2e/profile.spec.ts
+```
+
+If backend Catalog/Transaction is down, document the blocker with the failing URL.
+
+- [ ] **Step 4: Push and PR**
 
 ```bash
 git push -u origin feat/usuarios
-# PR title: "feat(usuarios): UC-01, UC-09, UC-10, UC-11 — Identity module (mocked)"
-# Base: feat/dorsales
 ```
 
-PR description: list each UC, screenshots of login/profile/history, note that `users` module is mocked via MSW (set `NEXT_PUBLIC_REAL_API_MODULES=dorsals,users` to swap when backend exposes Identity).
+PR:
+
+```text
+Title: feat(usuarios): Identity, profile completion and reviews MVP
+Base: feat/foundation
+```
+
+PR notes:
+
+```text
+- Identity and Reviews remain mocked because MVP-Dorsales has no REST controllers for those BCs yet.
+- Auth.js Credentials has a development-only server mock bridge while users is absent from NEXT_PUBLIC_REAL_API_MODULES.
+- Profile fields are aligned with Transaction backend transfer data.
+- UC-10 history is reused from feat/transacciones.
+```
 
 ---
 
-## Self-review
+## Self-Review
 
-**Spec coverage:**
+Spec coverage:
 
 | UC | Task |
 |---|---|
-| UC-01 registro/login | Tasks 2, 3 |
-| UC-09 perfil corredor | Tasks 4, 5, 6 |
-| UC-10 historial | Task 7 |
-| UC-11 reseñas (MVP) | Task 8 |
+| UC-01 registro/login | Tasks 3, 4, 5 |
+| UC-09 perfil corredor | Tasks 2, 6, 7, 8 |
+| UC-10 historial | Task 9 |
+| UC-11 resenas | Task 10 |
 
-**ADR coverage:**
-- ADR-005 Auth.js + datos extra → Task 6 (profile completion guard); Tasks 2, 3 leverage Credentials provider.
-- ADR-007 TanStack Query → Tasks 4, 5, 7, 8.
-- ADR-010 RHF + Zod → Tasks 2, 3, 5.
+Backend compatibility:
 
-**Placeholder scan:** none. Each step has concrete code.
+| Backend fact | Plan response |
+|---|---|
+| No Identity controllers in `MVP-Dorsales` | Keep users mocked and add Auth.js server bridge |
+| No Review controllers in `MVP-Dorsales` | Keep reviews mocked |
+| Transaction expects `phone_number` | Rename contact field |
+| Transaction expects `t_shirt_size` | Rename runner field |
+| Transaction history already exists | Reuse existing history page and hooks |
 
-**Type consistency:** `User`, `RunnerProfile`, `RegisterInput`, `LoginInput`, `Review`, `CreateReviewInput`, `Transaction` referenced consistently from `@dorsal/schemas`.
+Open follow-ups after this branch:
 
-**Open follow-ups:**
-- Avatar upload — not in MVP. Stub: profile page renders initial letter.
-- Email verification flow — placeholder route exists, full flow waits for backend support.
-- Reviews list on detail page — could surface seller's reviews. Decided to defer; seller summary on detail (Task 8 of dorsales) shows aggregate rating, sufficient for MVP.
+- Replace mocked Auth.js bridge when backend Identity exposes `/api/v1/auth/login` and `/api/v1/auth/register`.
+- Add `users` to `NEXT_PUBLIC_REAL_API_MODULES` only after the backend contract matches `packages/schemas/src/user.ts`.
+- Add `reviews` to `NEXT_PUBLIC_REAL_API_MODULES` only after backend Review controllers exist.
+- Decide whether address fields beyond `phone_number` belong to the real Identity backend or stay frontend-only for MVP.

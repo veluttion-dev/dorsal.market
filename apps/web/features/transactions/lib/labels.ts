@@ -1,0 +1,35 @@
+import type { TimelineEventType, TransactionStatus } from '@dorsal/schemas';
+
+export const STATUS_LABEL: Record<TransactionStatus, string> = {
+  reserved: 'Reservada',
+  paid: 'Pago recibido',
+  transfer_in_progress: 'Cambio iniciado',
+  transfer_proof_submitted: 'Prueba enviada',
+  confirmed: 'Cambio confirmado',
+  released_to_seller: 'Fondos liberados',
+  refunded_to_buyer: 'Reembolsada',
+  disputed: 'Disputa abierta',
+  expired: 'Reserva expirada',
+  cancelled: 'Cancelada',
+};
+
+export const EVENT_LABEL: Record<TimelineEventType, string> = {
+  reservation_created: 'Reserva creada',
+  payment_succeeded: 'Pago confirmado',
+  transfer_in_progress: 'Cambio en proceso',
+  proof_submitted: 'Prueba enviada',
+  transfer_confirmed: 'Cambio confirmado',
+  funds_released: 'Fondos liberados',
+  dispute_opened: 'Disputa abierta',
+  dispute_resolved: 'Disputa resuelta',
+  refunded: 'Reembolso emitido',
+};
+
+export function formatEventDate(value: string) {
+  return new Intl.DateTimeFormat('es-ES', {
+    day: '2-digit',
+    month: 'short',
+    hour: '2-digit',
+    minute: '2-digit',
+  }).format(new Date(value));
+}

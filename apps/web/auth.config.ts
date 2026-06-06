@@ -13,11 +13,16 @@ export const authConfig = {
       return true;
     },
     jwt({ token, user }) {
-      if (user) token.userId = (user as { id?: string }).id;
+      if (user) {
+        token.userId = (user as { id?: string }).id;
+        const authToken = (user as { token?: string }).token;
+        if (authToken) token.authToken = authToken;
+      }
       return token;
     },
     session({ session, token }) {
       if (token.userId) session.user.id = token.userId as string;
+      if (token.authToken) session.user.token = token.authToken as string;
       return session;
     },
   },

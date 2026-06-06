@@ -1,98 +1,140 @@
 # feat/usuarios
 
-**Goal:** Implementar el módulo Identity: registro, login (con Google y Facebook opcionales), perfil de corredor (identidad, contacto, datos deportivos), historial básico y reseñas cruzadas en formato mínimo.
+**Goal:** Implementar el modulo Identity: Cognito login/session, perfil privado, perfil publico, validacion de datos de corredor para compra, historial consumido desde `feat/transacciones` y resenas MVP.
 
-**Backend status:** ⏳ **Mockeado vía MSW** (el módulo Identity del backend aún no está expuesto). El frontend trabaja contra `packages/api-client/src/msw/users.ts`, que persiste datos en `localStorage` durante la sesión de dev.
+**Backend status:** Identity ya no debe tratarse como "pendiente".
 
-> Cuando el backend libere Identity, basta con: actualizar `packages/schemas/src/user.ts` al contrato real, añadir `users` a `NEXT_PUBLIC_REAL_API_MODULES`, y apagar el handler de MSW. El `UsersHttpAdapter` ya está implementado en foundation.
+- `../MVP-Dorsales` tiene `origin/feature/identity` con UC-01 Cognito/local user y migracion `users`.
+- `origin/feature/UC-09-runner-profile` es la planificacion/implementacion mas reciente de perfil: `GET /api/v1/me`, `PATCH /api/v1/me`, `GET /api/v1/users/{user_id}/public`, `runner_data_complete`.
+- Esa linea de Identity todavia debe reconciliarse con `origin/main`, que contiene Transaction, Catalog e infra AWS pre.
+- Review sigue sin contrato estable para front; mantener MSW hasta que se integre el BC Review definitivo.
 
-**Plan de implementación detallado:** [`docs/superpowers/plans/2026-05-09-feat-usuarios.md`](../superpowers/plans/2026-05-09-feat-usuarios.md) — 10 tasks.
+**AWS pre context:** API `https://qvdpnzcyzf.execute-api.eu-west-1.amazonaws.com`, Cognito pool `eu-west-1_lwL5qYgyF`, client `4qgmipgbv45f2roaju09bl0sk3`, Hosted UI domain `dorsales-pre`.
 
----
+**Plan actualizado:** [`docs/superpowers/plans/2026-05-30-feat-usuarios-backend-sync.md`](../superpowers/plans/2026-05-30-feat-usuarios-backend-sync.md).
 
-## Casos de uso cubiertos
-
-### UC-01 — Registro e inicio de sesión
-
-- **Email + contraseña** vía Credentials provider de Auth.js (siempre disponible).
-- **Google y Facebook** vía OAuth providers — solo se renderiza el botón si las env vars de OAuth están configuradas; si no, se ocultan automáticamente.
-- Registro pide: email, password, nombre completo, DNI, género, fecha de nacimiento.
-- Tras registro → redirección a `/perfil/completar` para completar contacto y datos de corredor.
-
-### UC-09 — Perfil y datos de corredor
-
-Página con tres secciones editables:
-1. **Identidad** — nombre (editable), email/DNI/fecha nacimiento (read-only).
-2. **Contacto y dirección** — teléfono, dirección, ciudad, CP, país.
-3. **Datos de corredor** — tiempo estimado, talla camiseta, club, alergias.
-
-Los datos del corredor se comparten automáticamente con el vendedor cuando completas una compra (ver `feat/transacciones`).
-
-### UC-10 — Historial
-
-Tabs "Compras" y "Ventas" con lista de transacciones. **Esta vista la consume**, no la genera — los datos vienen de `feat/transacciones` (`useMyPurchases`, `useMySales`). Coordinar con esa rama: la primera que abra PR crea la página, la otra solo enchufa los hooks.
-
-### UC-11 — Reseñas (versión mínima MVP)
-
-Form de rating 1-5 estrellas + comentario opcional. Visible tras completar transacción (`status = released_to_seller` o `confirmed`). El listado de reseñas de un seller aparecerá en su card del detalle de dorsal (cuando se implemente).
+**Plan anterior:** [`docs/superpowers/plans/2026-05-09-feat-usuarios.md`](../superpowers/plans/2026-05-09-feat-usuarios.md) queda como referencia historica; no ejecutar sin aplicar el sync del 2026-05-30.
 
 ---
 
-## Archivos que esta rama puede tocar libremente (owned)
+## Base Recomendada
 
+`feat/usuarios` debe arrancar desde `feat/foundation` despues de mergear `feat/transacciones`.
+
+Si hay que empezar antes, crear temporalmente desde `feat/transacciones` y rebasear a `feat/foundation` cuando transacciones este mergeada.
+
+---
+
+## Casos De Uso Cubiertos
+
+### UC-01 - Registro e inicio de sesion
+
+- En entorno real, Cognito es la fuente de identidad. El front no debe llamar a `api/v1/auth/login` ni `api/v1/auth/register` porque el back no emite passwords/tokens propios.
+- Auth.js debe usar proveedor Cognito/OIDC y guardar en sesion el `id_token/access_token` necesario para `Authorization: Bearer <JWT>`.
+- En desarrollo, se puede conservar un bridge Credentials/MSW, pero solo si `users` no esta en `NEXT_PUBLIC_REAL_API_MODULES` y nunca en produccion.
+- Tras primer login o perfil incompleto: redireccion a `/perfil/completar`.
+
+### UC-09 - Perfil y datos de corredor
+
+Pagina con tres secciones, alineadas con el contrato plano del back:
+
+1. **Identidad**: `first_name`, `last_name`; `email` read-only desde Cognito; `dni`, `gender`, `age`.
+2. **Contacto**: `phone_number`, `whatsapp_number`, `postal_code`, `address`.
+3. **Datos de corredor para transferencia**: `estimated_time`, `t_shirt_size`, `club`, `federation_license`, `medical_info`, `emergency_contact`, `additional_info`.
+
+El backend devuelve estos flags:
+
+```text
+profile_complete
+runner_data_complete
 ```
+
+`runner_data_complete` es el gate principal antes de comprar. En la rama UC-09 del back se calcula con `estimated_time`, `t_shirt_size` y `emergency_contact`.
+
+### UC-10 - Historial
+
+La pagina `/perfil/historial` ya fue creada en `feat/transacciones`.
+
+Esta rama no debe crear `HistoryTabs` nuevo ni llamar a `api.transactions.listMine()`. Debe conservar el flujo actual:
+
+```text
+useMyPurchases()
+useMySales()
+```
+
+### UC-11 - Resenas MVP
+
+- Form rating 1-5 + comentario opcional.
+- Visible en seguimiento de compra/venta cuando la transaccion este `confirmed` o `released_to_seller`.
+- Backend Review aun no existe, asi que se mantiene MSW hasta que haya contrato real.
+
+---
+
+## Archivos Owned
+
+```text
 apps/web/app/(auth)/login/page.tsx
 apps/web/app/(auth)/registro/page.tsx
 apps/web/app/(app)/perfil/page.tsx
-apps/web/app/(app)/perfil/completar/page.tsx        # nuevo
+apps/web/app/(app)/perfil/completar/page.tsx
 apps/web/features/users/**
-apps/web/components/user/**                          # nuevo, si hace falta
 apps/web/e2e/auth.spec.ts
 apps/web/e2e/profile.spec.ts
-packages/schemas/src/user.ts                         # refinamientos
-packages/schemas/src/review.ts                       # refinamientos
+packages/schemas/src/user.ts
+packages/schemas/src/review.ts
 packages/api-client/src/{ports,adapters,msw}/users*.ts
 packages/api-client/src/{ports,adapters,msw}/reviews*.ts
 ```
 
-## Zonas compartidas (coordina antes de tocar)
+## Zonas Compartidas
 
-- `apps/web/lib/auth.ts` y `apps/web/auth.config.ts` — auth scaffolding ya viene de foundation. Si necesitas añadir el `token` al JWT callback (por ejemplo, para que `feat/transacciones` lo lea), **acordadlo** y mejor hacerlo en un PR aparte `chore/auth-jwt-token`.
-- `apps/web/proxy.ts` — el matcher ya existe. Si añades rutas protegidas nuevas, ajusta `authConfig.callbacks.authorized` en `auth.config.ts`.
-- `apps/web/app/(app)/layout.tsx` — si añades el redirect a `/perfil/completar` cuando el perfil está incompleto, ese cambio es **compartido** (afecta a las tres ramas). Tu PR debe documentarlo y los demás se rebasan.
-- `apps/web/app/(app)/perfil/historial/page.tsx` — la comparte con `feat/transacciones` (ver UC-10 arriba).
-- `apps/web/components/layout/nav.tsx` — solo si quieres mostrar avatar/nombre del user logueado.
-- `packages/domain/**` — funciones nuevas como `isProfileComplete(user)` van aquí si las usa más de una rama.
+- `apps/web/lib/auth.ts`: necesario para el mock server-side de Credentials mientras Identity backend no exista.
+- `apps/web/auth.config.ts`: solo si cambian rutas protegidas.
+- `apps/web/features/transactions/components/buyer-data-notice.client.tsx`: quitar copy temporal y mostrar estado real de perfil.
+- `apps/web/features/transactions/components/checkout-form.client.tsx`: bloquear checkout si el perfil no tiene `phone_number` y `t_shirt_size`.
+- `apps/web/app/(app)/compra/[transactionId]/page.tsx`: insertar `ReviewForm`.
+- `apps/web/app/(app)/perfil/historial/page.tsx`: solo verificar o enlazar, no reemplazar.
 
----
-
-## Tareas (alto nivel)
-
-- [ ] **Task 1** — Branch setup.
-- [ ] **Task 2** — `<LoginForm />` + `<OAuthButtons />` — **UC-01 login**.
-- [ ] **Task 3** — `<RegisterForm />` con DNI/género/fecha — **UC-01 registro**.
-- [ ] **Task 4** — `useMe`, `useUpdateProfile`, `isProfileComplete()` (TDD del helper).
-- [ ] **Task 5** — Página `/perfil` con tres form-sections — **UC-09**.
-- [ ] **Task 6** — Profile completion guard + página `/perfil/completar`.
-- [ ] **Task 7** — Página `/perfil/historial` con tabs — **UC-10** (coordinar con transacciones).
-- [ ] **Task 8** — `<ReviewForm />` + `<ReviewList />` — **UC-11**.
-- [ ] **Task 9** — E2E auth + profile.
-- [ ] **Task 10** — Pipeline verde + abrir PR.
+No meter un redirect global en `apps/web/app/(app)/layout.tsx` mientras `users` sea mockeado por navegador; ese layout corre server-side y no puede depender de MSW browser.
 
 ---
 
-## Cómo empezar
+## Tareas Alto Nivel
+
+- [ ] **Task 1** - Baseline contra `feat/foundation`, `origin/feature/UC-09-runner-profile` y AWS pre.
+- [ ] **Task 2** - Rehacer schemas `users` al contrato plano `GET/PATCH /api/v1/me` + perfil publico.
+- [ ] **Task 3** - Adaptar `UsersPort`/HTTP/MSW: `getMe`, `patchMe`, `getPublicProfile`; `login/register` solo mock/dev.
+- [ ] **Task 4** - Configurar Auth.js Cognito/OIDC y conservar Credentials solo como fallback local.
+- [ ] **Task 5** - Formularios `/perfil` y `/perfil/completar` con PATCH parcial.
+- [ ] **Task 6** - Usar `profile_complete` y `runner_data_complete` en helpers/hooks.
+- [ ] **Task 7** - Bloquear checkout cuando `runner_data_complete` sea false.
+- [ ] **Task 8** - Preservar historial de `feat/transacciones` (`useMyPurchases`, `useMySales`).
+- [ ] **Task 9** - Mantener Reviews en MSW hasta contrato back estable.
+- [ ] **Task 10** - E2E auth/profile/checkout con modo Cognito pre y modo MSW local.
+- [ ] **Task 11** - Pipeline verde + PR.
+
+---
+
+## Como Empezar
 
 ```bash
 git switch feat/foundation
 git pull
 git switch -c feat/usuarios
 
-# En apps/web/.env.local NO añadas `users` a NEXT_PUBLIC_REAL_API_MODULES
-# (déjalo solo con `dorsals` o como esté). MSW mockeará Identity.
+# Si feat/transacciones aun no esta en foundation:
+# git switch feat/transacciones
+# git pull
+# git switch -c feat/usuarios
+
+# Para probar con back real cuando Identity este mergeado/desplegado:
+#   NEXT_PUBLIC_API_BASE_URL=https://qvdpnzcyzf.execute-api.eu-west-1.amazonaws.com
+#   NEXT_PUBLIC_REAL_API_MODULES=dorsals,transactions,users
+#   Cognito Hosted UI/client configurado en Auth.js
+#
+# En local sin Identity real, NO anadas `users` ni `reviews`.
 
 pnpm dev
-# Visita http://localhost:3000/login
 # Seed user: demo@dorsal.market / demo1234
 ```
 
@@ -102,4 +144,6 @@ pnpm dev
 
 | Fecha | Estado |
 |---|---|
-| 2026-05-14 | Plan listo, sin implementar. MSW handlers de Identity ya en `feat/foundation`. |
+| 2026-05-14 | Plan inicial listo, sin implementar. |
+| 2026-05-24 | Plan actualizado tras `feat/transacciones` y revision de `MVP-Dorsales`; requiere mock server-side para Auth.js y reutiliza historial existente. |
+| 2026-05-30 | Plan actualizado tras revisar ramas `MVP-Dorsales`: Identity/Cognito y UC-09 ya tienen contrato real en ramas remotas; `feat/usuarios` debe orientarse a `GET/PATCH /api/v1/me`, perfil publico y `runner_data_complete`. |

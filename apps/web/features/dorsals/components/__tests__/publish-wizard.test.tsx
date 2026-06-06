@@ -44,6 +44,7 @@ async function fillPublishForm() {
 
 describe('PublishWizard', () => {
   beforeEach(() => {
+    localStorage.clear();
     mocks.mutate.mockReset();
     mocks.push.mockReset();
   });
@@ -77,5 +78,19 @@ describe('PublishWizard', () => {
         expect.any(Object),
       ),
     );
+  });
+
+  it('restores draft fields after navigating away and back', async () => {
+    const user = userEvent.setup();
+    const { unmount } = render(<PublishWizard />);
+
+    await user.type(screen.getByLabelText('Nombre carrera'), 'Carrera guardada');
+    await user.type(screen.getByLabelText(/Precio/), '35');
+    unmount();
+
+    render(<PublishWizard />);
+
+    expect(screen.getByLabelText('Nombre carrera')).toHaveValue('Carrera guardada');
+    expect(screen.getByLabelText(/Precio/)).toHaveValue(35);
   });
 });

@@ -59,5 +59,6 @@ export const SessionUser = z.object({
   email: z.string().email(),
   name: z.string(),
   image: z.string().url().nullable().optional(),
+  token: z.string().optional(),
 });
 export type SessionUser = z.infer<typeof SessionUser>;

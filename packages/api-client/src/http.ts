@@ -1,6 +1,7 @@
 import { NetworkError, fromHttpStatus } from './errors';
 
 export type GetUserId = () => string | null | undefined;
+export type GetAuthToken = () => string | null | undefined;
 
 export interface HttpRequest {
   query?: Record<string, string | number | boolean | string[] | undefined>;
@@ -19,7 +20,8 @@ export interface HttpClient {
 
 export interface HttpClientOptions {
   baseUrl: string;
-  getUserId: GetUserId;
+  getUserId?: GetUserId;
+  getAuthToken?: GetAuthToken;
 }
 
 function buildUrl(base: string, path: string, query?: HttpRequest['query']): string {
@@ -40,14 +42,19 @@ function buildUrl(base: string, path: string, query?: HttpRequest['query']): str
 export function createHttp(opts: HttpClientOptions): HttpClient {
   async function request<T>(method: string, path: string, init?: HttpRequest): Promise<T> {
     const headers = new Headers(init?.headers);
-    if (init?.body !== undefined && !headers.has('Content-Type')) {
+    const isFormData = typeof FormData !== 'undefined' && init?.body instanceof FormData;
+    if (init?.body !== undefined && !isFormData && !headers.has('Content-Type')) {
       headers.set('Content-Type', 'application/json');
     }
-    const userId = opts.getUserId();
+    const userId = opts.getUserId?.();
     if (userId) headers.set('X-User-Id', userId);
+    const authToken = opts.getAuthToken?.();
+    if (authToken) headers.set('Authorization', `Bearer ${authToken}`);
 
     const fetchInit: RequestInit = { method, headers };
-    if (init?.body !== undefined) fetchInit.body = JSON.stringify(init.body);
+    if (init?.body !== undefined) {
+      fetchInit.body = isFormData ? (init.body as BodyInit) : JSON.stringify(init.body);
+    }
     if (init?.signal) fetchInit.signal = init.signal;
 
     let response: Response;

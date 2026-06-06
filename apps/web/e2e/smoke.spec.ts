@@ -12,6 +12,9 @@ test('theme toggle switches data-theme attribute', async ({ page }) => {
   // The toggle's aria-label is theme-agnostic ("Cambiar tema") until mounted,
   // then becomes "Cambiar a {light|dark}" — match both. The page renders the
   // toggle in the nav and in the body, so target the first.
-  await page.getByRole('button', { name: /cambiar/i }).first().click();
+  await page
+    .getByRole('button', { name: /cambiar/i })
+    .first()
+    .click();
   await expect(html).not.toHaveAttribute('data-theme', before ?? '');
 });
