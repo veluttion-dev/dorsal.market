@@ -1,4 +1,9 @@
-import type { Review, TimelineEvent, TransactionStatus, UserProfile } from '@dorsal/schemas';
+import type {
+  BuyerTransactionDetail,
+  Review,
+  SellerTransactionDetail,
+  User,
+} from '@dorsal/schemas';
 
 const SEED_USER_ID = '550e8400-e29b-41d4-a716-446655440001';
 const E2E_BUYER_USER_ID = '550e8400-e29b-41d4-a716-446655440002';
@@ -55,6 +60,10 @@ export type MockTransaction = {
   seller_deadline_at: string | null;
   buyer_deadline_at: string | null;
   created_at: string;
+};
+
+export type MockTransaction = BuyerTransactionDetail & {
+  buyer_snapshot: SellerTransactionDetail['buyer_snapshot'];
 };
 
 export const mockStore = {

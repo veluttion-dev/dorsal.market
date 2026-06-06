@@ -63,63 +63,54 @@ export const TimelineStep = z.object({
 });
 export type TimelineStep = z.infer<typeof TimelineStep>;
 
-const Contact = z.object({
-  full_name: z.string().nullable(),
-  phone_number: z.string().nullable(),
-  whatsapp_number: z.string().nullable(),
-  email: z.string().nullable(),
-});
-
-export const SellerContact = Contact.extend({
-  seller_id: Uuid,
-});
-export type SellerContact = z.infer<typeof SellerContact>;
-
-export const BuyerContact = Contact.extend({
-  buyer_id: Uuid,
-});
-export type BuyerContact = z.infer<typeof BuyerContact>;
-
-export const BuyerTransferProfile = z.object({
-  buyer_id: Uuid,
-  full_name: z.string().nullable(),
-  dni: z.string().nullable(),
-  phone_number: z.string().nullable(),
-  whatsapp_number: z.string().nullable(),
-  t_shirt_size: z.string().nullable(),
-  estimated_time: z.string().nullable(),
-  medical_info: z.string().nullable(),
-  emergency_contact: z.string().nullable(),
-});
-export type BuyerTransferProfile = z.infer<typeof BuyerTransferProfile>;
-
-export const OrderSummary = z.object({
+export const BuyerTransactionDetail = z.object({
+  id: Uuid,
   dorsal_id: Uuid,
-  race_name: z.string().nullable(),
-  bib_number: z.string().nullable(),
-  amount_eur: z.coerce.number().nonnegative(),
-});
-export type OrderSummary = z.infer<typeof OrderSummary>;
-
-const BackendDetailBase = z.object({
-  transaction_id: Uuid,
+  buyer_id: Uuid,
+  seller_id: Uuid,
   status: TransactionStatus,
-  lifecycle_state: z.string(),
-  order_summary: OrderSummary,
-  timeline: z.array(z.union([TimelineEvent, BackendTimelineEvent])),
-  seller_deadline_at: IsoDateTime.nullable(),
-  buyer_deadline_at: IsoDateTime.nullable(),
-});
-
-export const BuyerTransactionDetail = BackendDetailBase.extend({
-  seller_contact: SellerContact,
-  buyer_data_checklist: z.array(z.record(z.unknown())),
+  amount: z.coerce.number().nonnegative(),
+  currency: z.literal('EUR'),
+  stripe_payment_intent_client_secret: z.string().nullable(),
+  proof_file_url: z.string().url().nullable(),
+  timeline: z.array(TimelineEvent),
+  dorsal_snapshot: z.object({
+    race_name: z.string(),
+    race_date: z.string().nullable(),
+    location: z.string(),
+    distance: z.string(),
+    photo_url: z.string().url(),
+  }),
+  created_at: IsoDateTime,
+  updated_at: IsoDateTime,
 });
 export type BuyerTransactionDetail = z.infer<typeof BuyerTransactionDetail>;
 
-export const SellerTransactionDetail = BackendDetailBase.extend({
-  buyer_contact: BuyerContact,
-  buyer_profile: BuyerTransferProfile.nullable(),
+export const SellerTransactionDetail = z.object({
+  id: Uuid,
+  dorsal_id: Uuid,
+  buyer_id: Uuid,
+  seller_id: Uuid,
+  status: TransactionStatus,
+  amount: z.coerce.number().nonnegative(),
+  currency: z.literal('EUR'),
+  proof_file_url: z.string().url().nullable(),
+  timeline: z.array(TimelineEvent),
+  buyer_snapshot: z.object({
+    full_name: z.string(),
+    dni: z.string(),
+    email: z.string().email(),
+    phone: z.string().nullable(),
+    birth_date: z.string(),
+    runner: z
+      .object({
+        shirt_size: z.string().nullable(),
+        club: z.string().nullable(),
+      })
+      .optional(),
+  }),
+  created_at: IsoDateTime,
+  updated_at: IsoDateTime,
 });
 export type SellerTransactionDetail = z.infer<typeof SellerTransactionDetail>;
 
@@ -128,23 +119,24 @@ export type Transaction = z.infer<typeof Transaction>;
 
 export const ReserveListingResponse = z.object({
   transaction_id: Uuid,
-  payment_client_secret: z.string(),
-  reservation_expires_at: IsoDateTime,
+  stripe_payment_intent_client_secret: z.string(),
+  amount: z.coerce.number().nonnegative(),
+  expires_at: IsoDateTime,
 });
 export type ReserveListingResponse = z.infer<typeof ReserveListingResponse>;
 
 export const SellerOnboardingResponse = z.object({
-  account_id: z.string().optional(),
+  account_id: z.string(),
   onboarding_url: z.string().url().nullable(),
-  charges_enabled: z.boolean().optional(),
+  charges_enabled: z.boolean(),
 });
 export type SellerOnboardingResponse = z.infer<typeof SellerOnboardingResponse>;
 
 export const ProofUploadUrlResponse = z.object({
   upload_url: z.string().url(),
-  file_url: z.string(),
-  upload_method: z.enum(['PUT', 'POST']).optional(),
+  upload_method: z.enum(['PUT', 'POST']),
   fields: z.record(z.string()).optional(),
+  final_url: z.string().url(),
 });
 export type ProofUploadUrlResponse = z.infer<typeof ProofUploadUrlResponse>;
 
@@ -181,21 +173,19 @@ export const SellerProblemReport = z.object({
 export type SellerProblemReport = z.infer<typeof SellerProblemReport>;
 
 export const TransactionListItem = z.object({
-  transaction_id: Uuid,
-  race_name: z.string().nullable(),
-  race_date: z.string().nullable(),
-  distance: z.string().nullable(),
-  location: z.string().nullable(),
-  payment_method: z.string(),
-  price: z.coerce.number().nonnegative(),
-  technical_status: z.string(),
-  ui_status: z.string(),
-  ui_status_label: z.string(),
+  id: Uuid,
+  dorsal_id: Uuid,
+  status: TransactionStatus,
+  amount: z.coerce.number().nonnegative(),
+  counterparty_name: z.string(),
+  race_name: z.string(),
+  created_at: IsoDateTime,
 });
 export type TransactionListItem = z.infer<typeof TransactionListItem>;
 
 export const TransactionListResponse = z.object({
   items: z.array(TransactionListItem),
+  total: z.number().int().nonnegative(),
   limit: z.number().int().positive(),
   offset: z.number().int().nonnegative(),
 });

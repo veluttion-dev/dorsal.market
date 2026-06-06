@@ -20,11 +20,12 @@ describe('ReserveListingResponse', () => {
   it('parses a typical backend reservation response', () => {
     const out = ReserveListingResponse.parse({
       transaction_id: '11111111-1111-4111-8111-111111111111',
-      payment_client_secret: 'pi_secret_x',
-      reservation_expires_at: '2026-05-14T12:00:00Z',
+      stripe_payment_intent_client_secret: 'pi_secret_x',
+      amount: '45.00',
+      expires_at: '2026-05-14T12:00:00Z',
     });
 
-    expect(out.payment_client_secret).toBe('pi_secret_x');
+    expect(out.amount).toBe(45);
   });
 });
 

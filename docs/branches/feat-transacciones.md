@@ -8,6 +8,8 @@
 
 > Esta rama **rehace** los schemas/port/adapter/mock de Transaction que vinieron con foundation, porque el contrato real del backend difiere del que se asumió cuando se escribió el plan original. La task 2 y 3 del plan cubren esa actualización.
 
+> **Update 2026-05-30:** tras revisar `MVP-Dorsales` `origin/feature/identity` y `origin/feature/UC-09-runner-profile`, hay un segundo sync pendiente cuando el backend retire IDs de actor en body y use solo Cognito JWT para buyer/seller. Plan: [`docs/superpowers/plans/2026-05-30-feat-transacciones-identity-auth-sync.md`](../superpowers/plans/2026-05-30-feat-transacciones-identity-auth-sync.md).
+
 ---
 
 ## Casos de uso cubiertos

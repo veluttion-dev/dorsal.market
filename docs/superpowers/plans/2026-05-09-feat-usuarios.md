@@ -1,5 +1,7 @@
 # feat/usuarios Implementation Plan
 
+> **Superseded note (2026-05-30):** keep this file as historical context. The executable plan is now [`2026-05-30-feat-usuarios-backend-sync.md`](2026-05-30-feat-usuarios-backend-sync.md), after reviewing `MVP-Dorsales` `origin/feature/identity`, `origin/feature/UC-09-runner-profile`, and AWS pre outputs. The key changes are Cognito/OIDC real auth, `GET/PATCH /api/v1/me`, `GET /api/v1/users/{user_id}/public`, flat profile fields, and `runner_data_complete`.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Implement the Identity feature surface (UC-01 registro/login, UC-09 perfil, UC-10 historial integration, UC-11 resenas) on top of the current `feat/transacciones` work, without breaking the Transaction contracts that already exist.
