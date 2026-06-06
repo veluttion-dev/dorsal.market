@@ -45,12 +45,25 @@ Un solo test: `pnpm --filter @dorsal/<pkg> exec vitest run -t "nombre del test"`
 ### Mock layer intercambiable (ADR-004 — clave del proyecto)
 `packages/api-client` define un **puerto** (interfaz TS) por bounded context del backend: `DorsalsPort`, `UsersPort`, `TransactionsPort`, `ReviewsPort`. Cada puerto tiene un **HTTP adapter** real. Los módulos del backend que aún no existen se interceptan con **MSW** (`src/msw/`).
 
-La env var `NEXT_PUBLIC_REAL_API_MODULES` (CSV) decide qué módulos van contra el backend real; el resto los mockea MSW en dev. Estado backend: Catalog y Transaction **vivos**; Identity y Review **mockeados**.
+La env var `NEXT_PUBLIC_REAL_API_MODULES` (CSV) decide qué módulos van contra el backend real; el resto los mockea MSW en dev. Estado backend: Catalog, Transaction e **Identity** tienen contrato real; **Review** sigue **mockeado** (sin contrato back estable).
 
 Los componentes **nunca llaman `fetch`** — solo usan hooks de TanStack Query que envuelven los puertos. Migrar de mock a real es cambiar la env var, sin tocar UI.
 
 ### Auth
-Auth.js v5 (`apps/web/lib/auth.ts`, `auth.config.ts`). El HTTP client (`packages/api-client/src/http.ts`) inyecta el header de auth: Catalog usa `X-User-Id` provisional, Transaction usa `Authorization: Bearer <JWT>`. Ambos coexisten durante la migración del backend.
+Auth.js v5 (`apps/web/lib/auth.ts`, `auth.config.ts`). El HTTP client (`packages/api-client/src/http.ts`) inyecta el header de auth: Catalog usa `X-User-Id` provisional, Transaction e Identity usan `Authorization: Bearer <JWT>`. Ambos coexisten durante la migración del backend.
+
+**Cognito es el dueño del auth real.** El backend Identity **no expone** rutas de registro/login: el signup y el login viven en Cognito (Hosted UI/OIDC), externos al REST. El provider Cognito ya está en `apps/web/lib/auth.ts`. El provider Credentials + `POST /api/v1/auth/{login,register}` de MSW son **solo fallback de desarrollo** (seed `demo@dorsal.market` / `demo1234`) y nunca deben usarse contra el backend real ni en producción. Pre AWS: pool `eu-west-1_lwL5qYgyF`, client `4qgmipgbv45f2roaju09bl0sk3`.
+
+### Identity (bounded context de usuarios)
+Contrato real (ver `postman/identity_bounded_context.postman_collection.json`):
+
+```text
+GET   /api/v1/me                       # perfil privado, Bearer requerido (provisiona el user local)
+PATCH /api/v1/me                       # update parcial; solo campos presentes; age 14-120; estimated_time HH:MM:SS
+GET   /api/v1/users/{user_id}/public   # perfil público + reputación, sin auth
+```
+
+Perfil **plano** (sin objetos anidados) en `packages/schemas/src/user.ts` (`UserProfile`, `PatchUserProfileInput`, `PublicUserProfile`). El backend devuelve los flags `profile_complete` y `runner_data_complete`; **`runner_data_complete` es el gate de compra** (checkout). El front vive en `features/users` (UC-01/09/10/11) y los planes en `docs/superpowers/plans/2026-05-30-feat-usuarios-backend-sync.md`. Reviews (UC-11) siguen en MSW.
 
 ### Web app
 - Server Components por defecto; `'use client'` solo para interactividad. SSR/SSG es crítico (SEO de marketplace).
@@ -80,4 +93,4 @@ Los planes de implementación paso a paso están en `docs/superpowers/plans/2026
 
 ## Backend (repo paralelo)
 
-FastAPI + SQLModel + PostgreSQL + Stripe Connect + S3, hexagonal. Contratos en `postman/dorsales-api.postman_collection.json` (Catalog) y `postman/transaction_bounded_context.postman_collection.json` (Transaction). Levantar en `http://localhost:8000` para trabajar contra módulos reales.
+FastAPI + SQLModel + PostgreSQL + Stripe Connect + S3 + Cognito, hexagonal. Contratos en `postman/dorsales-api.postman_collection.json` (Catalog), `postman/transaction_bounded_context.postman_collection.json` (Transaction) y `postman/identity_bounded_context.postman_collection.json` (Identity). Levantar en `http://localhost:8000` para trabajar contra módulos reales.
