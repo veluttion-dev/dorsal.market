@@ -18,7 +18,6 @@ export function TransferActions({
   const transfer = useTransferInProgress(transactionId);
   const canStart = status === 'paid' || status === 'reserved' || status === 'PAYMENT_RECEIVED';
   const canUpload =
-    status === 'transfer_in_progress' ||
     status === 'paid' ||
     status === 'TRANSFER_IN_PROGRESS' ||
     status === 'PAYMENT_RECEIVED';
