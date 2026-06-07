@@ -16,12 +16,7 @@ import type {
 import { useSession } from 'next-auth/react';
 import { use } from 'react';
 
-const SELLER_PROBLEM_STATUSES: TransactionStatus[] = [
-  'released_to_seller',
-  'refunded_to_buyer',
-  'RELEASED_TO_SELLER',
-  'REFUNDED_TO_BUYER',
-];
+const SELLER_PROBLEM_STATUSES: TransactionStatus[] = ['RELEASED_TO_SELLER', 'REFUNDED_TO_BUYER'];
 
 function isSellerTransaction(
   tx: BuyerTransactionDetail | SellerTransactionDetail,

@@ -1,17 +1,10 @@
 import { z } from 'zod';
 import { IsoDateTime, Uuid } from './common';
 
+// Canonical Transaction status set returned by the backend (Transaction bounded
+// context). Single source of truth — the legacy lowercase aliases were removed
+// (issue #7) once Catalog/Transaction shipped real uppercase contracts.
 export const TransactionStatus = z.enum([
-  'reserved',
-  'paid',
-  'transfer_in_progress',
-  'transfer_proof_submitted',
-  'confirmed',
-  'released_to_seller',
-  'refunded_to_buyer',
-  'disputed',
-  'expired',
-  'cancelled',
   'PENDING_PAYMENT',
   'PAYMENT_RECEIVED',
   'TRANSFER_IN_PROGRESS',

@@ -26,7 +26,12 @@ describe('ReviewForm', () => {
     mocks.mutateAsync.mockResolvedValueOnce({});
     const user = userEvent.setup();
 
-    render(<ReviewForm transactionId="11111111-1111-4111-8111-111111111111" status="confirmed" />);
+    render(
+      <ReviewForm
+        transactionId="11111111-1111-4111-8111-111111111111"
+        status="RELEASED_TO_SELLER"
+      />,
+    );
 
     await user.click(screen.getByRole('button', { name: '5' }));
     await user.type(screen.getByLabelText(/comentario/i), 'Todo perfecto');
@@ -44,7 +49,7 @@ describe('ReviewForm', () => {
 
   it('stays hidden until the transaction is reviewable', () => {
     const { container } = render(
-      <ReviewForm transactionId="11111111-1111-4111-8111-111111111111" status="paid" />,
+      <ReviewForm transactionId="11111111-1111-4111-8111-111111111111" status="PAYMENT_RECEIVED" />,
     );
 
     expect(container).toBeEmptyDOMElement();

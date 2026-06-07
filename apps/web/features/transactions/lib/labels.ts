@@ -1,16 +1,6 @@
 import type { TimelineEventType, TransactionStatus } from '@dorsal/schemas';
 
 export const STATUS_LABEL: Record<TransactionStatus, string> = {
-  reserved: 'Reservada',
-  paid: 'Pago recibido',
-  transfer_in_progress: 'Cambio iniciado',
-  transfer_proof_submitted: 'Prueba enviada',
-  confirmed: 'Cambio confirmado',
-  released_to_seller: 'Fondos liberados',
-  refunded_to_buyer: 'Reembolsada',
-  disputed: 'Disputa abierta',
-  expired: 'Reserva expirada',
-  cancelled: 'Cancelada',
   PENDING_PAYMENT: 'Pendiente de pago',
   PAYMENT_RECEIVED: 'Pago recibido',
   TRANSFER_IN_PROGRESS: 'Cambio iniciado',

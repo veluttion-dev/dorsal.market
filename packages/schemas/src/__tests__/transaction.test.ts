@@ -10,9 +10,14 @@ import {
 } from '../transaction';
 
 describe('TransactionStatus', () => {
-  it('accepts legacy lowercase and current backend uppercase statuses', () => {
-    expect(TransactionStatus.parse('released_to_seller')).toBe('released_to_seller');
+  it('accepts the canonical backend uppercase statuses', () => {
+    expect(TransactionStatus.parse('RELEASED_TO_SELLER')).toBe('RELEASED_TO_SELLER');
     expect(TransactionStatus.parse('REFUNDED_TO_BUYER')).toBe('REFUNDED_TO_BUYER');
+  });
+
+  it('rejects the removed legacy lowercase statuses', () => {
+    expect(TransactionStatus.safeParse('released_to_seller').success).toBe(false);
+    expect(TransactionStatus.safeParse('paid').success).toBe(false);
   });
 });
 

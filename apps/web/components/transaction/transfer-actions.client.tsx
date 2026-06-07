@@ -16,11 +16,8 @@ export function TransferActions({
   status: TransactionStatus;
 }) {
   const transfer = useTransferInProgress(transactionId);
-  const canStart = status === 'paid' || status === 'reserved' || status === 'PAYMENT_RECEIVED';
-  const canUpload =
-    status === 'paid' ||
-    status === 'TRANSFER_IN_PROGRESS' ||
-    status === 'PAYMENT_RECEIVED';
+  const canStart = status === 'PAYMENT_RECEIVED';
+  const canUpload = status === 'TRANSFER_IN_PROGRESS' || status === 'PAYMENT_RECEIVED';
 
   async function start() {
     await transfer.mutateAsync(sellerId);

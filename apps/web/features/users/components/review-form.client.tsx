@@ -8,10 +8,10 @@ import { Star } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
 
-const REVIEWABLE_STATUSES = ['confirmed', 'released_to_seller', 'RELEASED_TO_SELLER'] as const;
+const REVIEWABLE_STATUSES: TransactionStatus[] = ['RELEASED_TO_SELLER'];
 
 export function isReviewableStatus(status: TransactionStatus) {
-  return REVIEWABLE_STATUSES.includes(status as (typeof REVIEWABLE_STATUSES)[number]);
+  return REVIEWABLE_STATUSES.includes(status);
 }
 
 export function ReviewForm({

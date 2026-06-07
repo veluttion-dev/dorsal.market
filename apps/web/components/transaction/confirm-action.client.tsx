@@ -7,8 +7,6 @@ import { CheckCircle2 } from 'lucide-react';
 import { toast } from 'sonner';
 
 const DISPUTABLE: TransactionStatus[] = [
-  'paid',
-  'transfer_proof_submitted',
   'PAYMENT_RECEIVED',
   'TRANSFER_IN_PROGRESS',
   'TRANSFER_SUBMITTED',
@@ -25,10 +23,7 @@ export function ConfirmAction({
   status: TransactionStatus;
 }) {
   const confirm = useConfirmTransfer(transactionId);
-  const canConfirm =
-    status === 'transfer_proof_submitted' ||
-    status === 'TRANSFER_SUBMITTED' ||
-    status === 'TRANSFER_IN_PROGRESS';
+  const canConfirm = status === 'TRANSFER_SUBMITTED' || status === 'TRANSFER_IN_PROGRESS';
 
   async function submit() {
     await confirm.mutateAsync(buyerId);

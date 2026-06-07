@@ -80,10 +80,10 @@ describe('TransactionsHttpAdapter', () => {
     const http = createHttpStub({ get });
     const adapter = new TransactionsHttpAdapter(http);
 
-    await adapter.listMyPurchases({ status: 'paid', limit: 20, offset: 0 });
+    await adapter.listMyPurchases({ status: 'PAYMENT_RECEIVED', limit: 20, offset: 0 });
 
     expect(get).toHaveBeenCalledWith('api/v1/me/purchases', {
-      query: { status: 'paid', limit: 20, offset: 0 },
+      query: { status: 'PAYMENT_RECEIVED', limit: 20, offset: 0 },
     });
   });
 
