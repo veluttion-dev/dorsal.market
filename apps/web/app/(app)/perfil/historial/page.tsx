@@ -2,7 +2,6 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useMyPurchases } from '@/features/transactions/hooks/use-my-purchases';
 import { useMySales } from '@/features/transactions/hooks/use-my-sales';
-import { STATUS_LABEL } from '@/features/transactions/lib/labels';
 import { formatPrice } from '@dorsal/domain';
 import type { TransactionListItem } from '@dorsal/schemas';
 import Link from 'next/link';
@@ -10,16 +9,16 @@ import Link from 'next/link';
 function TransactionRow({ item }: { item: TransactionListItem }) {
   return (
     <Link
-      href={`/compra/${item.id}`}
+      href={`/compra/${item.transaction_id}`}
       className="grid gap-1 rounded-lg border border-border bg-bg-card p-4 hover:bg-bg-elevated sm:grid-cols-[1fr_auto]"
     >
       <div>
-        <p className="font-semibold">{item.race_name}</p>
-        <p className="text-sm text-text-secondary">{item.counterparty_name}</p>
+        <p className="font-semibold">{item.race_name ?? 'Carrera sin nombre'}</p>
+        <p className="text-sm text-text-secondary">{item.location ?? item.payment_method}</p>
       </div>
       <div className="text-left sm:text-right">
-        <p className="font-semibold">{formatPrice(item.amount)}</p>
-        <p className="text-sm text-text-secondary">{STATUS_LABEL[item.status]}</p>
+        <p className="font-semibold">{formatPrice(item.price)}</p>
+        <p className="text-sm text-text-secondary">{item.ui_status_label}</p>
       </div>
     </Link>
   );
@@ -36,7 +35,7 @@ function List({ items }: { items: TransactionListItem[] }) {
   return (
     <div className="space-y-3">
       {items.map((item) => (
-        <TransactionRow key={item.id} item={item} />
+        <TransactionRow key={item.transaction_id} item={item} />
       ))}
     </div>
   );

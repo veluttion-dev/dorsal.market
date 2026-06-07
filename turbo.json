@@ -8,6 +8,9 @@
       "env": [
         "NODE_ENV",
         "BACKEND_API_URL",
+        "AUTH_COGNITO_CLIENT_SECRET",
+        "AUTH_COGNITO_ID",
+        "AUTH_COGNITO_ISSUER",
         "FACEBOOK_CLIENT_ID",
         "FACEBOOK_CLIENT_SECRET",
         "GOOGLE_CLIENT_ID",
