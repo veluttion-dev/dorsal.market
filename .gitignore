@@ -16,6 +16,7 @@ build/
 # Test outputs
 coverage/
 playwright-report/
+test-results/
 .playwright/
 .superpowers/
 
