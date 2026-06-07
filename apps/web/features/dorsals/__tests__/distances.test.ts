@@ -8,8 +8,7 @@ describe('distanceLabel', () => {
     ['10k', '10K'],
     ['21k', '21K'],
     ['42k', '42K'],
-    ['trail', 'Trail'],
-    ['ultra', 'Ultra'],
+    ['other', 'Otra'],
   ])('formats %s as %s', (input, expected) => {
     expect(distanceLabel(input)).toBe(expected);
   });

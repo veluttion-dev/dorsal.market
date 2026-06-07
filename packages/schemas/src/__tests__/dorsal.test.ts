@@ -11,9 +11,11 @@ import {
 describe('Distance enum', () => {
   it('accepts known distances', () => {
     expect(Distance.parse('10k')).toBe('10k');
+    expect(Distance.parse('other')).toBe('other');
   });
   it('rejects unknown distances', () => {
     expect(() => Distance.parse('marathon')).toThrow();
+    expect(() => Distance.parse('ultra')).toThrow();
   });
 });
 
@@ -103,6 +105,29 @@ describe('DorsalListResponse', () => {
   it('requires items + pagination fields', () => {
     const empty = { items: [], total: 0, page: 1, page_size: 20, total_pages: 0 };
     expect(DorsalListResponse.parse(empty)).toEqual(empty);
+  });
+
+  it('defaults public list items without status to published', () => {
+    const parsed = DorsalListResponse.parse({
+      items: [
+        {
+          id: '550e8400-e29b-41d4-a716-446655440010',
+          photo_url: 'https://example.com/p.jpg',
+          race_name: 'San Silvestre Madrid',
+          race_date: '2026-12-31',
+          location: 'Madrid',
+          distance: '10k',
+          price_amount: '45.00',
+          payment_methods: ['bizum', 'paypal'],
+        },
+      ],
+      total: 1,
+      page: 1,
+      page_size: 20,
+      total_pages: 1,
+    });
+
+    expect(parsed.items[0]?.status).toBe('published');
   });
 });
 

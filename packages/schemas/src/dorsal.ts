@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { IsoDate, IsoDateTime, Pagination, Uuid } from './common';
 
-export const Distance = z.enum(['5k', '10k', '21k', '42k', 'trail', 'ultra']);
+export const Distance = z.enum(['5k', '10k', '21k', '42k', 'other']);
 export type Distance = z.infer<typeof Distance>;
 
 export const PaymentMethod = z.enum(['bizum', 'paypal', 'card']);
@@ -36,7 +36,7 @@ export const DorsalSummary = z.object({
   price_amount: z.coerce.number().nonnegative(),
   payment_methods: z.array(PaymentMethod),
   photo_url: z.string().url(),
-  status: DorsalStatus,
+  status: DorsalStatus.default('published'),
 });
 export type DorsalSummary = z.infer<typeof DorsalSummary>;
 

@@ -24,7 +24,7 @@ import type { z } from 'zod';
 type FormInput = z.input<typeof PublishDorsalInput>;
 type FormValues = z.output<typeof PublishDorsalInput>;
 
-const distances: Distance[] = ['5k', '10k', '21k', '42k', 'trail', 'ultra'];
+const distances: Distance[] = ['5k', '10k', '21k', '42k', 'other'];
 const payments: PaymentMethod[] = ['bizum', 'paypal', 'card'];
 const itemKeys = ['chip', 'shirt', 'bag', 'medal', 'refreshments'] as const;
 const itemLabels: Record<(typeof itemKeys)[number], string> = {
