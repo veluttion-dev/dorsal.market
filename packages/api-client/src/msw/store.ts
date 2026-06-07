@@ -57,10 +57,6 @@ export type MockTransaction = {
   created_at: string;
 };
 
-export type MockTransaction = BuyerTransactionDetail & {
-  buyer_snapshot: SellerTransactionDetail['buyer_snapshot'];
-};
-
 export const mockStore = {
   users: new Map<string, UserProfile>([
     [SEED_USER_ID, seedUser],
