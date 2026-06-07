@@ -1,5 +1,6 @@
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
+import { NavMobile } from './nav-mobile.client';
 import { SignOutButton } from './sign-out-button.client';
 import { ThemeToggle } from './theme-toggle';
 
@@ -14,7 +15,8 @@ export function Nav({
         <Link href="/" className="font-mono text-lg font-bold">
           dorsal<span className="text-coral">.</span>market
         </Link>
-        <div className="flex items-center gap-6 text-sm">
+        {/* Escritorio */}
+        <div className="hidden items-center gap-6 text-sm md:flex">
           <Link href="/dorsales" className="text-text-secondary hover:text-text-primary">
             Dorsales
           </Link>
@@ -41,6 +43,12 @@ export function Nav({
               </Link>
             </div>
           )}
+        </div>
+
+        {/* Móvil */}
+        <div className="flex items-center gap-1 md:hidden">
+          <ThemeToggle />
+          <NavMobile session={session} />
         </div>
       </div>
     </nav>
