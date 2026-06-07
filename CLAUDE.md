@@ -26,8 +26,10 @@ Un solo test: `pnpm --filter @dorsal/<pkg> exec vitest run -t "nombre del test"`
 
 ## Entorno (importante)
 
-- **Node 20 es obligatorio** (`.nvmrc`). Si la shell por defecto trae Node 18, los comandos de build fallan. Activa con `nvm use` o prefija: `export PATH="$HOME/.nvm/versions/node/v20.*/bin:$PATH"`.
+- **Node ≥20** (`engines.node: ">=20.0.0"`). El CI pina **Node 20** vía `.nvmrc` para reproducibilidad, pero **Node 22 LTS también funciona** (typecheck/lint/test/build verifican verde en ambas). Lo que importa es no usar <20. Si tu shell trae una versión incompatible, activa con `nvm use` o prefija `export PATH="$HOME/.nvm/versions/node/v20.*/bin:$PATH"`. Mantén `.nvmrc` y el CI sincronizados si decides subir el pin.
 - **pnpm 9.12.0** vía corepack.
+- **Corre `pnpm install` tras cada pull/checkout antes de typecheck/build.** Hay deps externas (`@stripe/*`, `@sentry/nextjs`) declaradas en `apps/web/package.json` que, si no están en `node_modules`, hacen fallar `tsc` con `TS2307: Cannot find module`. Cuidado: **Turbo cachea typecheck/test**, así que un `turbo run typecheck` puede dar verde por caché aunque falte instalar; usa `--force` para verificación real.
+- Artefactos de Playwright (`test-results/`, `playwright-report/`) están en `.gitignore`. Biome respeta el ignore file (`useIgnoreFile`), así que no se lintean; no los versiones.
 - `apps/web` necesita `apps/web/.env.local` — cópialo de `.env.example` y pon un `NEXTAUTH_SECRET` real.
 - Next.js 16 usa **Turbopack por defecto** en dev y build. `next.config.ts` es Turbopack-compatible (sin hooks `webpack`; `typedRoutes` es opción de nivel superior). No hace falta ningún flag en el script `dev`.
 - **`msw/browser` nunca debe entrar al bundle servidor** (su exports map tiene `"node": null`). Por eso el arranque del worker MSW vive en `components/msw-bootstrap.tsx` y se carga con `next/dynamic({ ssr: false })` desde `providers.tsx`. Si tocas esa zona, mantén ese aislamiento.
@@ -45,7 +47,9 @@ Un solo test: `pnpm --filter @dorsal/<pkg> exec vitest run -t "nombre del test"`
 ### Mock layer intercambiable (ADR-004 — clave del proyecto)
 `packages/api-client` define un **puerto** (interfaz TS) por bounded context del backend: `DorsalsPort`, `UsersPort`, `TransactionsPort`, `ReviewsPort`. Cada puerto tiene un **HTTP adapter** real. Los módulos del backend que aún no existen se interceptan con **MSW** (`src/msw/`).
 
-La env var `NEXT_PUBLIC_REAL_API_MODULES` (CSV) decide qué módulos van contra el backend real; el resto los mockea MSW en dev. Estado backend: Catalog, Transaction e **Identity** tienen contrato real; **Review** sigue **mockeado** (sin contrato back estable).
+La env var `NEXT_PUBLIC_REAL_API_MODULES` (CSV) decide qué módulos van contra el backend real; el resto los mockea MSW en dev. Estado backend: Catalog, Transaction e **Identity** tienen contrato real; **Review** sigue **mockeado** (sin contrato back estable). `.env.example` trae `NEXT_PUBLIC_REAL_API_MODULES=dorsals` como default de dev.
+
+**Catalog (`dorsals`) no tiene handler MSW** y nunca se mockea: el tipo `ApiModule` de `src/msw/index.ts` lo excluye y `msw-bootstrap.tsx` lo filtra antes de `buildHandlers`. Si trabajas el front sin backend, `dorsals` debe ir a un Catalog real en `:8000` (o ajusta el set de módulos reales). Solo hay handlers MSW para `users`, `transactions` y `reviews`.
 
 Los componentes **nunca llaman `fetch`** — solo usan hooks de TanStack Query que envuelven los puertos. Migrar de mock a real es cambiar la env var, sin tocar UI.
 
@@ -65,10 +69,16 @@ GET   /api/v1/users/{user_id}/public   # perfil público + reputación, sin auth
 
 Perfil **plano** (sin objetos anidados) en `packages/schemas/src/user.ts` (`UserProfile`, `PatchUserProfileInput`, `PublicUserProfile`). El backend devuelve los flags `profile_complete` y `runner_data_complete`; **`runner_data_complete` es el gate de compra** (checkout). El front vive en `features/users` (UC-01/09/10/11) y los planes en `docs/superpowers/plans/2026-05-30-feat-usuarios-backend-sync.md`. Reviews (UC-11) siguen en MSW.
 
+### Transaction (estados de la operación)
+Contrato real (ver `postman/transaction_bounded_context.postman_collection.json`). El detalle expone `status` (técnico) y `lifecycle_state`; el listado de historial expone `technical_status`, `ui_status` y `ui_status_label`.
+
+**`TransactionStatus` tiene un único juego canónico en MAYÚSCULAS** (`packages/schemas/src/transaction.ts`): `PENDING_PAYMENT`, `PAYMENT_RECEIVED`, `TRANSFER_IN_PROGRESS`, `TRANSFER_SUBMITTED`, `IN_DISPUTE`, `RELEASED_TO_SELLER`, `REFUNDED_TO_BUYER`, `CANCELLED`. Es lo que devuelven backend y MSW. Los alias legacy en minúsculas (`paid`, `transfer_in_progress`, `released_to_seller`…) **se eliminaron** (issue #7): no vuelvas a añadirlos ni a duplicar guards may/min en los componentes (`confirm-action`, `transfer-actions`, `compra/[transactionId]`, `review-form`). `TimelineEventType` y `DorsalStatus` sí usan minúsculas legítimamente — no los confundas con `TransactionStatus`.
+
 ### Web app
 - Server Components por defecto; `'use client'` solo para interactividad. SSR/SSG es crítico (SEO de marketplace).
 - Route groups: `(marketing)` público SEO, `(app)` navegable/protegido, `(auth)` login/registro.
 - Estilos: Tailwind + shadcn/ui (`components/ui/`), tokens vía CSS vars, theming con next-themes (`data-theme`).
+- Nav responsive: el cluster de enlaces vive en `components/layout/nav.tsx` (`hidden md:flex`); en móvil (`md:hidden`) hay un menú hamburguesa en `nav-mobile.client.tsx` que abre el `Sheet` (`components/ui/sheet.tsx`, ahora con `SheetTitle`/`SheetDescription` para a11y). `ThemeToggle` queda visible en ambos.
 - Forms: react-hook-form + zodResolver con los schemas de `packages/schemas`.
 - `features/<dominio>/` agrupa hooks/componentes/server-fetchers por slice funcional.
 

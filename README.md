@@ -15,6 +15,7 @@ Marketplace de **dorsales de carreras populares** con pago en custodia (escrow).
 - [Documentación](#documentación)
 - [Comandos útiles](#comandos-útiles)
 - [Backend en repo paralelo](#backend-en-repo-paralelo)
+- [Despliegue](#despliegue)
 - [Convenciones](#convenciones)
 
 ---
@@ -25,11 +26,11 @@ Marketplace de **dorsales de carreras populares** con pago en custodia (escrow).
 |---|---|---|
 | **Monorepo** | pnpm workspaces + Turborepo | `node_modules` minimalista, cache de build/test por paquete |
 | **Lenguaje** | TypeScript 5.6 estricto (`exactOptionalPropertyTypes`, `noUncheckedIndexedAccess`) | Tipado serio en límites entre módulos |
-| **Runtime** | Node 20 LTS | Definido en `.nvmrc` y `package.json#engines` |
+| **Runtime** | Node ≥20 (`engines: ">=20.0.0"`) | CI pina Node 20 vía `.nvmrc`; Node 22 LTS también funciona (verificado) |
 | **Web framework** | Next.js 16 (App Router, Server Components) | SSR/SSG real → SEO crítico para un marketplace |
 | **Estilos** | Tailwind CSS + shadcn/ui + CSS vars | Tokens del mockup mapeados a Tailwind theme; primitivos accesibles (Radix) |
 | **Theming** | next-themes (atributo `data-theme`) | Dark/light sin flash en SSR |
-| **Auth** | Auth.js v5 (Credentials + Google + Facebook) | Sesión por cookie HTTP-only firmada (mejor que localStorage) |
+| **Auth** | Auth.js v5 (Cognito OIDC; Credentials solo fallback de dev) | Sesión por cookie HTTP-only firmada; Cognito es el dueño del login/registro real |
 | **Estado servidor** | TanStack Query v5 | Caché, dedup, optimistic updates, paginación |
 | **Estado cliente (puntual)** | Zustand con `persist` | Para UI persistente entre sesiones (filtros, theme) |
 | **Forms** | react-hook-form + Zod | Validación cliente/servidor compartida desde el mismo schema |
@@ -40,7 +41,7 @@ Marketplace de **dorsales de carreras populares** con pago en custodia (escrow).
 | **Lint/format** | Biome 1.9 | Un solo binario, ~10× más rápido que ESLint+Prettier |
 | **Iconos** | lucide-react | Tree-shakeable, los que shadcn adopta |
 | **CI** | GitHub Actions + Turborepo cache | Tareas afectadas por cada cambio se ejecutan solas |
-| **Deploy web** | Vercel (production + PR previews) | Pendiente conectar |
+| **Deploy web** | Vercel | Conectado. Solo construye `main` (producción); las demás ramas saltan vía *Ignored Build Step* — ver [Despliegue](#despliegue) |
 | **Observabilidad** | Sentry (errores) + Vercel Analytics (Web Vitals) | DSN vacío en dev = no envía |
 | **Móvil (futuro)** | Expo + React Native, FlashList, MMKV, Reanimated, expo-sqlite | Plan, no implementado todavía |
 
@@ -78,7 +79,7 @@ dorsal.market/
 
 ## Quickstart
 
-**Prerrequisitos:** Node 20 (`nvm use`), pnpm 9 (`corepack enable && corepack prepare pnpm@9.12.0 --activate`).
+**Prerrequisitos:** Node ≥20 (`nvm use` instala la versión de `.nvmrc`; Node 22 también vale), pnpm 9 (`corepack enable && corepack prepare pnpm@9.12.0 --activate`).
 
 ```bash
 # 1. Instala dependencias
@@ -124,7 +125,7 @@ Cada rama es **dueña** de un slice del codebase. Si todos respetamos esa owners
 | Rama | UCs | Backend status | Slice (cambia libremente) |
 |---|---|---|---|
 | [`feat/dorsales`](docs/branches/feat-dorsales.md) | UC-02, UC-04, UC-05 | ✅ Catalog vivo | `apps/web/app/(app)/{dorsales,vender}/**`, `apps/web/features/dorsals/**`, `apps/web/components/dorsal/**` |
-| [`feat/usuarios`](docs/branches/feat-usuarios.md) | UC-01, UC-09, UC-10, UC-11 | ⏳ Identity mockeado (MSW) | `apps/web/app/(auth)/**`, `apps/web/app/(app)/perfil/**`, `apps/web/features/users/**` |
+| [`feat/usuarios`](docs/branches/feat-usuarios.md) | UC-01, UC-09, UC-10, UC-11 | ✅ Identity vivo (Review aún MSW) | `apps/web/app/(auth)/**`, `apps/web/app/(app)/perfil/**`, `apps/web/features/users/**` |
 | [`feat/transacciones`](docs/branches/feat-transacciones.md) | UC-03, UC-06, UC-07, UC-08 | ✅ Transaction vivo | `apps/web/app/(app)/compra/**`, `apps/web/features/transactions/**`, `apps/web/components/transaction/**` |
 
 **Zonas compartidas que requieren coordinación** (toque con comunicación previa, idealmente en un PR aparte):
@@ -150,6 +151,7 @@ Detalles completos por rama en [`docs/branches/`](docs/branches/). Modelo arquit
 | [`mockups/*.html`](mockups/) | Diseño visual de las 6 pantallas (referencia, no se modifica) |
 | [`postman/dorsales-api.postman_collection.json`](postman/dorsales-api.postman_collection.json) | Contrato del backend Catalog |
 | [`postman/transaction_bounded_context.postman_collection.json`](postman/transaction_bounded_context.postman_collection.json) | Contrato del backend Transaction |
+| [`postman/identity_bounded_context.postman_collection.json`](postman/identity_bounded_context.postman_collection.json) | Contrato del backend Identity (perfil) |
 
 ---
 
@@ -185,21 +187,36 @@ pnpm turbo run lint typecheck test build
 
 El backend es **un repo separado**, FastAPI + SQLModel + opyoid (DI) + PostgreSQL + Stripe Connect + S3, con arquitectura hexagonal.
 
-**Estado de los bounded contexts a 2026-05-14:**
+**Estado de los bounded contexts a 2026-06-07:**
 
 | Módulo | Estado | Auth | Contrato Postman |
 |---|---|---|---|
 | **Catalog** (dorsales) | ✅ vivo | `X-User-Id` provisional | `postman/dorsales-api.postman_collection.json` |
 | **Transaction** (compra/escrow/disputas) | ✅ vivo | `Authorization: Bearer <JWT>` | `postman/transaction_bounded_context.postman_collection.json` |
-| **Identity** (auth, perfil) | ⏳ pendiente | — | (frontend mockea con MSW) |
+| **Identity** (perfil) | ✅ vivo | `Authorization: Bearer <JWT>` (login/registro vía Cognito, externos al REST) | `postman/identity_bounded_context.postman_collection.json` |
 | **Review** (reseñas) | ⏳ pendiente | — | (frontend mockea con MSW) |
 
-Cuando el backend libere Identity o Review:
+Cuando el backend libere Review:
 1. Actualiza los Zod schemas correspondientes para reflejar el contrato real.
 2. Cambia `NEXT_PUBLIC_REAL_API_MODULES` para incluir el módulo nuevo.
 3. Apaga el handler de MSW de ese módulo.
 
 El HTTP client del frontend inyecta tanto `X-User-Id` como `Authorization: Bearer` cuando hay sesión, así cada módulo del backend usa el header que corresponda durante la transición.
+
+---
+
+## Despliegue
+
+La web se despliega en **Vercel** vía la integración de Git. El despliegue de **producción** se hace **solo desde `main`**.
+
+Para evitar que cada PR a `feat/foundation` (o a ramas de feature) dispare un Preview Deployment que falla, el proyecto usa el **Ignored Build Step** de Vercel (Settings → Git): Vercel solo construye cuando la rama es `main` y salta el resto.
+
+```bash
+# Ignored Build Step (Behavior: "Run my Bash script")
+if [ "$VERCEL_GIT_COMMIT_REF" = "main" ]; then exit 1; else exit 0; fi
+```
+
+`exit 1` = construir (rama `main`); `exit 0` = saltar (cualquier otra rama → el check sale como *skipped*, no *failed*). Vercel solo conoce la rama **origen** (`VERCEL_GIT_COMMIT_REF`), no el destino de la PR, así que "solo en main" equivale a desplegar únicamente la rama de producción. El CI de GitHub Actions (`ci.yml`) sigue corriendo en todas las PRs y es el que valida lint/typecheck/test/build/e2e.
 
 ---
 
