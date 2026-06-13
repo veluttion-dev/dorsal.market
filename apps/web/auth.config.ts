@@ -12,15 +12,20 @@ export function selectAccountAuthToken(
   return account?.id_token ?? account?.access_token ?? null;
 }
 
+export function isProtectedPath(pathname: string) {
+  return (
+    pathname.startsWith('/vender') ||
+    pathname.startsWith('/perfil') ||
+    pathname.startsWith('/compra')
+  );
+}
+
 export const authConfig = {
   pages: { signIn: '/login' },
   callbacks: {
     authorized({ auth, request: { nextUrl } }) {
       const isLoggedIn = !!auth?.user;
-      const isProtected =
-        nextUrl.pathname.startsWith('/vender') ||
-        nextUrl.pathname.startsWith('/perfil') ||
-        nextUrl.pathname.startsWith('/compra');
+      const isProtected = isProtectedPath(nextUrl.pathname);
       if (isProtected && !isLoggedIn) return false;
       return true;
     },
