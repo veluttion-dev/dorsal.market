@@ -1,9 +1,6 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-import {
-  FeedbackConfigurationError,
-  FeedbackQuotaExceededError,
-} from '@/lib/feedback/errors';
+import { FeedbackConfigurationError, FeedbackQuotaExceededError } from '@/lib/feedback/errors';
 import { ResendFeedbackSink } from '@/lib/feedback/sinks/resend-feedback-sink';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { POST } from '../route';
 
 const mocks = vi.hoisted(() => ({

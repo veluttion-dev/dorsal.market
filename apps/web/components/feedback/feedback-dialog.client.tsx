@@ -76,9 +76,9 @@ export function FeedbackDialog({ open, onOpenChange }: FeedbackDialogProps) {
         <DialogHeader>
           <DialogTitle>Enviar feedback</DialogTitle>
           <DialogDescription>
-            Ayudanos a mejorar dorsal.market con feedback concreto: errores que encuentres,
-            partes del proceso que no se entienden, pasos que te resulten confusos al comprar o
-            vender, o ideas que faciliten completar una tarea.
+            Ayudanos a mejorar dorsal.market con feedback concreto: errores que encuentres, partes
+            del proceso que no se entienden, pasos que te resulten confusos al comprar o vender, o
+            ideas que faciliten completar una tarea.
           </DialogDescription>
         </DialogHeader>
 
