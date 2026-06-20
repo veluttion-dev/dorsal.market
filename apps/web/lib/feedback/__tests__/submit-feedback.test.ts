@@ -76,9 +76,9 @@ describe('submitFeedback', () => {
   it('rejects invalid contact emails before calling the sink', async () => {
     const sink = fakeSink();
 
-    await expect(submitFeedback(validPayload({ contactEmail: 'runner' }), sink)).rejects.toBeInstanceOf(
-      FeedbackValidationError,
-    );
+    await expect(
+      submitFeedback(validPayload({ contactEmail: 'runner' }), sink),
+    ).rejects.toBeInstanceOf(FeedbackValidationError);
 
     expect(sink.send).not.toHaveBeenCalled();
   });
@@ -86,9 +86,9 @@ describe('submitFeedback', () => {
   it('rejects invalid page URLs before calling the sink', async () => {
     const sink = fakeSink();
 
-    await expect(submitFeedback(validPayload({ pageUrl: 'dorsales/demo' }), sink)).rejects.toBeInstanceOf(
-      FeedbackValidationError,
-    );
+    await expect(
+      submitFeedback(validPayload({ pageUrl: 'dorsales/demo' }), sink),
+    ).rejects.toBeInstanceOf(FeedbackValidationError);
 
     expect(sink.send).not.toHaveBeenCalled();
   });
@@ -96,9 +96,9 @@ describe('submitFeedback', () => {
   it('rejects invalid submittedAt values before calling the sink', async () => {
     const sink = fakeSink();
 
-    await expect(submitFeedback(validPayload({ submittedAt: 'June 5, 2026' }), sink)).rejects.toBeInstanceOf(
-      FeedbackValidationError,
-    );
+    await expect(
+      submitFeedback(validPayload({ submittedAt: 'June 5, 2026' }), sink),
+    ).rejects.toBeInstanceOf(FeedbackValidationError);
 
     expect(sink.send).not.toHaveBeenCalled();
   });
@@ -121,9 +121,9 @@ describe('submitFeedback', () => {
   it('rejects feedback messages above the maximum length boundary before calling the sink', async () => {
     const sink = fakeSink();
 
-    await expect(submitFeedback(validPayload({ message: 'a'.repeat(4001) }), sink)).rejects.toBeInstanceOf(
-      FeedbackValidationError,
-    );
+    await expect(
+      submitFeedback(validPayload({ message: 'a'.repeat(4001) }), sink),
+    ).rejects.toBeInstanceOf(FeedbackValidationError);
 
     expect(sink.send).not.toHaveBeenCalled();
   });

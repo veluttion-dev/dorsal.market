@@ -22,7 +22,8 @@ function renderFeedbackHtml(payload: FeedbackPayload) {
     ['Fecha', payload.submittedAt],
     [
       'Usuario',
-      [payload.userName, payload.userEmail, payload.userId].filter(Boolean).join(' | ') || 'No autenticado',
+      [payload.userName, payload.userEmail, payload.userId].filter(Boolean).join(' | ') ||
+        'No autenticado',
     ],
   ];
 

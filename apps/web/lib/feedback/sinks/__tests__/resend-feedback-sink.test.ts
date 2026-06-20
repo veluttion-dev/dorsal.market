@@ -53,16 +53,16 @@ describe('ResendFeedbackSink', () => {
 
   it('includes escaped feedback HTML and reply_to in the Resend request body', async () => {
     setFeedbackEnv();
-    const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue(
-      new Response(JSON.stringify({ id: 'email_123' }), { status: 200 }),
-    );
+    const fetchMock = vi
+      .spyOn(globalThis, 'fetch')
+      .mockResolvedValue(new Response(JSON.stringify({ id: 'email_123' }), { status: 200 }));
 
     await new ResendFeedbackSink().send({
       message: `No entiendo <script>alert("pago")</script> & 'comillas'.`,
       contactEmail: 'runner@example.com',
       pageUrl: 'http://localhost:3000/compra/checkout/demo?step=pay&mode=test',
       userAgent: 'vitest <agent>',
-      userName: `Ana <Runner>`,
+      userName: 'Ana <Runner>',
       userEmail: 'ana@example.com',
       userId: 'user_123',
       submittedAt: '2026-06-05T16:00:00.000Z',
@@ -83,16 +83,18 @@ describe('ResendFeedbackSink', () => {
     });
     expect(body.html).toContain('&lt;script&gt;alert(&quot;pago&quot;)&lt;/script&gt;');
     expect(body.html).toContain('&amp; &#039;comillas&#039;');
-    expect(body.html).toContain('http://localhost:3000/compra/checkout/demo?step=pay&amp;mode=test');
+    expect(body.html).toContain(
+      'http://localhost:3000/compra/checkout/demo?step=pay&amp;mode=test',
+    );
     expect(body.html).toContain('vitest &lt;agent&gt;');
     expect(body.html).toContain('Ana &lt;Runner&gt; | ana@example.com | user_123');
   });
 
   it('omits reply_to from the Resend request body when contact email is absent', async () => {
     setFeedbackEnv();
-    const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue(
-      new Response(JSON.stringify({ id: 'email_123' }), { status: 200 }),
-    );
+    const fetchMock = vi
+      .spyOn(globalThis, 'fetch')
+      .mockResolvedValue(new Response(JSON.stringify({ id: 'email_123' }), { status: 200 }));
 
     await new ResendFeedbackSink().send({
       message: 'No entiendo que datos vera el vendedor despues de comprar.',
@@ -162,16 +164,26 @@ describe('ResendFeedbackSink', () => {
       submittedAt: '2026-06-05T16:00:00.000Z',
     };
 
-    await expect(new ResendFeedbackSink().send(payload)).rejects.toBeInstanceOf(FeedbackDeliveryError);
-    await expect(new ResendFeedbackSink().send(payload)).rejects.toBeInstanceOf(FeedbackDeliveryError);
-    await expect(new ResendFeedbackSink().send(payload)).rejects.toBeInstanceOf(FeedbackDeliveryError);
-    await expect(new ResendFeedbackSink().send(payload)).rejects.toBeInstanceOf(FeedbackDeliveryError);
+    await expect(new ResendFeedbackSink().send(payload)).rejects.toBeInstanceOf(
+      FeedbackDeliveryError,
+    );
+    await expect(new ResendFeedbackSink().send(payload)).rejects.toBeInstanceOf(
+      FeedbackDeliveryError,
+    );
+    await expect(new ResendFeedbackSink().send(payload)).rejects.toBeInstanceOf(
+      FeedbackDeliveryError,
+    );
+    await expect(new ResendFeedbackSink().send(payload)).rejects.toBeInstanceOf(
+      FeedbackDeliveryError,
+    );
   });
 
   it('fails clearly when feedback email env vars are missing', async () => {
-    delete process.env.RESEND_API_KEY;
-    delete process.env.FEEDBACK_TO_EMAIL;
-    delete process.env.FEEDBACK_FROM_EMAIL;
+    // Reflect.deleteProperty unsets the var; `process.env.X = undefined` would
+    // coerce to the string "undefined" and not simulate a missing var.
+    Reflect.deleteProperty(process.env, 'RESEND_API_KEY');
+    Reflect.deleteProperty(process.env, 'FEEDBACK_TO_EMAIL');
+    Reflect.deleteProperty(process.env, 'FEEDBACK_FROM_EMAIL');
 
     await expect(
       new ResendFeedbackSink().send({
