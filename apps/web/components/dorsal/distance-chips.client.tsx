@@ -1,9 +1,9 @@
 'use client';
 import { distanceLabel } from '@/features/dorsals/lib/distances';
 import { cn } from '@/lib/utils';
-import type { Distance } from '@dorsal/schemas';
+import { Distance } from '@dorsal/schemas';
 
-const ALL: Distance[] = ['5k', '10k', '21k', '42k', 'other'];
+const ALL = Distance.options;
 
 export function DistanceChips({
   value,

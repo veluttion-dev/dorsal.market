@@ -17,7 +17,7 @@ export function Nav({
         </Link>
         {/* Escritorio */}
         <div className="hidden items-center gap-6 text-sm md:flex">
-          <Link href="/dorsales" className="text-text-secondary hover:text-text-primary">
+          <Link href="/" className="text-text-secondary hover:text-text-primary">
             Dorsales
           </Link>
           <Link href="/vender" className="text-text-secondary hover:text-text-primary">

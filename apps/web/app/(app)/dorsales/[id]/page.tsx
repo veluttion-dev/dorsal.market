@@ -1,14 +1,16 @@
 import { BuyButton } from '@/components/dorsal/buy-button.client';
+import { STATUS_BADGE } from '@/components/dorsal/dorsal-card';
 import { IncludedItemsList } from '@/components/dorsal/included-items-list';
 import { PaymentMethodPills } from '@/components/dorsal/payment-method-pills';
-import { SellerCard } from '@/components/dorsal/seller-card';
+import { SellerCardSkeleton, SellerSection } from '@/components/dorsal/seller-section';
 import { distanceLabel } from '@/features/dorsals/lib/distances';
 import { getDorsalDetail } from '@/features/dorsals/server/get-detail';
-import { getServerApi } from '@/lib/api';
+import { cn } from '@/lib/utils';
 import { formatPrice, formatRaceDate } from '@dorsal/domain';
 import type { Metadata } from 'next';
 import Image from 'next/image';
 import { notFound } from 'next/navigation';
+import { Suspense } from 'react';
 
 export const revalidate = 300;
 
@@ -38,10 +40,6 @@ export default async function DorsalDetailPage({ params }: { params: Promise<Par
   const d = await getDorsalDetail(id);
   if (!d) notFound();
 
-  // The seller card degrades gracefully while public profiles are unavailable.
-  const api = await getServerApi();
-  const seller = await api.users.getPublicProfile(d.seller_id).catch(() => null);
-
   return (
     <main className="container mx-auto px-4 py-8">
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-[1fr_360px]">
@@ -54,8 +52,13 @@ export default async function DorsalDetailPage({ params }: { params: Promise<Par
               <span className="rounded-md bg-bg-elevated px-2 py-1 text-xs font-bold">
                 {distanceLabel(d.distance)}
               </span>
-              <span className="rounded-md bg-olive-subtle px-2 py-1 text-xs font-medium text-olive">
-                En venta
+              <span
+                className={cn(
+                  'rounded-md px-2 py-1 text-xs font-medium',
+                  STATUS_BADGE[d.status].className,
+                )}
+              >
+                {STATUS_BADGE[d.status].label}
               </span>
             </div>
             <h1 className="text-3xl font-bold">{d.race_name}</h1>
@@ -89,7 +92,9 @@ export default async function DorsalDetailPage({ params }: { params: Promise<Par
               Pago en custodia · feat/transacciones
             </p>
           </div>
-          {seller && <SellerCard seller={seller} />}
+          <Suspense fallback={<SellerCardSkeleton />}>
+            <SellerSection sellerId={d.seller_id} />
+          </Suspense>
           {(d.contact_phone || d.contact_email) && (
             <div className="rounded-lg border border-border bg-bg-card p-5 text-sm">
               <h3 className="mb-2 font-semibold">Contacto</h3>

@@ -23,7 +23,7 @@ describe('NavMobile', () => {
 
     const dialog = await screen.findByRole('dialog');
     expect(dialog).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'Dorsales' })).toHaveAttribute('href', '/dorsales');
+    expect(screen.getByRole('link', { name: 'Dorsales' })).toHaveAttribute('href', '/');
     expect(screen.getByRole('link', { name: 'Vender' })).toHaveAttribute('href', '/vender');
   });
 

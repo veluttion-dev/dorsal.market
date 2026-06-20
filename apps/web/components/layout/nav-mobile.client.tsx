@@ -14,7 +14,7 @@ import { useState } from 'react';
 import { SignOutButton } from './sign-out-button.client';
 
 const LINKS = [
-  { href: '/dorsales', label: 'Dorsales' },
+  { href: '/', label: 'Dorsales' },
   { href: '/vender', label: 'Vender' },
 ] as const;
 
