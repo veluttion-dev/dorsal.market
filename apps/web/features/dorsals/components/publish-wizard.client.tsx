@@ -12,7 +12,7 @@ import {
   loadPublishDraft,
   savePublishDraft,
 } from '@/features/dorsals/lib/publish-draft-storage';
-import { type Distance, type PaymentMethod, PublishDorsalInput } from '@dorsal/schemas';
+import { Distance, PaymentMethod, PublishDorsalInput } from '@dorsal/schemas';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Camera, CreditCard, MapPin, Phone, Trophy } from 'lucide-react';
 import { useRouter } from 'next/navigation';
@@ -24,8 +24,8 @@ import type { z } from 'zod';
 type FormInput = z.input<typeof PublishDorsalInput>;
 type FormValues = z.output<typeof PublishDorsalInput>;
 
-const distances: Distance[] = ['5k', '10k', '21k', '42k', 'other'];
-const payments: PaymentMethod[] = ['bizum', 'paypal', 'card'];
+const distances: Distance[] = [...Distance.options];
+const payments: PaymentMethod[] = [...PaymentMethod.options];
 const itemKeys = ['chip', 'shirt', 'bag', 'medal', 'refreshments'] as const;
 const itemLabels: Record<(typeof itemKeys)[number], string> = {
   chip: 'Chip',

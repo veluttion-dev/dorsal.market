@@ -21,7 +21,7 @@ describe('parseFiltersFromSearchParams', () => {
   });
 
   it('drops invalid values while keeping valid filters', () => {
-    const sp = new URLSearchParams('distance=10k&distance=ultra&sort_by=relevance');
+    const sp = new URLSearchParams('distance=10k&distance=20k&sort_by=relevance');
     expect(parseFiltersFromSearchParams(sp)).toEqual({ distance: ['10k'] });
   });
 

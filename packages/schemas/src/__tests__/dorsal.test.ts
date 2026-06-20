@@ -11,11 +11,14 @@ import {
 describe('Distance enum', () => {
   it('accepts known distances', () => {
     expect(Distance.parse('10k')).toBe('10k');
+    expect(Distance.parse('ultra')).toBe('ultra');
+    expect(Distance.parse('trail')).toBe('trail');
+    expect(Distance.parse('ciclismo')).toBe('ciclismo');
     expect(Distance.parse('other')).toBe('other');
   });
   it('rejects unknown distances', () => {
     expect(() => Distance.parse('marathon')).toThrow();
-    expect(() => Distance.parse('ultra')).toThrow();
+    expect(() => Distance.parse('20k')).toThrow();
   });
 });
 

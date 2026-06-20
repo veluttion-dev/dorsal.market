@@ -2,60 +2,23 @@
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import type { Distance, PaymentMethod, SearchDorsalsQuery } from '@dorsal/schemas';
-import {
-  parseAsArrayOf,
-  parseAsInteger,
-  parseAsString,
-  parseAsStringEnum,
-  useQueryStates,
-} from 'nuqs';
+import { FILTER_PARSERS } from '@/features/dorsals/lib/filter-parsers.client';
+import type { Distance, PaymentMethod } from '@dorsal/schemas';
+import { useQueryStates } from 'nuqs';
 import { DistanceChips } from './distance-chips.client';
 import { PriceRange } from './price-range.client';
-
-const distances: Distance[] = ['5k', '10k', '21k', '42k', 'other'];
-const payments: PaymentMethod[] = ['bizum', 'paypal', 'card'];
-const sortBy: NonNullable<SearchDorsalsQuery['sort_by']>[] = ['price', 'race_date', 'created_at'];
-const sortOrder: NonNullable<SearchDorsalsQuery['sort_order']>[] = ['asc', 'desc'];
 
 /**
  * Filter sidebar. State lives entirely in the URL searchParams via nuqs, so the
  * server-rendered listing page picks it up and results are shareable.
  */
 export function DorsalFilters() {
-  const [q, setQ] = useQueryStates(
-    {
-      race_name: parseAsString,
-      location: parseAsString,
-      distance: parseAsArrayOf(parseAsStringEnum(distances)),
-      price_min: parseAsInteger,
-      price_max: parseAsInteger,
-      payment_method: parseAsStringEnum(payments),
-      date_from: parseAsString,
-      date_to: parseAsString,
-      sort_by: parseAsStringEnum(sortBy),
-      sort_order: parseAsStringEnum(sortOrder),
-      page: parseAsInteger,
-      page_size: parseAsInteger,
-    },
-    { history: 'push', shallow: false },
-  );
+  // shallow (default): la URL se actualiza en cliente y DorsalsListClient
+  // refetch-ea vía TanStack Query sin recargar la página.
+  const [q, setQ] = useQueryStates(FILTER_PARSERS);
 
   function clearAll() {
-    void setQ({
-      race_name: null,
-      location: null,
-      distance: null,
-      price_min: null,
-      price_max: null,
-      payment_method: null,
-      date_from: null,
-      date_to: null,
-      sort_by: null,
-      sort_order: null,
-      page: null,
-      page_size: null,
-    });
+    void setQ(null);
   }
 
   return (

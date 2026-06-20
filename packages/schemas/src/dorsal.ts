@@ -1,7 +1,21 @@
 import { z } from 'zod';
 import { IsoDate, IsoDateTime, Pagination, Uuid } from './common';
 
-export const Distance = z.enum(['5k', '10k', '21k', '42k', 'other']);
+// `distance` modela el tipo de prueba (no solo la distancia). El orden aquí es
+// el de presentación en chips/filtros/wizard, que derivan de `Distance.options`.
+export const Distance = z.enum([
+  '5k',
+  '10k',
+  '21k',
+  '42k',
+  'ultra',
+  'trail',
+  'caminata',
+  'triatlon',
+  'ironman',
+  'ciclismo',
+  'other',
+]);
 export type Distance = z.infer<typeof Distance>;
 
 export const PaymentMethod = z.enum(['bizum', 'paypal', 'card']);
