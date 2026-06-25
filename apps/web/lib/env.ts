@@ -1,26 +1,31 @@
 import { z } from 'zod';
 
+const emptyStringToUndefined = (value: unknown) => (value === '' ? undefined : value);
+const optionalString = z.preprocess(emptyStringToUndefined, z.string().optional());
+const optionalUrl = z.preprocess(emptyStringToUndefined, z.string().url().optional());
+const optionalEmail = z.preprocess(emptyStringToUndefined, z.string().email().optional());
+
 const ServerEnvSchema = z.object({
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
   NEXTAUTH_SECRET: z.string().min(16),
-  NEXTAUTH_URL: z.string().url().optional(),
+  NEXTAUTH_URL: optionalUrl,
   BACKEND_API_URL: z.string().url(),
-  AUTH_COGNITO_ID: z.string().optional(),
-  AUTH_COGNITO_ISSUER: z.string().url().optional(),
-  AUTH_COGNITO_CLIENT_SECRET: z.string().optional(),
-  GOOGLE_CLIENT_ID: z.string().optional(),
-  GOOGLE_CLIENT_SECRET: z.string().optional(),
-  FACEBOOK_CLIENT_ID: z.string().optional(),
-  FACEBOOK_CLIENT_SECRET: z.string().optional(),
-  RESEND_API_KEY: z.string().optional(),
-  FEEDBACK_TO_EMAIL: z.string().email().optional(),
-  FEEDBACK_FROM_EMAIL: z.string().optional(),
+  AUTH_COGNITO_ID: optionalString,
+  AUTH_COGNITO_ISSUER: optionalUrl,
+  AUTH_COGNITO_CLIENT_SECRET: optionalString,
+  GOOGLE_CLIENT_ID: optionalString,
+  GOOGLE_CLIENT_SECRET: optionalString,
+  FACEBOOK_CLIENT_ID: optionalString,
+  FACEBOOK_CLIENT_SECRET: optionalString,
+  RESEND_API_KEY: optionalString,
+  FEEDBACK_TO_EMAIL: optionalEmail,
+  FEEDBACK_FROM_EMAIL: optionalString,
 });
 
 const PublicEnvSchema = z.object({
   NEXT_PUBLIC_BACKEND_API_URL: z.string().url(),
   NEXT_PUBLIC_REAL_API_MODULES: z.string().default(''),
-  NEXT_PUBLIC_SITE_URL: z.string().url().optional(),
+  NEXT_PUBLIC_SITE_URL: optionalUrl,
 });
 
 const parsedServer = ServerEnvSchema.safeParse(process.env);
