@@ -88,10 +88,10 @@ function toSellerDetail(tx: MockTransaction): SellerTransactionDetail {
           dni: buyer.dni,
           phone_number: buyer.phone_number,
           whatsapp_number: buyer.whatsapp_number ?? null,
-          t_shirt_size: buyer.t_shirt_size,
-          estimated_time: buyer.estimated_time,
+          t_shirt_size: tx.t_shirt_size,
+          estimated_time: tx.estimated_time,
           medical_info: buyer.medical_info,
-          emergency_contact: buyer.emergency_contact,
+          emergency_contact: tx.emergency_contact,
         }
       : null,
     order_summary: {
@@ -162,7 +162,15 @@ export const transactionsHandlers = [
   ),
 
   http.post(`${BASE}/api/v1/transactions`, async ({ request }) => {
-    const body = (await request.json()) as { dorsal_id: string; buyer_id?: string };
+    const body = (await request.json()) as {
+      dorsal_id: string;
+      buyer_id?: string;
+      runner_data?: {
+        estimated_time?: string;
+        t_shirt_size?: string;
+        emergency_contact?: string;
+      };
+    };
     const transactionId = crypto.randomUUID();
     const buyerId = body.buyer_id ?? currentUserId(request);
     const tx: MockTransaction = {
@@ -180,6 +188,9 @@ export const transactionsHandlers = [
       bib_number: null,
       payment_method: 'card',
       proof_file_url: null,
+      estimated_time: body.runner_data?.estimated_time ?? null,
+      t_shirt_size: body.runner_data?.t_shirt_size ?? null,
+      emergency_contact: body.runner_data?.emergency_contact ?? null,
       timeline: [
         event('payment_held', 'Payment held'),
         event('data_released', 'Buyer data released'),

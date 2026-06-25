@@ -51,6 +51,9 @@ export type MockTransaction = {
   bib_number: string | null;
   payment_method: string;
   proof_file_url: string | null;
+  estimated_time: string | null;
+  t_shirt_size: string | null;
+  emergency_contact: string | null;
   timeline: TimelineEvent[];
   seller_deadline_at: string | null;
   buyer_deadline_at: string | null;

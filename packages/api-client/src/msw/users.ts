@@ -13,8 +13,8 @@ function profileComplete(user: UserProfile) {
   return Boolean(user.first_name && user.last_name && user.dni && user.gender && user.age);
 }
 
-function runnerDataComplete(user: UserProfile) {
-  return Boolean(user.estimated_time && user.t_shirt_size && user.emergency_contact);
+function runnerDataComplete() {
+  return true;
 }
 
 function ensureUser(request: Request) {
@@ -46,7 +46,7 @@ function ensureUser(request: Request) {
     emergency_contact: null,
     additional_info: null,
     profile_complete: false,
-    runner_data_complete: false,
+    runner_data_complete: true,
   });
   mockStore.users.set(userId, created);
   return created;
@@ -96,7 +96,7 @@ export const usersHandlers = [
       emergency_contact: null,
       additional_info: null,
       profile_complete: true,
-      runner_data_complete: false,
+      runner_data_complete: true,
     });
     mockStore.users.set(id, user);
     mockStore.passwords.set(body.email, body.password);
@@ -122,7 +122,7 @@ export const usersHandlers = [
     const updated = UserProfile.parse({
       ...candidate,
       profile_complete: profileComplete(candidate),
-      runner_data_complete: runnerDataComplete(candidate),
+      runner_data_complete: runnerDataComplete(),
     });
     mockStore.users.set(userId, updated);
     return HttpResponse.json(updated);
