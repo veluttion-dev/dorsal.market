@@ -26,14 +26,14 @@ const completeUser: UserProfile = {
 };
 
 describe('profile completion', () => {
-  it('allows buying only when both backend completion flags are true', () => {
+  it('allows buying when identity profile completion is true', () => {
     expect(canBuyWithProfile(completeUser)).toBe(true);
     expect(canBuyWithProfile({ ...completeUser, profile_complete: false })).toBe(false);
-    expect(canBuyWithProfile({ ...completeUser, runner_data_complete: false })).toBe(false);
+    expect(canBuyWithProfile({ ...completeUser, runner_data_complete: false })).toBe(true);
     expect(canBuyWithProfile(null)).toBe(false);
   });
 
-  it('lists the runner fields needed for the transfer flow', () => {
+  it('does not list race-specific runner fields as missing profile data', () => {
     expect(
       getMissingProfileFields({
         ...completeUser,
@@ -41,7 +41,7 @@ describe('profile completion', () => {
         t_shirt_size: null,
         emergency_contact: null,
       }),
-    ).toEqual(['Tiempo estimado', 'Talla de camiseta', 'Contacto de emergencia']);
+    ).toEqual([]);
   });
 
   it('mentions identity data when backend profile_complete is false', () => {

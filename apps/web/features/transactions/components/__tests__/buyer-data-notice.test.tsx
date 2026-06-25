@@ -30,7 +30,7 @@ describe('BuyerDataNotice', () => {
   it('explains that profile data will be used by the transfer flow', () => {
     render(<BuyerDataNotice isAuthenticated profile={completeProfile} />);
 
-    expect(screen.getByText(/datos de tu perfil/i)).toBeInTheDocument();
+    expect(screen.getByText(/datos de identidad/i)).toBeInTheDocument();
     expect(screen.getByRole('link', { name: /Revisar perfil/i })).toHaveAttribute(
       'href',
       '/perfil',
@@ -43,7 +43,7 @@ describe('BuyerDataNotice', () => {
     expect(screen.getByText(/inicia sesion/i)).toBeInTheDocument();
   });
 
-  it('points incomplete users to the completion screen', () => {
+  it('does not block complete identity profiles on runner data', () => {
     render(
       <BuyerDataNotice
         isAuthenticated
@@ -56,10 +56,10 @@ describe('BuyerDataNotice', () => {
       />,
     );
 
-    expect(screen.getByText(/talla de camiseta/i)).toBeInTheDocument();
+    expect(screen.getByText(/datos específicos de la carrera/i)).toBeInTheDocument();
     expect(screen.getByRole('link', { name: /Revisar perfil/i })).toHaveAttribute(
       'href',
-      '/perfil/completar',
+      '/perfil',
     );
   });
 });

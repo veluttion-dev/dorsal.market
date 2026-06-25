@@ -15,8 +15,6 @@ interface ProfileFormValues {
   phone_number: string;
   postal_code: string;
   address: string;
-  estimated_time: string;
-  t_shirt_size: string;
   club: string;
   federation_license: string;
   medical_info: string;
@@ -31,7 +29,6 @@ const TEXT_FIELDS = [
   'phone_number',
   'postal_code',
   'address',
-  'estimated_time',
   'club',
   'federation_license',
   'medical_info',
@@ -58,8 +55,6 @@ function valuesFromUser(user: UserProfile): ProfileFormValues {
     phone_number: user.phone_number ?? '',
     postal_code: user.postal_code ?? '',
     address: user.address ?? '',
-    estimated_time: user.estimated_time ?? '',
-    t_shirt_size: user.t_shirt_size ?? '',
     club: user.club ?? '',
     federation_license: user.federation_license ?? '',
     medical_info: user.medical_info ?? '',
@@ -87,10 +82,6 @@ function buildPatch(initial: ProfileFormValues, current: ProfileFormValues): Pat
     patch.gender = nullable(current.gender) as PatchUserProfileInput['gender'];
   }
 
-  if (current.t_shirt_size !== initial.t_shirt_size) {
-    patch.t_shirt_size = nullable(current.t_shirt_size) as PatchUserProfileInput['t_shirt_size'];
-  }
-
   if (current.age !== initial.age) {
     patch.age = current.age.trim() ? Number(current.age) : null;
   }
@@ -104,12 +95,18 @@ function field(
   values: ProfileFormValues,
   setValues: (values: ProfileFormValues) => void,
   type = 'text',
+  requirement: 'required' | 'optional' | undefined = undefined,
 ) {
   return (
     <div className="space-y-1.5">
-      <Label htmlFor={id}>{label}</Label>
+      <Label htmlFor={id}>
+        {label}
+        {requirement === 'required' && <span aria-hidden="true"> *</span>}
+        {requirement === 'optional' && ' (opcional)'}
+      </Label>
       <Input
         id={id}
+        aria-label={label}
         type={type}
         value={values[id]}
         onChange={(event) => setValues({ ...values, [id]: event.target.value })}
@@ -128,26 +125,37 @@ export function ProfileForm({
   const initial = valuesFromUser(user);
   const [values, setValues] = useState(initial);
   const [saving, setSaving] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
   async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setSaving(true);
-    await onSubmit(buildPatch(initial, values));
-    setSaving(false);
+    setSubmitError(null);
+    try {
+      await onSubmit(buildPatch(initial, values));
+    } catch {
+      setSubmitError('No se pudo guardar el perfil. Inténtalo de nuevo.');
+    } finally {
+      setSaving(false);
+    }
   }
 
   return (
     <form className="space-y-8" onSubmit={submit}>
       <section className="space-y-4">
         <h2 className="text-lg font-semibold">Identidad</h2>
+        <p className="text-sm text-text-muted">* Campos obligatorios</p>
         <div className="grid gap-4 md:grid-cols-2">
-          {field('first_name', 'Nombre', values, setValues)}
-          {field('last_name', 'Apellidos', values, setValues)}
-          {field('dni', 'DNI', values, setValues)}
+          {field('first_name', 'Nombre', values, setValues, 'text', 'required')}
+          {field('last_name', 'Apellidos', values, setValues, 'text', 'required')}
+          {field('dni', 'DNI', values, setValues, 'text', 'required')}
           <div className="space-y-1.5">
-            <Label htmlFor="gender">Genero</Label>
+            <Label htmlFor="gender">
+              Genero<span aria-hidden="true"> *</span>
+            </Label>
             <select
               id="gender"
+              aria-label="Genero"
               className="flex h-9 w-full rounded-md border border-border bg-bg-elevated px-3 py-1 text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-coral"
               value={values.gender}
               onChange={(event) => setValues({ ...values, gender: event.target.value })}
@@ -160,7 +168,7 @@ export function ProfileForm({
               ))}
             </select>
           </div>
-          {field('age', 'Edad', values, setValues, 'number')}
+          {field('age', 'Edad', values, setValues, 'number', 'required')}
           <div className="space-y-1.5">
             <Label htmlFor="email">Email</Label>
             <Input id="email" value={user.email} disabled readOnly />
@@ -171,25 +179,35 @@ export function ProfileForm({
       <section className="space-y-4">
         <h2 className="text-lg font-semibold">Contacto</h2>
         <div className="grid gap-4 md:grid-cols-2">
-          {field('phone_number', 'Telefono', values, setValues)}
-          {field('postal_code', 'Codigo postal', values, setValues)}
-          {field('address', 'Direccion', values, setValues)}
+          {field('phone_number', 'Telefono', values, setValues, 'text', 'optional')}
+          {field('postal_code', 'Codigo postal', values, setValues, 'text', 'optional')}
+          {field('address', 'Direccion', values, setValues, 'text', 'optional')}
+          {field(
+            'emergency_contact',
+            'Contacto de emergencia',
+            values,
+            setValues,
+            'text',
+            'optional',
+          )}
         </div>
       </section>
 
       <section className="space-y-4">
-        <h2 className="text-lg font-semibold">Datos de corredor</h2>
+        <h2 className="text-lg font-semibold">Información adicional</h2>
         <div className="grid gap-4 md:grid-cols-2">
-          {field('estimated_time', 'Tiempo estimado', values, setValues)}
-          {field('t_shirt_size', 'Talla camiseta', values, setValues)}
-          {field('club', 'Club', values, setValues)}
-          {field('federation_license', 'Licencia federativa', values, setValues)}
-          {field('medical_info', 'Informacion medica', values, setValues)}
-          {field('emergency_contact', 'Contacto de emergencia', values, setValues)}
-          {field('additional_info', 'Informacion adicional', values, setValues)}
+          {field('club', 'Club', values, setValues, 'text', 'optional')}
+          {field('federation_license', 'Licencia federativa', values, setValues, 'text', 'optional')}
+          {field('medical_info', 'Informacion medica', values, setValues, 'text', 'optional')}
+          {field('additional_info', 'Informacion adicional', values, setValues, 'text', 'optional')}
         </div>
       </section>
 
+      {submitError && (
+        <p role="alert" className="text-sm text-red-500">
+          {submitError}
+        </p>
+      )}
       <Button type="submit" disabled={saving}>
         <Save />
         Guardar perfil

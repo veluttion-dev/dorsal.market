@@ -24,7 +24,8 @@ export function ProfilePage({ completeMode = false }: { completeMode?: boolean }
       <div>
         <h1 className="text-3xl font-bold">{completeMode ? 'Completar perfil' : 'Perfil'}</h1>
         <p className="mt-2 text-sm text-text-secondary">
-          Estos datos se usan para tramitar la transferencia del dorsal.
+          Guarda aquí tus datos personales. Los datos específicos de cada carrera se pedirán al
+          comprar.
         </p>
       </div>
       <ProfileForm
@@ -32,7 +33,7 @@ export function ProfilePage({ completeMode = false }: { completeMode?: boolean }
         onSubmit={async (input) => {
           const updated = await patch.mutateAsync(input);
           toast.success('Perfil guardado');
-          if (completeMode && updated.profile_complete && updated.runner_data_complete) {
+          if (completeMode && updated.profile_complete) {
             router.push(params.get('callbackUrl') ?? '/perfil');
           }
         }}

@@ -28,6 +28,15 @@ const user: UserProfile = {
 };
 
 describe('ProfileForm', () => {
+  it('keeps race-specific time and shirt size out of the profile', () => {
+    render(<ProfileForm user={user} onSubmit={vi.fn()} />);
+
+    expect(screen.queryByLabelText('Tiempo estimado')).not.toBeInTheDocument();
+    expect(screen.queryByLabelText('Talla camiseta')).not.toBeInTheDocument();
+    expect(screen.getByLabelText('Contacto de emergencia (opcional)')).toBeVisible();
+    expect(screen.getByText('* Campos obligatorios')).toBeVisible();
+  });
+
   it('submits only changed fields as a PATCH payload', async () => {
     const onSubmit = vi.fn(async () => undefined);
     const actor = userEvent.setup();
@@ -51,5 +60,19 @@ describe('ProfileForm', () => {
     await actor.click(screen.getByRole('button', { name: 'Guardar perfil' }));
 
     await waitFor(() => expect(onSubmit).toHaveBeenCalledWith({ gender: 'male' }));
+  });
+
+  it('re-enables saving after a rejected submission', async () => {
+    const onSubmit = vi.fn(async () => {
+      throw new Error('failed');
+    });
+    const actor = userEvent.setup();
+    render(<ProfileForm user={user} onSubmit={onSubmit} />);
+
+    await actor.click(screen.getByRole('button', { name: 'Guardar perfil' }));
+
+    await waitFor(() =>
+      expect(screen.getByRole('button', { name: 'Guardar perfil' })).toBeEnabled(),
+    );
   });
 });

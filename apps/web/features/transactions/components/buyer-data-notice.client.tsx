@@ -27,8 +27,8 @@ export function BuyerDataNotice({
         <div className="min-w-0">
           <h2 className="font-semibold">Datos para la transferencia</h2>
           <p className="mt-1 text-sm text-text-secondary">
-            La compra usara los datos de tu perfil para que el vendedor pueda tramitar el cambio de
-            titularidad del dorsal.
+            La compra usará tus datos de identidad. Los datos específicos de la carrera se
+            solicitarán aquí solo cuando el vendedor los necesite.
           </p>
           {!isAuthenticated && (
             <p className="mt-2 text-sm text-text-muted">

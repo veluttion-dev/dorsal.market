@@ -76,6 +76,8 @@ export const PatchUserProfileInput = UserProfile.omit({
   id: true,
   email: true,
   whatsapp_number: true,
+  estimated_time: true,
+  t_shirt_size: true,
   profile_complete: true,
   runner_data_complete: true,
 }).partial();
