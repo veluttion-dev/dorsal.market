@@ -119,10 +119,7 @@ export const PublishDorsalInput = z
   .superRefine((v, ctx) => {
     if (!v.publish) return;
 
-    if (
-      v.purchase_requirements.fixed_shirt_size &&
-      v.purchase_requirements.requires_shirt_size
-    ) {
+    if (v.purchase_requirements.fixed_shirt_size && v.purchase_requirements.requires_shirt_size) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         message: 'No puedes usar una talla fija y solicitar talla al comprador',

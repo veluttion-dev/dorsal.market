@@ -9,11 +9,7 @@ import { getStripe } from '@/features/transactions/lib/stripe';
 import { useMe } from '@/features/users/hooks/use-me';
 import { canBuyWithProfile } from '@/features/users/lib/profile-completion';
 import { formatPrice } from '@dorsal/domain';
-import {
-  type PurchaseRequirements,
-  type RunnerDataInput,
-  ShirtSize,
-} from '@dorsal/schemas';
+import { type PurchaseRequirements, type RunnerDataInput, ShirtSize } from '@dorsal/schemas';
 import { Elements, PaymentElement, useElements, useStripe } from '@stripe/react-stripe-js';
 import { CreditCard, Loader2 } from 'lucide-react';
 import { useSession } from 'next-auth/react';
@@ -130,10 +126,7 @@ export function CheckoutForm({
     if (purchaseRequirements.requires_shirt_size && !runnerData.t_shirt_size) {
       errors.t_shirt_size = 'Selecciona una talla';
     }
-    if (
-      purchaseRequirements.requires_emergency_contact &&
-      !runnerData.emergency_contact.trim()
-    ) {
+    if (purchaseRequirements.requires_emergency_contact && !runnerData.emergency_contact.trim()) {
       errors.emergency_contact = 'Introduce un contacto de emergencia';
     }
     setFieldErrors(errors);

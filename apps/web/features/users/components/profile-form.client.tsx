@@ -197,7 +197,14 @@ export function ProfileForm({
         <h2 className="text-lg font-semibold">Información adicional</h2>
         <div className="grid gap-4 md:grid-cols-2">
           {field('club', 'Club', values, setValues, 'text', 'optional')}
-          {field('federation_license', 'Licencia federativa', values, setValues, 'text', 'optional')}
+          {field(
+            'federation_license',
+            'Licencia federativa',
+            values,
+            setValues,
+            'text',
+            'optional',
+          )}
           {field('medical_info', 'Informacion medica', values, setValues, 'text', 'optional')}
           {field('additional_info', 'Informacion adicional', values, setValues, 'text', 'optional')}
         </div>

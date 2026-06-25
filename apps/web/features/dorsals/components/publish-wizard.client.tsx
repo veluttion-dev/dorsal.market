@@ -191,12 +191,9 @@ export function PublishWizard() {
             <label htmlFor="requires-estimated-time" className="flex items-center gap-2 text-sm">
               <Checkbox
                 id="requires-estimated-time"
-                checked={form.watch('purchase_requirements.requires_estimated_time')}
+                checked={form.watch('purchase_requirements.requires_estimated_time') ?? false}
                 onCheckedChange={(checked) =>
-                  form.setValue(
-                    'purchase_requirements.requires_estimated_time',
-                    checked === true,
-                  )
+                  form.setValue('purchase_requirements.requires_estimated_time', checked === true)
                 }
               />
               Solicitar tiempo estimado
@@ -204,7 +201,7 @@ export function PublishWizard() {
             <label htmlFor="requires-emergency-contact" className="flex items-center gap-2 text-sm">
               <Checkbox
                 id="requires-emergency-contact"
-                checked={form.watch('purchase_requirements.requires_emergency_contact')}
+                checked={form.watch('purchase_requirements.requires_emergency_contact') ?? false}
                 onCheckedChange={(checked) =>
                   form.setValue(
                     'purchase_requirements.requires_emergency_contact',
@@ -224,9 +221,7 @@ export function PublishWizard() {
                   className="w-full rounded-md border border-border bg-bg-elevated px-3 py-2 text-sm"
                   value={form.watch('purchase_requirements.fixed_shirt_size') ?? ''}
                   onChange={(event) => {
-                    const fixedSize = event.target.value
-                      ? (event.target.value as ShirtSize)
-                      : null;
+                    const fixedSize = event.target.value ? (event.target.value as ShirtSize) : null;
                     form.setValue('purchase_requirements.fixed_shirt_size', fixedSize, {
                       shouldValidate: true,
                     });
@@ -243,9 +238,7 @@ export function PublishWizard() {
                   ))}
                 </select>
                 <FieldError
-                  message={
-                    form.formState.errors.purchase_requirements?.fixed_shirt_size?.message
-                  }
+                  message={form.formState.errors.purchase_requirements?.fixed_shirt_size?.message}
                 />
               </div>
               <label
@@ -255,7 +248,7 @@ export function PublishWizard() {
                 <Checkbox
                   id="requires-shirt-size"
                   disabled={Boolean(form.watch('purchase_requirements.fixed_shirt_size'))}
-                  checked={form.watch('purchase_requirements.requires_shirt_size')}
+                  checked={form.watch('purchase_requirements.requires_shirt_size') ?? false}
                   onCheckedChange={(checked) =>
                     form.setValue('purchase_requirements.requires_shirt_size', checked === true, {
                       shouldValidate: true,

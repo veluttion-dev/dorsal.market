@@ -36,18 +36,22 @@ describe('PatchUserProfileInput', () => {
     expect(
       PatchUserProfileInput.parse({
         first_name: 'Ana',
-        estimated_time: null,
         emergency_contact: '+34600999888',
       }),
     ).toEqual({
       first_name: 'Ana',
-      estimated_time: null,
       emergency_contact: '+34600999888',
     });
   });
 
-  it('rejects malformed estimated_time values', () => {
-    expect(() => PatchUserProfileInput.parse({ estimated_time: '1:35' })).toThrow();
+  it('strips race-specific fields from profile patches', () => {
+    expect(
+      PatchUserProfileInput.parse({
+        first_name: 'Ana',
+        estimated_time: '01:35:00',
+        t_shirt_size: 'M',
+      }),
+    ).toEqual({ first_name: 'Ana' });
   });
 });
 
