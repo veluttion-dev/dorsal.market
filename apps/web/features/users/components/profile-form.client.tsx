@@ -13,7 +13,6 @@ interface ProfileFormValues {
   gender: string;
   age: string;
   phone_number: string;
-  whatsapp_number: string;
   postal_code: string;
   address: string;
   estimated_time: string;
@@ -30,7 +29,6 @@ const TEXT_FIELDS = [
   'last_name',
   'dni',
   'phone_number',
-  'whatsapp_number',
   'postal_code',
   'address',
   'estimated_time',
@@ -43,6 +41,13 @@ const TEXT_FIELDS = [
 
 type TextField = (typeof TEXT_FIELDS)[number];
 
+const GENDER_OPTIONS = [
+  { value: 'male', label: 'Masculino' },
+  { value: 'female', label: 'Femenino' },
+  { value: 'other', label: 'Otro' },
+  { value: 'prefer_not_to_say', label: 'Prefiero no indicarlo' },
+] as const;
+
 function valuesFromUser(user: UserProfile): ProfileFormValues {
   return {
     first_name: user.first_name ?? '',
@@ -51,7 +56,6 @@ function valuesFromUser(user: UserProfile): ProfileFormValues {
     gender: user.gender ?? '',
     age: user.age?.toString() ?? '',
     phone_number: user.phone_number ?? '',
-    whatsapp_number: user.whatsapp_number ?? '',
     postal_code: user.postal_code ?? '',
     address: user.address ?? '',
     estimated_time: user.estimated_time ?? '',
@@ -140,7 +144,22 @@ export function ProfileForm({
           {field('first_name', 'Nombre', values, setValues)}
           {field('last_name', 'Apellidos', values, setValues)}
           {field('dni', 'DNI', values, setValues)}
-          {field('gender', 'Genero', values, setValues)}
+          <div className="space-y-1.5">
+            <Label htmlFor="gender">Genero</Label>
+            <select
+              id="gender"
+              className="flex h-9 w-full rounded-md border border-border bg-bg-elevated px-3 py-1 text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-coral"
+              value={values.gender}
+              onChange={(event) => setValues({ ...values, gender: event.target.value })}
+            >
+              <option value="">Selecciona una opcion</option>
+              {GENDER_OPTIONS.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </div>
           {field('age', 'Edad', values, setValues, 'number')}
           <div className="space-y-1.5">
             <Label htmlFor="email">Email</Label>
@@ -153,7 +172,6 @@ export function ProfileForm({
         <h2 className="text-lg font-semibold">Contacto</h2>
         <div className="grid gap-4 md:grid-cols-2">
           {field('phone_number', 'Telefono', values, setValues)}
-          {field('whatsapp_number', 'WhatsApp', values, setValues)}
           {field('postal_code', 'Codigo postal', values, setValues)}
           {field('address', 'Direccion', values, setValues)}
         </div>

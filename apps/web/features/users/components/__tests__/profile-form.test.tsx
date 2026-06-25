@@ -40,4 +40,16 @@ describe('ProfileForm', () => {
 
     await waitFor(() => expect(onSubmit).toHaveBeenCalledWith({ first_name: 'Maria' }));
   });
+
+  it('submits the gender contract value while displaying its Spanish label', async () => {
+    const onSubmit = vi.fn(async () => undefined);
+    const actor = userEvent.setup();
+
+    render(<ProfileForm user={user} onSubmit={onSubmit} />);
+
+    await actor.selectOptions(screen.getByRole('combobox', { name: 'Genero' }), 'male');
+    await actor.click(screen.getByRole('button', { name: 'Guardar perfil' }));
+
+    await waitFor(() => expect(onSubmit).toHaveBeenCalledWith({ gender: 'male' }));
+  });
 });

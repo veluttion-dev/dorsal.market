@@ -12,7 +12,6 @@ describe('UserProfile', () => {
       gender: 'female',
       age: 32,
       phone_number: '600000000',
-      whatsapp_number: '600000000',
       postal_code: '28001',
       address: 'Calle Mayor 1',
       estimated_time: '01:35:00',
@@ -28,6 +27,7 @@ describe('UserProfile', () => {
 
     expect(parsed.runner_data_complete).toBe(true);
     expect(parsed.estimated_time).toBe('01:35:00');
+    expect(parsed.whatsapp_number).toBeUndefined();
   });
 });
 

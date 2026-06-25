@@ -87,7 +87,7 @@ function toSellerDetail(tx: MockTransaction): SellerTransactionDetail {
           full_name: displayName(buyer.id),
           dni: buyer.dni,
           phone_number: buyer.phone_number,
-          whatsapp_number: buyer.whatsapp_number,
+          whatsapp_number: buyer.whatsapp_number ?? null,
           t_shirt_size: buyer.t_shirt_size,
           estimated_time: buyer.estimated_time,
           medical_info: buyer.medical_info,

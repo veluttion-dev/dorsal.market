@@ -54,7 +54,7 @@ export const UserProfile = z.object({
   gender: Gender.nullable(),
   age: z.number().int().min(14).max(120).nullable(),
   phone_number: z.string().nullable(),
-  whatsapp_number: z.string().nullable(),
+  whatsapp_number: z.string().nullable().optional(),
   postal_code: z.string().nullable(),
   address: z.string().nullable(),
   estimated_time: z
@@ -75,6 +75,7 @@ export type UserProfile = z.infer<typeof UserProfile>;
 export const PatchUserProfileInput = UserProfile.omit({
   id: true,
   email: true,
+  whatsapp_number: true,
   profile_complete: true,
   runner_data_complete: true,
 }).partial();
