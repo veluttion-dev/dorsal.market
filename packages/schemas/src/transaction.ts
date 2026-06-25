@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { IsoDateTime, Uuid } from './common';
+import { ShirtSize } from './user';
 
 // Canonical Transaction status set returned by the backend (Transaction bounded
 // context). Single source of truth — the legacy lowercase aliases were removed
@@ -125,6 +126,16 @@ export const ReserveListingResponse = z.object({
   reservation_expires_at: IsoDateTime,
 });
 export type ReserveListingResponse = z.infer<typeof ReserveListingResponse>;
+
+export const RunnerDataInput = z.object({
+  estimated_time: z
+    .string()
+    .regex(/^\d{2}:\d{2}:\d{2}$/)
+    .optional(),
+  t_shirt_size: ShirtSize.optional(),
+  emergency_contact: z.string().max(120).optional(),
+});
+export type RunnerDataInput = z.infer<typeof RunnerDataInput>;
 
 export const SellerOnboardingResponse = z.object({
   account_id: z.string().optional(),

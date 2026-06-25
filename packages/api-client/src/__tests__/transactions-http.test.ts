@@ -108,4 +108,33 @@ describe('TransactionsHttpAdapter', () => {
       },
     });
   });
+
+  it('sends runner data as part of the reservation', async () => {
+    const post = vi.fn(async () => ({
+      transaction_id: '11111111-1111-4111-8111-111111111111',
+      payment_client_secret: 'pi_secret_x',
+      reservation_expires_at: '2026-05-24T18:33:20Z',
+    }));
+    const adapter = new TransactionsHttpAdapter(createHttpStub({ post }));
+
+    await adapter.reserveListing({
+      dorsalId: '55555555-5555-4555-8555-555555555555',
+      buyerId: '22222222-2222-4222-8222-222222222222',
+      runnerData: {
+        estimated_time: '01:45:00',
+        emergency_contact: 'Ana +34600000000',
+      },
+    });
+
+    expect(post).toHaveBeenCalledWith('api/v1/transactions', {
+      body: {
+        dorsal_id: '55555555-5555-4555-8555-555555555555',
+        buyer_id: '22222222-2222-4222-8222-222222222222',
+        runner_data: {
+          estimated_time: '01:45:00',
+          emergency_contact: 'Ana +34600000000',
+        },
+      },
+    });
+  });
 });

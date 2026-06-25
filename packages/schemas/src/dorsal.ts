@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { IsoDate, IsoDateTime, Pagination, Uuid } from './common';
+import { ShirtSize } from './user';
 
 // `distance` modela el tipo de prueba (no solo la distancia). El orden aquí es
 // el de presentación en chips/filtros/wizard, que derivan de `Distance.options`.
@@ -33,6 +34,14 @@ export const IncludedItems = z.object({
 });
 export type IncludedItems = z.infer<typeof IncludedItems>;
 
+export const PurchaseRequirements = z.object({
+  requires_estimated_time: z.boolean().default(false),
+  requires_shirt_size: z.boolean().default(false),
+  requires_emergency_contact: z.boolean().default(false),
+  fixed_shirt_size: ShirtSize.nullable().default(null),
+});
+export type PurchaseRequirements = z.infer<typeof PurchaseRequirements>;
+
 export const ContactInfo = z.object({
   phone: z.preprocess((v) => (v === '' ? null : v), z.string().nullable().optional()),
   email: z.preprocess((v) => (v === '' ? null : v), z.string().email().nullable().optional()),
@@ -58,6 +67,12 @@ export const DorsalDetail = DorsalSummary.extend({
   bib_number: z.string().nullable(),
   start_corral: z.string().nullable(),
   included_items: IncludedItems,
+  purchase_requirements: PurchaseRequirements.default({
+    requires_estimated_time: false,
+    requires_shirt_size: false,
+    requires_emergency_contact: false,
+    fixed_shirt_size: null,
+  }),
   contact_phone: z.string().nullable(),
   contact_email: z.string().email().nullable(),
   sale_reason: z.string().nullable(),
@@ -90,6 +105,12 @@ export const PublishDorsalInput = z
     distance: z.preprocess(emptyStringToUndefined, Distance.optional()),
     start_corral: z.preprocess(emptyStringToNull, z.string().nullable().optional()),
     included_items: IncludedItems.optional(),
+    purchase_requirements: PurchaseRequirements.default({
+      requires_estimated_time: false,
+      requires_shirt_size: false,
+      requires_emergency_contact: false,
+      fixed_shirt_size: null,
+    }),
     price_amount: z.preprocess(emptyNumberToUndefined, z.coerce.number().nonnegative().optional()),
     payment_methods: z.array(PaymentMethod).optional(),
     contact: ContactInfo.optional(),
@@ -97,6 +118,24 @@ export const PublishDorsalInput = z
   })
   .superRefine((v, ctx) => {
     if (!v.publish) return;
+
+    if (
+      v.purchase_requirements.fixed_shirt_size &&
+      v.purchase_requirements.requires_shirt_size
+    ) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'No puedes usar una talla fija y solicitar talla al comprador',
+        path: ['purchase_requirements', 'requires_shirt_size'],
+      });
+    }
+    if (v.purchase_requirements.fixed_shirt_size && !v.included_items?.shirt) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'La talla fija requiere que el dorsal incluya camiseta',
+        path: ['purchase_requirements', 'fixed_shirt_size'],
+      });
+    }
 
     const required = [
       ['race_name', v.race_name, 'Introduce el nombre de la carrera'],

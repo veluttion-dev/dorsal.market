@@ -3,6 +3,7 @@ import type {
   Dispute,
   ProofUploadUrlResponse,
   ReserveListingResponse,
+  RunnerDataInput,
   SellerOnboardingResponse,
   SellerProblemCategory,
   SellerProblemReport,
@@ -13,7 +14,11 @@ import type {
 export interface TransactionsPort {
   onboardSeller(sellerId: string): Promise<SellerOnboardingResponse>;
 
-  reserveListing(input: { dorsalId: string; buyerId: string }): Promise<ReserveListingResponse>;
+  reserveListing(input: {
+    dorsalId: string;
+    buyerId: string;
+    runnerData?: RunnerDataInput;
+  }): Promise<ReserveListingResponse>;
 
   getBuyerTransaction(id: string): Promise<BuyerTransactionDetail>;
   getSellerTransaction(id: string): Promise<SellerTransactionDetail>;

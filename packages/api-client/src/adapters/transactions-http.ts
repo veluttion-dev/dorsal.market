@@ -3,6 +3,7 @@ import {
   Dispute,
   ProofUploadUrlResponse,
   ReserveListingResponse,
+  type RunnerDataInput,
   SellerOnboardingResponse,
   type SellerProblemCategory,
   SellerProblemReport,
@@ -24,10 +25,14 @@ export class TransactionsHttpAdapter implements TransactionsPort {
     );
   }
 
-  async reserveListing(input: { dorsalId: string; buyerId: string }) {
+  async reserveListing(input: { dorsalId: string; buyerId: string; runnerData?: RunnerDataInput }) {
     return ReserveListingResponse.parse(
       await this.http.post('api/v1/transactions', {
-        body: { dorsal_id: input.dorsalId, buyer_id: input.buyerId },
+        body: {
+          dorsal_id: input.dorsalId,
+          buyer_id: input.buyerId,
+          ...(input.runnerData ? { runner_data: input.runnerData } : {}),
+        },
       }),
     );
   }

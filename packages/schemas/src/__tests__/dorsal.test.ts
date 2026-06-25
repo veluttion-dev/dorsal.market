@@ -41,6 +41,12 @@ describe('DorsalDetail', () => {
       bib_number: '1234',
       start_corral: 'B',
       included_items: { chip: true, shirt: true, bag: false, medal: true, refreshments: false },
+      purchase_requirements: {
+        requires_estimated_time: true,
+        requires_shirt_size: false,
+        requires_emergency_contact: true,
+        fixed_shirt_size: 'M',
+      },
       price_amount: 45,
       payment_methods: ['bizum', 'paypal'],
       contact_phone: '612345678',
@@ -52,6 +58,7 @@ describe('DorsalDetail', () => {
     };
     const parsed = DorsalDetail.parse(sample);
     expect(parsed.distance).toBe('10k');
+    expect(parsed.purchase_requirements.fixed_shirt_size).toBe('M');
   });
 
   it('coerces price_amount from string (backend may serialize Decimal as string)', () => {
@@ -205,6 +212,29 @@ describe('PublishDorsalInput', () => {
       expect(paths).toContain('race_date');
       expect(paths).toContain('payment_methods');
     }
+  });
+
+  it('rejects publishing with fixed and requested shirt size together', () => {
+    expect(() =>
+      PublishDorsalInput.parse({
+        publish: true,
+        photo_url: 'https://example.com/race.jpg',
+        race_name: 'Madrid Corre',
+        race_date: '2027-04-15',
+        location: 'Madrid',
+        distance: '10k',
+        included_items: { chip: true, shirt: true, bag: false, medal: false, refreshments: false },
+        purchase_requirements: {
+          requires_estimated_time: false,
+          requires_shirt_size: true,
+          requires_emergency_contact: false,
+          fixed_shirt_size: 'M',
+        },
+        price_amount: 35,
+        payment_methods: ['card'],
+        contact: { phone: '611111111', email: '', phone_visible: true, email_visible: false },
+      }),
+    ).toThrow(/talla fija/i);
   });
 });
 
