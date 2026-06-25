@@ -22,6 +22,12 @@ describe('publish draft storage', () => {
       distance: '21k',
       start_corral: 'B',
       included_items: { chip: true, shirt: false, bag: false, medal: true, refreshments: true },
+      purchase_requirements: {
+        requires_estimated_time: true,
+        requires_shirt_size: false,
+        requires_emergency_contact: true,
+        fixed_shirt_size: null,
+      },
       price_amount: 45,
       payment_methods: ['bizum'],
       contact: { phone: '600000000', email: null, phone_visible: true, email_visible: true },
@@ -29,6 +35,7 @@ describe('publish draft storage', () => {
     });
 
     expect(loadPublishDraft()?.race_name).toBe('Media Madrid');
+    expect(loadPublishDraft()?.purchase_requirements?.requires_estimated_time).toBe(true);
     expect(localStorage.getItem(PUBLISH_DRAFT_STORAGE_KEY)).toContain('Media Madrid');
   });
 

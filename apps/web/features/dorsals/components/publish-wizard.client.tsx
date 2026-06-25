@@ -12,7 +12,7 @@ import {
   loadPublishDraft,
   savePublishDraft,
 } from '@/features/dorsals/lib/publish-draft-storage';
-import { Distance, PaymentMethod, PublishDorsalInput } from '@dorsal/schemas';
+import { Distance, PaymentMethod, PublishDorsalInput, ShirtSize } from '@dorsal/schemas';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Camera, CreditCard, MapPin, Phone, Trophy } from 'lucide-react';
 import { useRouter } from 'next/navigation';
@@ -26,6 +26,7 @@ type FormValues = z.output<typeof PublishDorsalInput>;
 
 const distances: Distance[] = [...Distance.options];
 const payments: PaymentMethod[] = [...PaymentMethod.options];
+const shirtSizes: ShirtSize[] = [...ShirtSize.options];
 const itemKeys = ['chip', 'shirt', 'bag', 'medal', 'refreshments'] as const;
 const itemLabels: Record<(typeof itemKeys)[number], string> = {
   chip: 'Chip',
@@ -50,6 +51,12 @@ export function PublishWizard() {
       publish: true,
       photo_url: '',
       included_items: { chip: false, shirt: false, bag: false, medal: false, refreshments: false },
+      purchase_requirements: {
+        requires_estimated_time: false,
+        requires_shirt_size: false,
+        requires_emergency_contact: false,
+        fixed_shirt_size: null,
+      },
       payment_methods: [],
       contact: { phone: '', email: '', phone_visible: true, email_visible: true },
       ...persistedDraft,
@@ -160,11 +167,105 @@ export function PublishWizard() {
               <Checkbox
                 id={`item-${k}`}
                 checked={form.watch(`included_items.${k}`)}
-                onCheckedChange={(c) => form.setValue(`included_items.${k}`, c === true)}
+                onCheckedChange={(c) => {
+                  const checked = c === true;
+                  form.setValue(`included_items.${k}`, checked);
+                  if (k === 'shirt' && !checked) {
+                    form.setValue('purchase_requirements.fixed_shirt_size', null);
+                    form.setValue('purchase_requirements.requires_shirt_size', false);
+                  }
+                }}
               />
               {itemLabels[k]}
             </label>
           ))}
+        </div>
+        <div className="space-y-4 border-t border-border pt-5">
+          <div>
+            <h3 className="text-sm font-semibold">Datos que debe aportar el comprador</h3>
+            <p className="mt-1 text-sm text-text-muted">
+              El checkout solo solicitará los datos que actives aquí.
+            </p>
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <label htmlFor="requires-estimated-time" className="flex items-center gap-2 text-sm">
+              <Checkbox
+                id="requires-estimated-time"
+                checked={form.watch('purchase_requirements.requires_estimated_time')}
+                onCheckedChange={(checked) =>
+                  form.setValue(
+                    'purchase_requirements.requires_estimated_time',
+                    checked === true,
+                  )
+                }
+              />
+              Solicitar tiempo estimado
+            </label>
+            <label htmlFor="requires-emergency-contact" className="flex items-center gap-2 text-sm">
+              <Checkbox
+                id="requires-emergency-contact"
+                checked={form.watch('purchase_requirements.requires_emergency_contact')}
+                onCheckedChange={(checked) =>
+                  form.setValue(
+                    'purchase_requirements.requires_emergency_contact',
+                    checked === true,
+                  )
+                }
+              />
+              Solicitar contacto de emergencia
+            </label>
+          </div>
+          {form.watch('included_items.shirt') && (
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="space-y-1.5">
+                <Label htmlFor="fixed-shirt-size">Talla incluida</Label>
+                <select
+                  id="fixed-shirt-size"
+                  className="w-full rounded-md border border-border bg-bg-elevated px-3 py-2 text-sm"
+                  value={form.watch('purchase_requirements.fixed_shirt_size') ?? ''}
+                  onChange={(event) => {
+                    const fixedSize = event.target.value
+                      ? (event.target.value as ShirtSize)
+                      : null;
+                    form.setValue('purchase_requirements.fixed_shirt_size', fixedSize, {
+                      shouldValidate: true,
+                    });
+                    if (fixedSize) {
+                      form.setValue('purchase_requirements.requires_shirt_size', false);
+                    }
+                  }}
+                >
+                  <option value="">Sin talla fija</option>
+                  {shirtSizes.map((size) => (
+                    <option key={size} value={size}>
+                      {size}
+                    </option>
+                  ))}
+                </select>
+                <FieldError
+                  message={
+                    form.formState.errors.purchase_requirements?.fixed_shirt_size?.message
+                  }
+                />
+              </div>
+              <label
+                htmlFor="requires-shirt-size"
+                className="flex items-center gap-2 self-end pb-2 text-sm"
+              >
+                <Checkbox
+                  id="requires-shirt-size"
+                  disabled={Boolean(form.watch('purchase_requirements.fixed_shirt_size'))}
+                  checked={form.watch('purchase_requirements.requires_shirt_size')}
+                  onCheckedChange={(checked) =>
+                    form.setValue('purchase_requirements.requires_shirt_size', checked === true, {
+                      shouldValidate: true,
+                    })
+                  }
+                />
+                Solicitar talla al comprador
+              </label>
+            </div>
+          )}
         </div>
       </FormSection>
 

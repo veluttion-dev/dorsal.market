@@ -93,4 +93,36 @@ describe('PublishWizard', () => {
     expect(screen.getByLabelText('Nombre carrera')).toHaveValue('Carrera guardada');
     expect(screen.getByLabelText(/Precio/)).toHaveValue(35);
   });
+
+  it('submits configurable buyer requirements', async () => {
+    const user = userEvent.setup();
+    render(<PublishWizard />);
+    await fillPublishForm();
+
+    await user.click(screen.getByRole('checkbox', { name: 'Solicitar tiempo estimado' }));
+    await user.click(screen.getByRole('checkbox', { name: 'Solicitar contacto de emergencia' }));
+    await user.click(screen.getByRole('button', { name: 'Publicar dorsal' }));
+
+    await waitFor(() =>
+      expect(mocks.mutate).toHaveBeenCalledWith(
+        expect.objectContaining({
+          purchase_requirements: expect.objectContaining({
+            requires_estimated_time: true,
+            requires_emergency_contact: true,
+          }),
+        }),
+        expect.any(Object),
+      ),
+    );
+  });
+
+  it('disables buyer shirt-size requests when the listing has a fixed size', async () => {
+    const user = userEvent.setup();
+    render(<PublishWizard />);
+
+    await user.click(screen.getByRole('checkbox', { name: 'Camiseta' }));
+    await user.selectOptions(screen.getByLabelText('Talla incluida'), 'M');
+
+    expect(screen.getByRole('checkbox', { name: 'Solicitar talla al comprador' })).toBeDisabled();
+  });
 });
