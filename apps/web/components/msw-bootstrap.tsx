@@ -1,10 +1,6 @@
 'use client';
-import {
-  type ApiModule,
-  buildHandlers,
-  deriveMockedModules,
-  parseRealModules,
-} from '@dorsal/api-client';
+import { startMswBrowser } from '@/lib/msw-browser';
+import { type ApiModule, deriveMockedModules, parseRealModules } from '@dorsal/api-client';
 import { useEffect } from 'react';
 
 /**
@@ -21,11 +17,7 @@ export function MswBootstrap() {
       (m): m is Exclude<ApiModule, 'dorsals'> => m !== 'dorsals',
     );
     if (mocked.length === 0) return;
-    (async () => {
-      const { setupWorker } = await import('msw/browser');
-      const worker = setupWorker(...buildHandlers(mocked));
-      await worker.start({ onUnhandledRequest: 'bypass' });
-    })().catch(() => {
+    startMswBrowser(mocked, () => import('msw/browser')).catch(() => {
       // Worker failed to start — dev requests fall through to the network.
     });
   }, []);
