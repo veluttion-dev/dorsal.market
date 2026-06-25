@@ -12,12 +12,12 @@ export class DorsalsHttpAdapter implements DorsalsPort {
   constructor(private http: HttpClient) {}
 
   async search(query: SearchDorsalsQuery): Promise<DorsalListResponse> {
-    const raw = await this.http.get<unknown>('api/v1/dorsals', { query });
+    const raw = await this.http.get<unknown>('api/v1/dorsals', { query, auth: false });
     return DorsalListResponse.parse(raw);
   }
 
   async getById(id: string): Promise<DorsalDetail> {
-    const raw = await this.http.get<unknown>(`api/v1/dorsals/${id}`);
+    const raw = await this.http.get<unknown>(`api/v1/dorsals/${id}`, { auth: false });
     return DorsalDetail.parse(raw);
   }
 

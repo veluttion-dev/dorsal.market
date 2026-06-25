@@ -41,6 +41,19 @@ describe('createHttp', () => {
     expect(headers.get('Authorization')).toBe('Bearer jwt-token');
   });
 
+  it('omits Authorization bearer header when request auth is disabled', async () => {
+    fetchMock.mockResolvedValueOnce(new Response('{}', { status: 200 }));
+    const authenticated = createHttp({
+      baseUrl: 'http://api.test',
+      getAuthToken: () => 'jwt-token',
+    });
+
+    await authenticated.get('/api/v1/dorsals', { auth: false });
+
+    const init = fetchMock.mock.calls[0]?.[1] as RequestInit;
+    expect(new Headers(init.headers).get('Authorization')).toBeNull();
+  });
+
   it('omits X-User-Id when getUserId returns null', async () => {
     fetchMock.mockResolvedValueOnce(new Response('{}', { status: 200 }));
     const anon = createHttp({ baseUrl: 'http://api.test', getUserId: () => null });
