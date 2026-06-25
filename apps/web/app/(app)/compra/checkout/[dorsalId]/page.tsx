@@ -20,7 +20,12 @@ export default async function CheckoutPage({
         <p className="text-sm font-medium uppercase text-coral">Pago seguro</p>
         <h1 className="mt-1 text-3xl font-bold">Reserva tu dorsal</h1>
       </header>
-      <CheckoutForm dorsalId={dorsal.id} raceName={dorsal.race_name} amount={dorsal.price_amount} />
+      <CheckoutForm
+        dorsalId={dorsal.id}
+        raceName={dorsal.race_name}
+        amount={dorsal.price_amount}
+        purchaseRequirements={dorsal.purchase_requirements}
+      />
     </main>
   );
 }

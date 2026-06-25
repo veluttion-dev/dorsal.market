@@ -1,5 +1,7 @@
 'use client';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { BuyerDataNotice } from '@/features/transactions/components/buyer-data-notice.client';
 import { useReserveListing } from '@/features/transactions/hooks/use-reserve-listing';
 import { getTransactionErrorMessage } from '@/features/transactions/lib/errors';
@@ -7,14 +9,25 @@ import { getStripe } from '@/features/transactions/lib/stripe';
 import { useMe } from '@/features/users/hooks/use-me';
 import { canBuyWithProfile } from '@/features/users/lib/profile-completion';
 import { formatPrice } from '@dorsal/domain';
+import {
+  type PurchaseRequirements,
+  type RunnerDataInput,
+  ShirtSize,
+} from '@dorsal/schemas';
 import { Elements, PaymentElement, useElements, useStripe } from '@stripe/react-stripe-js';
 import { CreditCard, Loader2 } from 'lucide-react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 
 const stripePromise = getStripe();
+const defaultPurchaseRequirements: PurchaseRequirements = {
+  requires_estimated_time: false,
+  requires_shirt_size: false,
+  requires_emergency_contact: false,
+  fixed_shirt_size: null,
+};
 
 function StripePaymentForm({ transactionId }: { transactionId: string }) {
   const stripe = useStripe();
@@ -55,10 +68,12 @@ export function CheckoutForm({
   dorsalId,
   raceName,
   amount,
+  purchaseRequirements = defaultPurchaseRequirements,
 }: {
   dorsalId: string;
   raceName: string;
   amount: number;
+  purchaseRequirements?: PurchaseRequirements;
 }) {
   const router = useRouter();
   const { data } = useSession();
@@ -66,6 +81,26 @@ export function CheckoutForm({
   const reserve = useReserveListing();
   const [clientSecret, setClientSecret] = useState<string | null>(null);
   const [transactionId, setTransactionId] = useState<string | null>(null);
+  const [runnerData, setRunnerData] = useState({
+    estimated_time: '',
+    t_shirt_size: '',
+    emergency_contact: me.data?.emergency_contact ?? '',
+  });
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  const emergencyContactEdited = useRef(false);
+
+  useEffect(() => {
+    if (
+      !emergencyContactEdited.current &&
+      !runnerData.emergency_contact &&
+      me.data?.emergency_contact
+    ) {
+      setRunnerData((current) => ({
+        ...current,
+        emergency_contact: me.data?.emergency_contact ?? '',
+      }));
+    }
+  }, [me.data?.emergency_contact, runnerData.emergency_contact]);
 
   async function startCheckout() {
     const buyerId = data?.user?.id;
@@ -78,14 +113,50 @@ export function CheckoutForm({
       return;
     }
     if (!canBuyWithProfile(me.data)) {
-      toast.error('Completa tus datos de corredor antes de comprar');
+      toast.error('Completa tus datos de identidad antes de comprar');
       router.push(
         `/perfil/completar?callbackUrl=${encodeURIComponent(`/compra/checkout/${dorsalId}`)}`,
       );
       return;
     }
+
+    const errors: Record<string, string> = {};
+    if (
+      purchaseRequirements.requires_estimated_time &&
+      !/^\d{2}:\d{2}:\d{2}$/.test(runnerData.estimated_time.trim())
+    ) {
+      errors.estimated_time = 'Introduce el tiempo en formato HH:MM:SS';
+    }
+    if (purchaseRequirements.requires_shirt_size && !runnerData.t_shirt_size) {
+      errors.t_shirt_size = 'Selecciona una talla';
+    }
+    if (
+      purchaseRequirements.requires_emergency_contact &&
+      !runnerData.emergency_contact.trim()
+    ) {
+      errors.emergency_contact = 'Introduce un contacto de emergencia';
+    }
+    setFieldErrors(errors);
+    if (Object.keys(errors).length) return;
+
+    const checkoutRunnerData: RunnerDataInput = {};
+    if (purchaseRequirements.requires_estimated_time) {
+      checkoutRunnerData.estimated_time = runnerData.estimated_time.trim();
+    }
+    if (purchaseRequirements.requires_shirt_size) {
+      checkoutRunnerData.t_shirt_size = runnerData.t_shirt_size as RunnerDataInput['t_shirt_size'];
+    }
+    if (purchaseRequirements.requires_emergency_contact) {
+      checkoutRunnerData.emergency_contact = runnerData.emergency_contact.trim();
+    }
+
     try {
-      const result = await reserve.mutateAsync({ dorsalId, buyerId });
+      const hasRunnerData = Object.keys(checkoutRunnerData).length > 0;
+      const result = await reserve.mutateAsync({
+        dorsalId,
+        buyerId,
+        ...(hasRunnerData ? { runnerData: checkoutRunnerData } : {}),
+      });
       setTransactionId(result.transaction_id);
       setClientSecret(result.payment_client_secret);
       const stripe = await stripePromise;
@@ -108,6 +179,97 @@ export function CheckoutForm({
         isLoading={me.isLoading}
         profile={me.data}
       />
+
+      {(purchaseRequirements.requires_estimated_time ||
+        purchaseRequirements.requires_shirt_size ||
+        purchaseRequirements.requires_emergency_contact ||
+        purchaseRequirements.fixed_shirt_size) && (
+        <section className="space-y-4 border-y border-border py-5">
+          <div>
+            <h2 className="font-semibold">Datos para esta carrera</h2>
+            <p className="mt-1 text-sm text-text-muted">
+              Se guardarán solo en esta compra y no modificarán tu perfil.
+            </p>
+          </div>
+          <div className="grid gap-4 sm:grid-cols-2">
+            {purchaseRequirements.requires_estimated_time && (
+              <div className="space-y-1.5">
+                <Label htmlFor="checkout-estimated-time">Tiempo estimado</Label>
+                <Input
+                  id="checkout-estimated-time"
+                  aria-label="Tiempo estimado"
+                  placeholder="HH:MM:SS"
+                  value={runnerData.estimated_time}
+                  onChange={(event) =>
+                    setRunnerData((current) => ({
+                      ...current,
+                      estimated_time: event.target.value,
+                    }))
+                  }
+                />
+                {fieldErrors.estimated_time && (
+                  <p className="text-sm text-red-500">{fieldErrors.estimated_time}</p>
+                )}
+              </div>
+            )}
+            {purchaseRequirements.requires_shirt_size && (
+              <div className="space-y-1.5">
+                <Label htmlFor="checkout-shirt-size">Talla</Label>
+                <select
+                  id="checkout-shirt-size"
+                  aria-label="Talla"
+                  className="w-full rounded-md border border-border bg-bg-elevated px-3 py-2 text-sm"
+                  value={runnerData.t_shirt_size}
+                  onChange={(event) =>
+                    setRunnerData((current) => ({
+                      ...current,
+                      t_shirt_size: event.target.value,
+                    }))
+                  }
+                >
+                  <option value="">Selecciona</option>
+                  {ShirtSize.options.map((size) => (
+                    <option key={size} value={size}>
+                      {size}
+                    </option>
+                  ))}
+                </select>
+                {fieldErrors.t_shirt_size && (
+                  <p className="text-sm text-red-500">{fieldErrors.t_shirt_size}</p>
+                )}
+              </div>
+            )}
+            {purchaseRequirements.fixed_shirt_size && (
+              <div className="space-y-1">
+                <p className="text-sm font-medium">Talla de camiseta incluida</p>
+                <p className="text-sm text-text-secondary">
+                  {purchaseRequirements.fixed_shirt_size}
+                </p>
+              </div>
+            )}
+            {purchaseRequirements.requires_emergency_contact && (
+              <div className="space-y-1.5 sm:col-span-2">
+                <Label htmlFor="checkout-emergency-contact">Contacto de emergencia</Label>
+                <Input
+                  id="checkout-emergency-contact"
+                  aria-label="Contacto de emergencia"
+                  value={runnerData.emergency_contact}
+                  onChange={(event) => {
+                    emergencyContactEdited.current = true;
+                    setRunnerData((current) => ({
+                      ...current,
+                      emergency_contact: event.target.value,
+                    }));
+                  }}
+                />
+                {fieldErrors.emergency_contact && (
+                  <p className="text-sm text-red-500">{fieldErrors.emergency_contact}</p>
+                )}
+              </div>
+            )}
+          </div>
+        </section>
+      )}
 
       {!clientSecret || !transactionId ? (
         <Button

@@ -89,14 +89,13 @@ describe('CheckoutForm', () => {
     );
   });
 
-  it('redirects to profile completion before reserving when backend flags are incomplete', async () => {
+  it('redirects to profile completion before reserving when identity is incomplete', async () => {
     if (!mocks.currentProfile) {
       throw new Error('Expected profile fixture to be initialized');
     }
     mocks.currentProfile = {
       ...mocks.currentProfile,
-      runner_data_complete: false,
-      emergency_contact: null,
+      profile_complete: false,
     };
     const user = userEvent.setup();
 
@@ -111,10 +110,69 @@ describe('CheckoutForm', () => {
 
     expect(mocks.mutateAsync).not.toHaveBeenCalled();
     expect(mocks.toastError).toHaveBeenCalledWith(
-      'Completa tus datos de corredor antes de comprar',
+      'Completa tus datos de identidad antes de comprar',
     );
     expect(mocks.push).toHaveBeenCalledWith(
       '/perfil/completar?callbackUrl=%2Fcompra%2Fcheckout%2F55555555-5555-4555-8555-555555555555',
     );
+  });
+
+  it('renders only the runner fields requested by the dorsal', () => {
+    render(
+      <CheckoutForm
+        dorsalId="55555555-5555-4555-8555-555555555555"
+        raceName="Madrid"
+        amount={35}
+        purchaseRequirements={{
+          requires_estimated_time: true,
+          requires_shirt_size: false,
+          requires_emergency_contact: true,
+          fixed_shirt_size: null,
+        }}
+      />,
+    );
+
+    expect(screen.getByLabelText('Tiempo estimado')).toBeVisible();
+    expect(screen.queryByLabelText('Talla')).not.toBeInTheDocument();
+    expect(screen.getByLabelText('Contacto de emergencia')).toHaveValue('Pedro 600000001');
+  });
+
+  it('sends edited runner data only to the reservation', async () => {
+    mocks.mutateAsync.mockResolvedValueOnce({
+      transaction_id: '11111111-1111-4111-8111-111111111111',
+      payment_client_secret: 'secret',
+      reservation_expires_at: '2026-06-26T12:00:00Z',
+    });
+    const user = userEvent.setup();
+    render(
+      <CheckoutForm
+        dorsalId="55555555-5555-4555-8555-555555555555"
+        raceName="Madrid"
+        amount={35}
+        purchaseRequirements={{
+          requires_estimated_time: true,
+          requires_shirt_size: false,
+          requires_emergency_contact: true,
+          fixed_shirt_size: null,
+        }}
+      />,
+    );
+
+    await user.type(screen.getByLabelText('Tiempo estimado'), '01:45:00');
+    await user.clear(screen.getByLabelText('Contacto de emergencia'));
+    await user.type(screen.getByLabelText('Contacto de emergencia'), 'Solo esta compra');
+    await user.click(screen.getByRole('button', { name: /Simular pago|Continuar al pago/ }));
+
+    await waitFor(() =>
+      expect(mocks.mutateAsync).toHaveBeenCalledWith({
+        dorsalId: '55555555-5555-4555-8555-555555555555',
+        buyerId: 'buyer-1',
+        runnerData: {
+          estimated_time: '01:45:00',
+          emergency_contact: 'Solo esta compra',
+        },
+      }),
+    );
+    expect(mocks.currentProfile?.emergency_contact).toBe('Pedro 600000001');
   });
 });
