@@ -1,13 +1,6 @@
-import { Nav } from '@/components/layout/nav';
-import { auth } from '@/lib/auth';
+import { SiteChrome } from '@/components/layout/site-chrome';
 import type { ReactNode } from 'react';
 
-export default async function MarketingLayout({ children }: { children: ReactNode }) {
-  const session = await auth();
-  return (
-    <>
-      <Nav session={session} />
-      {children}
-    </>
-  );
+export default function MarketingLayout({ children }: { children: ReactNode }) {
+  return <SiteChrome>{children}</SiteChrome>;
 }
