@@ -8,6 +8,7 @@ import { z } from 'zod';
 import { authConfig } from '../auth.config';
 import { isUsersMocked } from '../features/users/lib/auth-mode';
 import { buildMockAuthToken } from '../features/users/lib/mock-auth-token';
+import { buildCognitoProviderConfig } from './cognito-provider-config';
 import { env } from './env';
 
 const Creds = z.object({
@@ -77,11 +78,13 @@ const providers: NextAuthConfig['providers'] = [
 
 if (env.AUTH_COGNITO_ID && env.AUTH_COGNITO_ISSUER) {
   providers.push(
-    Cognito({
-      clientId: env.AUTH_COGNITO_ID,
-      clientSecret: env.AUTH_COGNITO_CLIENT_SECRET ?? '',
-      issuer: env.AUTH_COGNITO_ISSUER,
-    }),
+    Cognito(
+      buildCognitoProviderConfig({
+        clientId: env.AUTH_COGNITO_ID,
+        issuer: env.AUTH_COGNITO_ISSUER,
+        clientSecret: env.AUTH_COGNITO_CLIENT_SECRET,
+      }),
+    ),
   );
 }
 

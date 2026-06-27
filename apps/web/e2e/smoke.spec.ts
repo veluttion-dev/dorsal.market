@@ -5,6 +5,19 @@ test('home renders the dorsal.market wordmark', async ({ page }) => {
   await expect(page.getByText(/dorsal/i).first()).toBeVisible();
 });
 
+test('home does not render script tags from client components', async ({ page }) => {
+  const scriptTagErrors: string[] = [];
+  page.on('console', (message) => {
+    if (message.type() === 'error' && message.text().includes('Encountered a script tag')) {
+      scriptTagErrors.push(message.text());
+    }
+  });
+
+  await page.goto('/');
+
+  expect(scriptTagErrors).toEqual([]);
+});
+
 test('theme toggle switches data-theme attribute', async ({ page }) => {
   await page.goto('/');
   const html = page.locator('html');

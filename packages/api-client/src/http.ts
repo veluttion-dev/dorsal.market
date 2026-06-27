@@ -8,6 +8,7 @@ export interface HttpRequest {
   body?: unknown;
   headers?: HeadersInit;
   signal?: AbortSignal;
+  auth?: boolean;
 }
 
 export interface HttpClient {
@@ -48,7 +49,7 @@ export function createHttp(opts: HttpClientOptions): HttpClient {
     }
     const userId = opts.getUserId?.();
     if (userId) headers.set('X-User-Id', userId);
-    const authToken = opts.getAuthToken?.();
+    const authToken = init?.auth === false ? null : opts.getAuthToken?.();
     if (authToken) headers.set('Authorization', `Bearer ${authToken}`);
 
     const fetchInit: RequestInit = { method, headers };
