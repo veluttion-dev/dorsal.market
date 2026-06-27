@@ -14,8 +14,9 @@ import { useState } from 'react';
 import { SignOutButton } from './sign-out-button.client';
 
 const LINKS = [
-  { href: '/', label: 'Dorsales' },
   { href: '/vender', label: 'Vender' },
+  { href: '/guias/comprar', label: 'Cómo comprar' },
+  { href: '/guias/vender', label: 'Cómo publicar' },
 ] as const;
 
 export function NavMobile({
