@@ -1,12 +1,9 @@
+'use client';
 import type { PaymentMethod } from '@dorsal/schemas';
-
-const LABELS: Record<PaymentMethod, string> = {
-  bizum: 'Bizum',
-  paypal: 'PayPal',
-  card: 'Tarjeta',
-};
+import { useTranslations } from 'next-intl';
 
 export function PaymentMethodPills({ methods }: { methods: PaymentMethod[] }) {
+  const t = useTranslations('payment_methods');
   return (
     <div className="flex flex-wrap gap-1.5">
       {methods.map((m) => (
@@ -14,7 +11,7 @@ export function PaymentMethodPills({ methods }: { methods: PaymentMethod[] }) {
           key={m}
           className="rounded-full border border-border bg-bg-elevated px-2.5 py-0.5 text-xs text-text-secondary"
         >
-          {LABELS[m]}
+          {t(m)}
         </span>
       ))}
     </div>

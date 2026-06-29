@@ -4,6 +4,7 @@ import { DorsalsListClient } from '@/features/dorsals/components/dorsals-list.cl
 import { parseFiltersFromSearchParams } from '@/features/dorsals/lib/filters-url';
 import { searchDorsals } from '@/features/dorsals/server/search';
 import type { Metadata } from 'next';
+import { getTranslations } from 'next-intl/server';
 
 type SearchParams = { [k: string]: string | string[] | undefined };
 
@@ -18,6 +19,7 @@ export default async function Home({
 }: {
   searchParams: Promise<SearchParams>;
 }) {
+  const t = await getTranslations('home');
   const sp = await searchParams;
   const usp = new URLSearchParams();
   for (const [k, v] of Object.entries(sp)) {
@@ -34,9 +36,9 @@ export default async function Home({
     <main className="container mx-auto px-4 py-8">
       <header className="mb-8">
         <h1 className="text-4xl font-bold">
-          Encuentra tu <em className="not-italic text-coral">dorsal</em>
+          {t('heading')} <em className="not-italic text-coral">{t('heading_highlight')}</em>
         </h1>
-        <p className="mt-2 text-sm text-text-muted">{initial.total} dorsales encontrados</p>
+        <p className="mt-2 text-sm text-text-muted">{t('found', { total: initial.total })}</p>
       </header>
       <div className="mb-4 lg:hidden">
         <DorsalFiltersMobile />

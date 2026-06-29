@@ -9,27 +9,29 @@ import {
   SheetTrigger,
 } from '@/components/ui/sheet';
 import { Menu } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { useState } from 'react';
 import { SignOutButton } from './sign-out-button.client';
-
-const LINKS = [
-  { href: '/vender', label: 'Vender' },
-  { href: '/guias/comprar', label: 'Cómo comprar' },
-  { href: '/guias/vender', label: 'Cómo publicar' },
-] as const;
 
 export function NavMobile({
   session,
 }: {
   session: { user?: { name?: string | null } } | null | undefined;
 }) {
+  const t = useTranslations('nav');
   const [open, setOpen] = useState(false);
+
+  const LINKS = [
+    { href: '/vender', label: t('sell') },
+    { href: '/guias/comprar', label: t('how_to_buy') },
+    { href: '/guias/vender', label: t('how_to_publish') },
+  ] as const;
 
   return (
     <Sheet open={open} onOpenChange={setOpen}>
       <SheetTrigger asChild>
-        <Button variant="ghost" size="icon" aria-label="Abrir menú">
+        <Button variant="ghost" size="icon" aria-label={t('open_menu')}>
           <Menu className="h-5 w-5" />
         </Button>
       </SheetTrigger>
@@ -37,7 +39,7 @@ export function NavMobile({
         <SheetTitle className="font-mono text-base font-bold">
           dorsal<span className="text-coral">.</span>market
         </SheetTitle>
-        <SheetDescription className="sr-only">Menú de navegación principal</SheetDescription>
+        <SheetDescription className="sr-only">{t('main_nav')}</SheetDescription>
 
         <nav className="mt-8 flex flex-col">
           {LINKS.map((link) => (
@@ -58,7 +60,7 @@ export function NavMobile({
               <SheetClose asChild>
                 <Link href="/perfil">
                   <Button variant="secondary" className="w-full">
-                    {session.user.name ?? 'Perfil'}
+                    {session.user.name ?? t('profile')}
                   </Button>
                 </Link>
               </SheetClose>
@@ -68,7 +70,7 @@ export function NavMobile({
             <>
               <SheetClose asChild>
                 <Link href="/login">
-                  <Button className="w-full">Entrar</Button>
+                  <Button className="w-full">{t('enter')}</Button>
                 </Link>
               </SheetClose>
               <SheetClose asChild>
@@ -76,7 +78,7 @@ export function NavMobile({
                   href="/registro"
                   className="py-1 text-center text-sm text-text-secondary transition-colors hover:text-text-primary"
                 >
-                  Crear cuenta
+                  {t('create_account')}
                 </Link>
               </SheetClose>
             </>
