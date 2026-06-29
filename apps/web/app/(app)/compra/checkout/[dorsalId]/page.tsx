@@ -1,7 +1,7 @@
 import { getDorsalDetail } from '@/features/dorsals/server/get-detail';
 import { CheckoutForm } from '@/features/transactions/components/checkout-form.client';
-import { getTranslations } from 'next-intl/server';
 import type { Metadata } from 'next';
+import { getTranslations } from 'next-intl/server';
 import { notFound } from 'next/navigation';
 
 export const metadata: Metadata = { title: 'Checkout' };

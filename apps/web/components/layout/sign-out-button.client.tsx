@@ -1,8 +1,8 @@
 'use client';
 import { Button } from '@/components/ui/button';
 import { LogOut } from 'lucide-react';
-import { useTranslations } from 'next-intl';
 import { signOut } from 'next-auth/react';
+import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 
 export function SignOutButton() {

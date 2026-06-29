@@ -1,6 +1,6 @@
 'use client';
-import { useTranslations } from 'next-intl';
 import type { PaymentMethod } from '@dorsal/schemas';
+import { useTranslations } from 'next-intl';
 
 export function PaymentMethodPills({ methods }: { methods: PaymentMethod[] }) {
   const t = useTranslations('payment_methods');

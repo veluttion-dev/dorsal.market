@@ -1,8 +1,8 @@
 'use client';
 import { usePresignPhoto } from '@/features/dorsals/hooks/use-presign-photo';
 import { cn } from '@/lib/utils';
-import { useTranslations } from 'next-intl';
 import { Image as ImageIcon, Upload, X } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useDropzone } from 'react-dropzone';
 

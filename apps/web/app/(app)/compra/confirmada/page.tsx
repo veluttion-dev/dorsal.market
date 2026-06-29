@@ -2,8 +2,8 @@
 import { Button } from '@/components/ui/button';
 import { useBuyerTransaction } from '@/features/transactions/hooks/use-buyer-transaction';
 import { STATUS_LABEL } from '@/features/transactions/lib/labels';
-import { useTranslations } from 'next-intl';
 import { CheckCircle2, ListChecks } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 

@@ -1,6 +1,6 @@
 'use client';
-import { useTranslations } from 'next-intl';
 import type { DorsalSummary } from '@dorsal/schemas';
+import { useTranslations } from 'next-intl';
 import { DorsalCard } from './dorsal-card';
 
 export function DorsalGrid({ items }: { items: DorsalSummary[] }) {

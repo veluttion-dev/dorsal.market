@@ -9,9 +9,9 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { useSellerProblemReport } from '@/features/transactions/hooks/use-seller-problem-report';
-import { useTranslations } from 'next-intl';
 import type { SellerProblemCategory } from '@dorsal/schemas';
 import { Send } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { toast } from 'sonner';
 

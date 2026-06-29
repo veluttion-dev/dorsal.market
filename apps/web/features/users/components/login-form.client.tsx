@@ -1,8 +1,8 @@
 'use client';
 import { Button } from '@/components/ui/button';
-import { useTranslations } from 'next-intl';
 import { LogIn, UserRound } from 'lucide-react';
 import { signIn } from 'next-auth/react';
+import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { useState } from 'react';

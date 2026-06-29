@@ -3,8 +3,8 @@ import { DorsalGrid } from '@/components/dorsal/dorsal-grid';
 import { useDorsalsList } from '@/features/dorsals/hooks/use-dorsals-list';
 import { FILTER_PARSERS } from '@/features/dorsals/lib/filter-parsers.client';
 import { filtersFromQueryState } from '@/features/dorsals/lib/filters-url';
-import { useTranslations } from 'next-intl';
 import type { DorsalListResponse, SearchDorsalsQuery } from '@dorsal/schemas';
+import { useTranslations } from 'next-intl';
 import { useQueryStates } from 'nuqs';
 import { Pagination } from './pagination';
 

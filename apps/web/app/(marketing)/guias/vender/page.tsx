@@ -1,6 +1,6 @@
 import { Guide } from '@/components/layout/guide';
-import { getTranslations } from 'next-intl/server';
 import type { Metadata } from 'next';
+import { getTranslations } from 'next-intl/server';
 
 export const metadata: Metadata = {
   title: 'Cómo publicar un dorsal',

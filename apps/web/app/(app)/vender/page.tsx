@@ -1,6 +1,6 @@
 import { PublishWizard } from '@/features/dorsals/components/publish-wizard.client';
-import { getTranslations } from 'next-intl/server';
 import type { Metadata } from 'next';
+import { getTranslations } from 'next-intl/server';
 import Link from 'next/link';
 
 export const metadata: Metadata = { title: 'Vender dorsal' };

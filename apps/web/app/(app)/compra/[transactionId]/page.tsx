@@ -8,13 +8,13 @@ import { useSellerTransaction } from '@/features/transactions/hooks/use-seller-t
 import { STATUS_LABEL } from '@/features/transactions/lib/labels';
 import { ReviewForm } from '@/features/users/components/review-form.client';
 import { formatPrice } from '@dorsal/domain';
-import { useTranslations } from 'next-intl';
 import type {
   BuyerTransactionDetail,
   SellerTransactionDetail,
   TransactionStatus,
 } from '@dorsal/schemas';
 import { useSession } from 'next-auth/react';
+import { useTranslations } from 'next-intl';
 import { use } from 'react';
 
 const SELLER_PROBLEM_STATUSES: TransactionStatus[] = ['RELEASED_TO_SELLER', 'REFUNDED_TO_BUYER'];

@@ -3,10 +3,10 @@ import { Button } from '@/components/ui/button';
 import { useOnboardSeller } from '@/features/transactions/hooks/use-onboard-seller';
 import { isTransactionsMocked } from '@/features/transactions/lib/environment';
 import { getTransactionErrorMessage } from '@/features/transactions/lib/errors';
-import { useTranslations } from 'next-intl';
 import type { SellerOnboardingResponse } from '@dorsal/schemas';
 import { CheckCircle2, ExternalLink, Loader2 } from 'lucide-react';
 import { useSession } from 'next-auth/react';
+import { useTranslations } from 'next-intl';
 import { useSearchParams } from 'next/navigation';
 import { useState } from 'react';
 import { toast } from 'sonner';
@@ -70,9 +70,7 @@ export default function SellerOnboardingPage() {
           <p className="mt-1 font-semibold">
             {lastResult?.charges_enabled ? t('charges_enabled') : t('charges_pending')}
           </p>
-          {mockedTransactions && (
-            <p className="mt-2 text-sm text-text-muted">{t('mock_notice')}</p>
-          )}
+          {mockedTransactions && <p className="mt-2 text-sm text-text-muted">{t('mock_notice')}</p>}
         </div>
         <Button type="button" disabled={onboard.isPending} onClick={start}>
           {onboard.isPending ? <Loader2 className="animate-spin" /> : <ExternalLink />}

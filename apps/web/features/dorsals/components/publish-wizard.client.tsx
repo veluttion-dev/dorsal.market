@@ -12,10 +12,10 @@ import {
   loadPublishDraft,
   savePublishDraft,
 } from '@/features/dorsals/lib/publish-draft-storage';
-import { useTranslations } from 'next-intl';
 import { Distance, PaymentMethod, PublishDorsalInput } from '@dorsal/schemas';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Camera, CreditCard, MapPin, Phone, Trophy } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
@@ -103,7 +103,11 @@ export function PublishWizard() {
       }}
       className="space-y-5"
     >
-      <FormSection icon={<Camera className="h-4 w-4" />} title={t('step1_title')} badge={t('step1_badge')}>
+      <FormSection
+        icon={<Camera className="h-4 w-4" />}
+        title={t('step1_title')}
+        badge={t('step1_badge')}
+      >
         <PhotoUpload
           value={form.watch('photo_url') || null}
           onChange={(url) => form.setValue('photo_url', url ?? '', { shouldValidate: true })}
@@ -111,7 +115,11 @@ export function PublishWizard() {
         <FieldError message={form.formState.errors.photo_url?.message} />
       </FormSection>
 
-      <FormSection icon={<Trophy className="h-4 w-4" />} title={t('step2_title')} badge={t('step2_badge')}>
+      <FormSection
+        icon={<Trophy className="h-4 w-4" />}
+        title={t('step2_title')}
+        badge={t('step2_badge')}
+      >
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div className="space-y-1.5">
             <Label htmlFor="race_name">{t('label_race_name')}</Label>
@@ -130,7 +138,11 @@ export function PublishWizard() {
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="location">{t('label_location')}</Label>
-            <Input id="location" {...form.register('location')} placeholder={t('location_placeholder')} />
+            <Input
+              id="location"
+              {...form.register('location')}
+              placeholder={t('location_placeholder')}
+            />
             <FieldError message={form.formState.errors.location?.message} />
           </div>
           <div className="space-y-1.5">
@@ -158,7 +170,11 @@ export function PublishWizard() {
         <FieldError message={form.formState.errors.included_items?.message} />
       </FormSection>
 
-      <FormSection icon={<MapPin className="h-4 w-4" />} title={t('step3_title')} badge={t('step3_badge')}>
+      <FormSection
+        icon={<MapPin className="h-4 w-4" />}
+        title={t('step3_title')}
+        badge={t('step3_badge')}
+      >
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
           {itemKeys.map((k) => (
             <label
@@ -222,7 +238,11 @@ export function PublishWizard() {
         </div>
       </FormSection>
 
-      <FormSection icon={<Phone className="h-4 w-4" />} title={t('step5_title')} badge={t('step5_badge')}>
+      <FormSection
+        icon={<Phone className="h-4 w-4" />}
+        title={t('step5_title')}
+        badge={t('step5_badge')}
+      >
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div className="space-y-1.5">
             <Label htmlFor="contact_phone">{t('label_phone')}</Label>

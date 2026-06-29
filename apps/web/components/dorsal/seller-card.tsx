@@ -1,6 +1,6 @@
-import { getTranslations } from 'next-intl/server';
 import type { PublicUserProfile } from '@dorsal/schemas';
 import { Star } from 'lucide-react';
+import { getTranslations } from 'next-intl/server';
 
 export async function SellerCard({ seller }: { seller: PublicUserProfile }) {
   const t = await getTranslations('seller_card');
@@ -17,7 +17,8 @@ export async function SellerCard({ seller }: { seller: PublicUserProfile }) {
           <p className="font-semibold">{displayName}</p>
           <p className="flex items-center gap-1 text-sm text-text-secondary">
             <Star className="h-3.5 w-3.5 fill-current text-coral" />
-            {seller.avg_rating_seller?.toFixed(1) ?? '-'} - {t('sales', { count: seller.total_sales })}
+            {seller.avg_rating_seller?.toFixed(1) ?? '-'} -{' '}
+            {t('sales', { count: seller.total_sales })}
           </p>
         </div>
       </div>

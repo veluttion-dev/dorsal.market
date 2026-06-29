@@ -1,7 +1,7 @@
 'use client';
-import { useTranslations } from 'next-intl';
 import type { IncludedItems } from '@dorsal/schemas';
 import { Check, X } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 
 export function IncludedItemsList({ items }: { items: IncludedItems }) {
   const t = useTranslations('included_items');

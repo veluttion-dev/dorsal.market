@@ -2,9 +2,9 @@
 import { DisputeDialog } from '@/components/transaction/dispute-dialog.client';
 import { Button } from '@/components/ui/button';
 import { useConfirmTransfer } from '@/features/transactions/hooks/use-confirm-transfer';
-import { useTranslations } from 'next-intl';
 import type { TransactionStatus } from '@dorsal/schemas';
 import { CheckCircle2 } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import { toast } from 'sonner';
 
 const DISPUTABLE: TransactionStatus[] = [

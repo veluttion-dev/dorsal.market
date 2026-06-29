@@ -4,9 +4,9 @@ import {
   canBuyWithProfile,
   getMissingProfileFields,
 } from '@/features/users/lib/profile-completion';
-import { useTranslations } from 'next-intl';
 import type { UserProfile } from '@dorsal/schemas';
 import { IdCard } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 
 export function BuyerDataNotice({
@@ -29,9 +29,7 @@ export function BuyerDataNotice({
         <div className="min-w-0">
           <h2 className="font-semibold">{t('title')}</h2>
           <p className="mt-1 text-sm text-text-secondary">{t('description')}</p>
-          {!isAuthenticated && (
-            <p className="mt-2 text-sm text-text-muted">{t('need_login')}</p>
-          )}
+          {!isAuthenticated && <p className="mt-2 text-sm text-text-muted">{t('need_login')}</p>}
           {isAuthenticated && isLoading && (
             <p className="mt-2 text-sm text-text-muted">{t('checking')}</p>
           )}

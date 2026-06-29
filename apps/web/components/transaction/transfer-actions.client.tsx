@@ -2,9 +2,9 @@
 import { ProofUploader } from '@/components/transaction/proof-uploader.client';
 import { Button } from '@/components/ui/button';
 import { useTransferInProgress } from '@/features/transactions/hooks/use-transfer-in-progress';
-import { useTranslations } from 'next-intl';
 import type { TransactionStatus } from '@dorsal/schemas';
 import { Loader2, PlayCircle } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import { toast } from 'sonner';
 
 export function TransferActions({

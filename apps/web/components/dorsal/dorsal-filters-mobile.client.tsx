@@ -8,8 +8,8 @@ import {
   SheetTitle,
   SheetTrigger,
 } from '@/components/ui/sheet';
-import { useTranslations } from 'next-intl';
 import { SlidersHorizontal } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import { DorsalFilters } from './dorsal-filters.client';
 
 export function DorsalFiltersMobile() {

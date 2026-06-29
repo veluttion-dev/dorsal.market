@@ -9,8 +9,8 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 import { useOpenDispute } from '@/features/transactions/hooks/use-open-dispute';
-import { useTranslations } from 'next-intl';
 import { AlertTriangle } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { toast } from 'sonner';
 

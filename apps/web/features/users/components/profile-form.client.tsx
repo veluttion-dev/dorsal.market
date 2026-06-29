@@ -2,9 +2,9 @@
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { useTranslations } from 'next-intl';
 import type { PatchUserProfileInput, UserProfile } from '@dorsal/schemas';
 import { Save } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 
 interface ProfileFormValues {

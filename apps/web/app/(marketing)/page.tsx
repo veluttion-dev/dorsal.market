@@ -3,8 +3,8 @@ import { DorsalFilters } from '@/components/dorsal/dorsal-filters.client';
 import { DorsalsListClient } from '@/features/dorsals/components/dorsals-list.client';
 import { parseFiltersFromSearchParams } from '@/features/dorsals/lib/filters-url';
 import { searchDorsals } from '@/features/dorsals/server/search';
-import { getTranslations } from 'next-intl/server';
 import type { Metadata } from 'next';
+import { getTranslations } from 'next-intl/server';
 
 type SearchParams = { [k: string]: string | string[] | undefined };
 

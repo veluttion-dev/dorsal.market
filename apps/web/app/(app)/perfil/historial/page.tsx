@@ -3,8 +3,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useMyPurchases } from '@/features/transactions/hooks/use-my-purchases';
 import { useMySales } from '@/features/transactions/hooks/use-my-sales';
 import { formatPrice } from '@dorsal/domain';
-import { useTranslations } from 'next-intl';
 import type { TransactionListItem } from '@dorsal/schemas';
+import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 
 function TransactionRow({ item }: { item: TransactionListItem }) {

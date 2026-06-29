@@ -1,7 +1,7 @@
 'use client';
 import { TrackingStep } from '@/components/transaction/tracking-step';
-import { useTranslations } from 'next-intl';
 import type { TimelineEvent } from '@dorsal/schemas';
+import { useTranslations } from 'next-intl';
 
 export function TrackingTimeline({ events }: { events: TimelineEvent[] }) {
   const t = useTranslations('tracking');
