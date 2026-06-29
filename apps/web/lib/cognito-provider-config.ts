@@ -13,12 +13,13 @@ export function buildCognitoProviderConfig({
   clientSecret,
 }: CognitoConfigInput): OAuthUserConfig<CognitoProfile> {
   if (clientSecret) {
-    return { clientId, clientSecret, issuer };
+    return { clientId, clientSecret, issuer, checks: ['pkce', 'nonce'] };
   }
 
   return {
     clientId,
     issuer,
     client: { token_endpoint_auth_method: 'none' },
+    checks: ['pkce', 'nonce'],
   };
 }

@@ -6,6 +6,7 @@ import { getTransactionErrorMessage } from '@/features/transactions/lib/errors';
 import type { SellerOnboardingResponse } from '@dorsal/schemas';
 import { CheckCircle2, ExternalLink, Loader2 } from 'lucide-react';
 import { useSession } from 'next-auth/react';
+import { useSearchParams } from 'next/navigation';
 import { useState } from 'react';
 import { toast } from 'sonner';
 
@@ -14,6 +15,7 @@ export default function SellerOnboardingPage() {
   const onboard = useOnboardSeller();
   const [lastResult, setLastResult] = useState<SellerOnboardingResponse | null>(null);
   const mockedTransactions = isTransactionsMocked();
+  const status = useSearchParams().get('status');
 
   async function start() {
     const sellerId = data?.user?.id;
@@ -43,6 +45,16 @@ export default function SellerOnboardingPage() {
         <p className="text-sm font-medium uppercase text-coral">Stripe Connect</p>
         <h1 className="mt-1 text-3xl font-bold">Configura tus cobros</h1>
       </header>
+      {status === 'complete' && (
+        <div className="mb-6 rounded-lg border border-olive/40 bg-olive/10 p-4 text-sm">
+          Has vuelto de Stripe. Estamos verificando tu cuenta; en cuanto quede lista podras publicar.
+        </div>
+      )}
+      {status === 'refresh' && (
+        <div className="mb-6 rounded-lg border border-coral/40 bg-coral/10 p-4 text-sm">
+          El enlace de Stripe caduco. Pulsa &quot;Configurar pagos&quot; para reanudar.
+        </div>
+      )}
       <section className="space-y-5 rounded-lg border border-border bg-bg-card p-6">
         <div className="flex items-start gap-3">
           <CheckCircle2 className="mt-1 text-olive" />
