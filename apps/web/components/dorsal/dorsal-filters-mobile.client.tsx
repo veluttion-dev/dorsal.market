@@ -8,32 +8,26 @@ import {
   SheetTitle,
   SheetTrigger,
 } from '@/components/ui/sheet';
+import { useTranslations } from 'next-intl';
 import { SlidersHorizontal } from 'lucide-react';
 import { DorsalFilters } from './dorsal-filters.client';
 
-/**
- * Mobile entry point for the filters: a full-width "Filtros" button that opens
- * the same <DorsalFilters /> inside a side sheet. On lg+ the sidebar is shown
- * directly and this trigger is hidden, so filters never push the grid down on
- * small screens.
- */
 export function DorsalFiltersMobile() {
+  const t = useTranslations('filters');
   return (
     <Sheet>
       <SheetTrigger asChild>
         <Button variant="outline" className="w-full lg:hidden">
           <SlidersHorizontal />
-          Filtros
+          {t('title')}
         </Button>
       </SheetTrigger>
       <SheetContent side="left" className="w-80 max-w-[85vw] overflow-y-auto">
-        <SheetTitle className="sr-only">Filtros</SheetTitle>
-        <SheetDescription className="sr-only">
-          Filtra los dorsales por carrera, distancia, precio, ubicación y método de pago.
-        </SheetDescription>
+        <SheetTitle className="sr-only">{t('title')}</SheetTitle>
+        <SheetDescription className="sr-only">{t('mobile_description')}</SheetDescription>
         <DorsalFilters />
         <SheetClose asChild>
-          <Button className="mt-6 w-full">Ver resultados</Button>
+          <Button className="mt-6 w-full">{t('see_results')}</Button>
         </SheetClose>
       </SheetContent>
     </Sheet>

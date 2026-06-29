@@ -2,6 +2,7 @@
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useSubmitProof } from '@/features/transactions/hooks/use-submit-proof';
+import { useTranslations } from 'next-intl';
 import { Upload } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
@@ -10,13 +11,14 @@ export function ProofUploader({
   transactionId,
   sellerId,
 }: { transactionId: string; sellerId: string }) {
+  const t = useTranslations('proof');
   const submitProof = useSubmitProof(transactionId);
   const [file, setFile] = useState<File | null>(null);
 
   async function submit() {
     if (!file) return;
     await submitProof.mutateAsync({ sellerId, file });
-    toast.success('Prueba enviada');
+    toast.success(t('sent_toast'));
     setFile(null);
   }
 
@@ -34,7 +36,7 @@ export function ProofUploader({
         onClick={submit}
       >
         <Upload />
-        Subir prueba
+        {t('upload')}
       </Button>
     </div>
   );

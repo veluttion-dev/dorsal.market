@@ -1,14 +1,11 @@
 'use client';
 import { usePresignPhoto } from '@/features/dorsals/hooks/use-presign-photo';
 import { cn } from '@/lib/utils';
+import { useTranslations } from 'next-intl';
 import { Image as ImageIcon, Upload, X } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useDropzone } from 'react-dropzone';
 
-/**
- * Photo dropzone. `value` is the persisted photo URL; `onChange` fires with the
- * final URL once the upload resolves (or null when cleared).
- */
 export function PhotoUpload({
   value,
   onChange,
@@ -16,6 +13,7 @@ export function PhotoUpload({
   value: string | null;
   onChange: (url: string | null) => void;
 }) {
+  const t = useTranslations('photo_upload');
   const [preview, setPreview] = useState<string | null>(value);
   const objectUrlRef = useRef<string | null>(null);
   const presign = usePresignPhoto();
@@ -59,8 +57,7 @@ export function PhotoUpload({
     <div className="space-y-2">
       {preview ? (
         <div className="relative aspect-video overflow-hidden rounded-lg border border-border bg-bg-elevated">
-          {/* Preview may be a blob: object URL — plain <img>, not next/image. */}
-          <img src={preview} alt="Vista previa del dorsal" className="h-full w-full object-cover" />
+          <img src={preview} alt={t('preview_alt')} className="h-full w-full object-cover" />
           <button
             type="button"
             onClick={() => {
@@ -68,7 +65,7 @@ export function PhotoUpload({
               onChange(null);
             }}
             className="absolute right-2 top-2 rounded-full bg-bg-primary/80 p-1.5 text-text-primary hover:bg-bg-primary"
-            aria-label="Quitar foto"
+            aria-label={t('remove_aria')}
           >
             <X className="h-4 w-4" />
           </button>
@@ -83,20 +80,20 @@ export function PhotoUpload({
         >
           <input {...getInputProps()} />
           {presign.isPending ? (
-            <p>Subiendo…</p>
+            <p>{t('uploading')}</p>
           ) : (
             <>
               <ImageIcon className="h-10 w-10" />
               <p className="text-sm font-medium">
                 <Upload className="-mt-1 mr-1 inline h-3.5 w-3.5" />
-                Arrastra una foto o haz clic
+                {t('drop_hint')}
               </p>
-              <p className="text-xs">PNG / JPG / WEBP · Máx 8 MB</p>
+              <p className="text-xs">{t('file_types')}</p>
             </>
           )}
         </div>
       )}
-      {presign.isError && <p className="text-sm text-red-500">No se pudo subir la foto</p>}
+      {presign.isError && <p className="text-sm text-red-500">{t('upload_error')}</p>}
     </div>
   );
 }

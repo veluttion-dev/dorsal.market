@@ -1,6 +1,8 @@
 import { Providers } from '@/components/providers';
 import type { Metadata } from 'next';
 import { Outfit, Space_Mono } from 'next/font/google';
+import { NextIntlClientProvider } from 'next-intl';
+import { getMessages } from 'next-intl/server';
 import type { ReactNode } from 'react';
 import './globals.css';
 
@@ -18,11 +20,14 @@ export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000'),
 };
 
-export default function RootLayout({ children }: { children: ReactNode }) {
+export default async function RootLayout({ children }: { children: ReactNode }) {
+  const messages = await getMessages();
   return (
     <html lang="es" className={`${outfit.variable} ${spaceMono.variable}`} suppressHydrationWarning>
       <body>
-        <Providers>{children}</Providers>
+        <NextIntlClientProvider messages={messages}>
+          <Providers>{children}</Providers>
+        </NextIntlClientProvider>
       </body>
     </html>
   );

@@ -1,11 +1,14 @@
+'use client';
+import { useTranslations } from 'next-intl';
 import type { DorsalSummary } from '@dorsal/schemas';
 import { DorsalCard } from './dorsal-card';
 
 export function DorsalGrid({ items }: { items: DorsalSummary[] }) {
+  const t = useTranslations('dorsals');
   if (items.length === 0) {
     return (
       <div className="rounded-lg border border-dashed border-border p-12 text-center">
-        <p className="text-text-secondary">No hay dorsales que coincidan con los filtros.</p>
+        <p className="text-text-secondary">{t('no_results')}</p>
       </div>
     );
   }

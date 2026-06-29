@@ -1,5 +1,6 @@
 'use client';
 import { Button } from '@/components/ui/button';
+import { useTranslations } from 'next-intl';
 import { LogIn, UserRound } from 'lucide-react';
 import { signIn } from 'next-auth/react';
 import Link from 'next/link';
@@ -13,6 +14,7 @@ export function LoginForm({
   cognitoEnabled: boolean;
   mockEnabled: boolean;
 }) {
+  const t = useTranslations('auth');
   const params = useSearchParams();
   const callbackUrl = params.get('callbackUrl') ?? '/perfil';
   const [loadingProvider, setLoadingProvider] = useState<string | null>(null);
@@ -33,10 +35,8 @@ export function LoginForm({
 
   return (
     <div className="w-full max-w-sm rounded-lg border border-border bg-bg-card p-8">
-      <h1 className="text-2xl font-bold">Entrar</h1>
-      <p className="mt-2 text-sm text-text-secondary">
-        Accede para comprar, vender y gestionar tus dorsales.
-      </p>
+      <h1 className="text-2xl font-bold">{t('login_title')}</h1>
+      <p className="mt-2 text-sm text-text-secondary">{t('login_subtitle')}</p>
 
       <div className="mt-6 space-y-3">
         {cognitoEnabled ? (
@@ -47,11 +47,11 @@ export function LoginForm({
             onClick={loginWithCognito}
           >
             <LogIn />
-            Entrar con Cognito
+            {t('login_cognito')}
           </Button>
         ) : (
           <div className="rounded-md border border-border bg-bg-elevated p-3 text-sm text-text-secondary">
-            El login real se activara al configurar Cognito en el entorno.
+            {t('login_cognito_disabled')}
           </div>
         )}
 
@@ -64,17 +64,17 @@ export function LoginForm({
             onClick={loginAsDemo}
           >
             <UserRound />
-            Entrar como demo
+            {t('login_demo')}
           </Button>
         )}
       </div>
       <p className="mt-6 text-center text-sm text-text-secondary">
-        ¿No tienes cuenta?{' '}
+        {t('no_account')}{' '}
         <Link
           href={`/registro?callbackUrl=${encodeURIComponent(callbackUrl)}`}
           className="font-medium text-coral hover:underline"
         >
-          Crear cuenta
+          {t('create_account_link')}
         </Link>
       </p>
     </div>

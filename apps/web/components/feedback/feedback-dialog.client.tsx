@@ -10,6 +10,7 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { toast } from 'sonner';
 
@@ -21,6 +22,7 @@ type FeedbackDialogProps = {
 const MIN_MESSAGE_LENGTH = 20;
 
 export function FeedbackDialog({ open, onOpenChange }: FeedbackDialogProps) {
+  const t = useTranslations('feedback');
   const [message, setMessage] = useState('');
   const [contactEmail, setContactEmail] = useState('');
   const [error, setError] = useState('');
@@ -31,7 +33,7 @@ export function FeedbackDialog({ open, onOpenChange }: FeedbackDialogProps) {
     const trimmedEmail = contactEmail.trim();
 
     if (trimmedMessage.length < MIN_MESSAGE_LENGTH) {
-      setError('Escribe al menos 20 caracteres para que el feedback sea util.');
+      setError(t('min_length_error'));
       return;
     }
 
@@ -50,21 +52,21 @@ export function FeedbackDialog({ open, onOpenChange }: FeedbackDialogProps) {
       });
 
       if (response.status === 429) {
-        toast.error('Ahora mismo no podemos recibir mas feedback. Intentalo mas tarde.');
+        toast.error(t('rate_limited'));
         return;
       }
 
       if (!response.ok) {
-        toast.error('No se pudo enviar el feedback. Intentalo de nuevo.');
+        toast.error(t('error'));
         return;
       }
 
-      toast.success('Gracias, hemos recibido tu feedback');
+      toast.success(t('success'));
       setMessage('');
       setContactEmail('');
       onOpenChange(false);
     } catch {
-      toast.error('No se pudo enviar el feedback. Intentalo de nuevo.');
+      toast.error(t('error'));
     } finally {
       setSubmitting(false);
     }
@@ -74,21 +76,17 @@ export function FeedbackDialog({ open, onOpenChange }: FeedbackDialogProps) {
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Enviar feedback</DialogTitle>
-          <DialogDescription>
-            Ayudanos a mejorar dorsal.market con feedback concreto: errores que encuentres, partes
-            del proceso que no se entienden, pasos que te resulten confusos al comprar o vender, o
-            ideas que faciliten completar una tarea.
-          </DialogDescription>
+          <DialogTitle>{t('title')}</DialogTitle>
+          <DialogDescription>{t('description')}</DialogDescription>
         </DialogHeader>
 
         <div className="grid gap-2">
-          <Label htmlFor="feedback-message">Mensaje</Label>
+          <Label htmlFor="feedback-message">{t('message_label')}</Label>
           <textarea
             id="feedback-message"
             className="min-h-32 rounded-md border border-border bg-bg-elevated p-3 text-sm shadow-sm outline-none placeholder:text-text-muted focus:ring-1 focus:ring-coral disabled:cursor-not-allowed disabled:opacity-50"
             value={message}
-            placeholder='Ejemplo: "Al publicar un dorsal no entiendo que datos vera el comprador..."'
+            placeholder={t('message_placeholder')}
             aria-invalid={Boolean(error)}
             aria-describedby={error ? 'feedback-message-error' : undefined}
             disabled={submitting}
@@ -105,7 +103,7 @@ export function FeedbackDialog({ open, onOpenChange }: FeedbackDialogProps) {
         </div>
 
         <div className="grid gap-2">
-          <Label htmlFor="feedback-contact-email">Email de contacto opcional</Label>
+          <Label htmlFor="feedback-contact-email">{t('email_label')}</Label>
           <Input
             id="feedback-contact-email"
             type="email"
@@ -115,12 +113,12 @@ export function FeedbackDialog({ open, onOpenChange }: FeedbackDialogProps) {
             onChange={(event) => setContactEmail(event.currentTarget.value)}
           />
           <p id="feedback-contact-email-helper" className="text-sm text-text-secondary">
-            Solo lo usaremos si necesitamos entender mejor tu feedback o responderte.
+            {t('email_helper')}
           </p>
         </div>
 
         <Button type="button" disabled={submitting} onClick={submitFeedback}>
-          {submitting ? 'Enviando...' : 'Enviar feedback'}
+          {submitting ? t('submitting') : t('submit')}
         </Button>
       </DialogContent>
     </Dialog>

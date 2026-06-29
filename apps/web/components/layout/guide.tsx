@@ -1,4 +1,5 @@
 import { Button } from '@/components/ui/button';
+import { getTranslations } from 'next-intl/server';
 import Link from 'next/link';
 
 export interface GuideStep {
@@ -6,7 +7,7 @@ export interface GuideStep {
   body: string;
 }
 
-export function Guide({
+export async function Guide({
   eyebrow,
   title,
   intro,
@@ -19,6 +20,8 @@ export function Guide({
   steps: GuideStep[];
   cta: { href: string; label: string };
 }) {
+  const t = await getTranslations('guide');
+
   return (
     <main className="container mx-auto max-w-3xl px-4 py-12">
       <p className="text-xs font-semibold uppercase tracking-wider text-coral">{eyebrow}</p>
@@ -43,7 +46,7 @@ export function Guide({
       </ol>
 
       <div className="mt-10 flex flex-col items-start gap-4 rounded-lg border-2 border-coral bg-coral-subtle/40 p-6 sm:flex-row sm:items-center sm:justify-between">
-        <p className="font-semibold">¿List@ para empezar?</p>
+        <p className="font-semibold">{t('ready')}</p>
         <Link href={cta.href}>
           <Button size="lg">{cta.label}</Button>
         </Link>

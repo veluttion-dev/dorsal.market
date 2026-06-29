@@ -1,5 +1,6 @@
 import { getDorsalDetail } from '@/features/dorsals/server/get-detail';
 import { CheckoutForm } from '@/features/transactions/components/checkout-form.client';
+import { getTranslations } from 'next-intl/server';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 
@@ -10,6 +11,7 @@ export default async function CheckoutPage({
 }: {
   params: Promise<{ dorsalId: string }>;
 }) {
+  const t = await getTranslations('checkout');
   const { dorsalId } = await params;
   const dorsal = await getDorsalDetail(dorsalId);
   if (!dorsal) notFound();
@@ -17,8 +19,8 @@ export default async function CheckoutPage({
   return (
     <main className="container mx-auto max-w-2xl px-4 py-10">
       <header className="mb-6">
-        <p className="text-sm font-medium uppercase text-coral">Pago seguro</p>
-        <h1 className="mt-1 text-3xl font-bold">Reserva tu dorsal</h1>
+        <p className="text-sm font-medium uppercase text-coral">{t('eyebrow')}</p>
+        <h1 className="mt-1 text-3xl font-bold">{t('heading')}</h1>
       </header>
       <CheckoutForm dorsalId={dorsal.id} raceName={dorsal.race_name} amount={dorsal.price_amount} />
     </main>

@@ -1,10 +1,12 @@
 'use client';
 import { Button } from '@/components/ui/button';
 import { LogOut } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import { signOut } from 'next-auth/react';
 import { useState } from 'react';
 
 export function SignOutButton() {
+  const t = useTranslations('nav');
   const [pending, setPending] = useState(false);
 
   async function submit() {
@@ -15,7 +17,7 @@ export function SignOutButton() {
   return (
     <Button type="button" variant="ghost" size="sm" disabled={pending} onClick={submit}>
       <LogOut />
-      Salir
+      {t('sign_out')}
     </Button>
   );
 }

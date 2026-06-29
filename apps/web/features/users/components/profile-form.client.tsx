@@ -2,6 +2,7 @@
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { useTranslations } from 'next-intl';
 import type { PatchUserProfileInput, UserProfile } from '@dorsal/schemas';
 import { Save } from 'lucide-react';
 import { useState } from 'react';
@@ -40,13 +41,6 @@ const TEXT_FIELDS = [
 ] as const;
 
 type TextField = (typeof TEXT_FIELDS)[number];
-
-const GENDER_OPTIONS = [
-  { value: 'male', label: 'Masculino' },
-  { value: 'female', label: 'Femenino' },
-  { value: 'other', label: 'Otro' },
-  { value: 'prefer_not_to_say', label: 'Prefiero no indicarlo' },
-] as const;
 
 function valuesFromUser(user: UserProfile): ProfileFormValues {
   return {
@@ -125,9 +119,17 @@ export function ProfileForm({
   user: UserProfile;
   onSubmit: (input: PatchUserProfileInput) => Promise<void> | void;
 }) {
+  const t = useTranslations('profile');
   const initial = valuesFromUser(user);
   const [values, setValues] = useState(initial);
   const [saving, setSaving] = useState(false);
+
+  const GENDER_OPTIONS = [
+    { value: 'male', label: t('gender_male') },
+    { value: 'female', label: t('gender_female') },
+    { value: 'other', label: t('gender_other') },
+    { value: 'prefer_not_to_say', label: t('gender_prefer_not') },
+  ] as const;
 
   async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -139,20 +141,20 @@ export function ProfileForm({
   return (
     <form className="space-y-8" onSubmit={submit}>
       <section className="space-y-4">
-        <h2 className="text-lg font-semibold">Identidad</h2>
+        <h2 className="text-lg font-semibold">{t('section_identity')}</h2>
         <div className="grid gap-4 md:grid-cols-2">
-          {field('first_name', 'Nombre', values, setValues)}
-          {field('last_name', 'Apellidos', values, setValues)}
-          {field('dni', 'DNI', values, setValues)}
+          {field('first_name', t('label_first_name'), values, setValues)}
+          {field('last_name', t('label_last_name'), values, setValues)}
+          {field('dni', t('label_dni'), values, setValues)}
           <div className="space-y-1.5">
-            <Label htmlFor="gender">Genero</Label>
+            <Label htmlFor="gender">{t('label_gender')}</Label>
             <select
               id="gender"
               className="flex h-9 w-full rounded-md border border-border bg-bg-elevated px-3 py-1 text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-coral"
               value={values.gender}
               onChange={(event) => setValues({ ...values, gender: event.target.value })}
             >
-              <option value="">Selecciona una opcion</option>
+              <option value="">{t('label_gender_select')}</option>
               {GENDER_OPTIONS.map((option) => (
                 <option key={option.value} value={option.value}>
                   {option.label}
@@ -160,39 +162,39 @@ export function ProfileForm({
               ))}
             </select>
           </div>
-          {field('age', 'Edad', values, setValues, 'number')}
+          {field('age', t('label_age'), values, setValues, 'number')}
           <div className="space-y-1.5">
-            <Label htmlFor="email">Email</Label>
+            <Label htmlFor="email">{t('label_email')}</Label>
             <Input id="email" value={user.email} disabled readOnly />
           </div>
         </div>
       </section>
 
       <section className="space-y-4">
-        <h2 className="text-lg font-semibold">Contacto</h2>
+        <h2 className="text-lg font-semibold">{t('section_contact')}</h2>
         <div className="grid gap-4 md:grid-cols-2">
-          {field('phone_number', 'Telefono', values, setValues)}
-          {field('postal_code', 'Codigo postal', values, setValues)}
-          {field('address', 'Direccion', values, setValues)}
+          {field('phone_number', t('label_phone'), values, setValues)}
+          {field('postal_code', t('label_postal_code'), values, setValues)}
+          {field('address', t('label_address'), values, setValues)}
         </div>
       </section>
 
       <section className="space-y-4">
-        <h2 className="text-lg font-semibold">Datos de corredor</h2>
+        <h2 className="text-lg font-semibold">{t('section_runner')}</h2>
         <div className="grid gap-4 md:grid-cols-2">
-          {field('estimated_time', 'Tiempo estimado', values, setValues)}
-          {field('t_shirt_size', 'Talla camiseta', values, setValues)}
-          {field('club', 'Club', values, setValues)}
-          {field('federation_license', 'Licencia federativa', values, setValues)}
-          {field('medical_info', 'Informacion medica', values, setValues)}
-          {field('emergency_contact', 'Contacto de emergencia', values, setValues)}
-          {field('additional_info', 'Informacion adicional', values, setValues)}
+          {field('estimated_time', t('label_estimated_time'), values, setValues)}
+          {field('t_shirt_size', t('label_t_shirt_size'), values, setValues)}
+          {field('club', t('label_club'), values, setValues)}
+          {field('federation_license', t('label_federation_license'), values, setValues)}
+          {field('medical_info', t('label_medical_info'), values, setValues)}
+          {field('emergency_contact', t('label_emergency_contact'), values, setValues)}
+          {field('additional_info', t('label_additional_info'), values, setValues)}
         </div>
       </section>
 
       <Button type="submit" disabled={saving}>
         <Save />
-        Guardar perfil
+        {t('save')}
       </Button>
     </form>
   );

@@ -3,6 +3,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useMyPurchases } from '@/features/transactions/hooks/use-my-purchases';
 import { useMySales } from '@/features/transactions/hooks/use-my-sales';
 import { formatPrice } from '@dorsal/domain';
+import { useTranslations } from 'next-intl';
 import type { TransactionListItem } from '@dorsal/schemas';
 import Link from 'next/link';
 
@@ -24,11 +25,11 @@ function TransactionRow({ item }: { item: TransactionListItem }) {
   );
 }
 
-function List({ items }: { items: TransactionListItem[] }) {
+function List({ items, emptyLabel }: { items: TransactionListItem[]; emptyLabel: string }) {
   if (!items.length) {
     return (
       <div className="rounded-lg border border-border bg-bg-card p-5 text-sm text-text-secondary">
-        Sin movimientos.
+        {emptyLabel}
       </div>
     );
   }
@@ -42,24 +43,25 @@ function List({ items }: { items: TransactionListItem[] }) {
 }
 
 export default function HistoryPage() {
+  const t = useTranslations('history');
   const purchases = useMyPurchases({ limit: 20, offset: 0 });
   const sales = useMySales({ limit: 20, offset: 0 });
 
   return (
     <main className="container mx-auto max-w-4xl px-4 py-10">
       <header className="mb-8">
-        <h1 className="text-3xl font-bold">Historial</h1>
+        <h1 className="text-3xl font-bold">{t('title')}</h1>
       </header>
       <Tabs defaultValue="purchases">
         <TabsList>
-          <TabsTrigger value="purchases">Compras</TabsTrigger>
-          <TabsTrigger value="sales">Ventas</TabsTrigger>
+          <TabsTrigger value="purchases">{t('purchases')}</TabsTrigger>
+          <TabsTrigger value="sales">{t('sales')}</TabsTrigger>
         </TabsList>
         <TabsContent value="purchases" className="mt-5">
-          <List items={purchases.data?.items ?? []} />
+          <List items={purchases.data?.items ?? []} emptyLabel={t('no_items')} />
         </TabsContent>
         <TabsContent value="sales" className="mt-5">
-          <List items={sales.data?.items ?? []} />
+          <List items={sales.data?.items ?? []} emptyLabel={t('no_items')} />
         </TabsContent>
       </Tabs>
     </main>
