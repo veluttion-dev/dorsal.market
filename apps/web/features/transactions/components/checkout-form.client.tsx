@@ -14,6 +14,7 @@ import { type PurchaseRequirements, type RunnerDataInput, ShirtSize } from '@dor
 import { Elements, PaymentElement, useElements, useStripe } from '@stripe/react-stripe-js';
 import { CreditCard, Loader2 } from 'lucide-react';
 import { signOut, useSession } from 'next-auth/react';
+import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
@@ -27,6 +28,7 @@ const defaultPurchaseRequirements: PurchaseRequirements = {
 };
 
 function StripePaymentForm({ transactionId }: { transactionId: string }) {
+  const t = useTranslations('checkout');
   const stripe = useStripe();
   const elements = useElements();
   const router = useRouter();
@@ -55,7 +57,7 @@ function StripePaymentForm({ transactionId }: { transactionId: string }) {
       <PaymentElement />
       <Button type="button" className="w-full" disabled={submitting} onClick={submitPayment}>
         {submitting ? <Loader2 className="animate-spin" /> : <CreditCard />}
-        Pagar
+        {t('pay')}
       </Button>
     </div>
   );
@@ -72,6 +74,7 @@ export function CheckoutForm({
   amount: number;
   purchaseRequirements?: PurchaseRequirements;
 }) {
+  const t = useTranslations('checkout');
   const router = useRouter();
   const { data } = useSession();
   const me = useMe();
@@ -102,11 +105,11 @@ export function CheckoutForm({
 
   async function startCheckout() {
     if (!data?.user?.id) {
-      toast.error('Inicia sesion para comprar');
+      toast.error(t('need_login'));
       return;
     }
     if (me.isLoading) {
-      toast.error('Estamos comprobando tu perfil');
+      toast.error(t('checking_profile'));
       return;
     }
     if (isSessionAuthError(me.error)) {
@@ -179,7 +182,7 @@ export function CheckoutForm({
   return (
     <div className="space-y-5">
       <div className="rounded-lg border border-border bg-bg-card p-5">
-        <p className="text-sm text-text-secondary">Vas a comprar</p>
+        <p className="text-sm text-text-secondary">{t('buying')}</p>
         <h2 className="mt-1 text-xl font-semibold">{raceName}</h2>
         <p className="mt-3 text-3xl font-bold">{formatPrice(amount)}</p>
       </div>
@@ -304,7 +307,7 @@ export function CheckoutForm({
           onClick={startCheckout}
         >
           {reserve.isPending ? <Loader2 className="animate-spin" /> : <CreditCard />}
-          {stripeConfigured ? 'Continuar al pago' : 'Simular pago'}
+          {stripeConfigured ? t('continue') : t('simulate')}
         </Button>
       ) : (
         <Elements stripe={stripePromise} options={{ clientSecret }}>

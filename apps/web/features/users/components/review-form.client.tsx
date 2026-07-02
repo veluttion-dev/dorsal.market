@@ -5,6 +5,7 @@ import { Label } from '@/components/ui/label';
 import { useCreateReview } from '@/features/users/hooks/use-create-review';
 import type { TransactionStatus } from '@dorsal/schemas';
 import { Star } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { toast } from 'sonner';
 
@@ -21,6 +22,7 @@ export function ReviewForm({
   transactionId: string;
   status: TransactionStatus;
 }) {
+  const t = useTranslations('review');
   const createReview = useCreateReview();
   const [rating, setRating] = useState(5);
   const [comment, setComment] = useState('');
@@ -34,12 +36,12 @@ export function ReviewForm({
       rating,
       comment: comment.trim() || undefined,
     });
-    toast.success('Valoracion guardada');
+    toast.success(t('saved_toast'));
   }
 
   return (
     <form className="rounded-lg border border-border bg-bg-card p-5" onSubmit={submit}>
-      <h2 className="font-semibold">Valorar operacion</h2>
+      <h2 className="font-semibold">{t('title')}</h2>
       <div className="mt-4 flex gap-2">
         {[1, 2, 3, 4, 5].map((value) => (
           <Button
@@ -55,7 +57,7 @@ export function ReviewForm({
         ))}
       </div>
       <div className="mt-4 space-y-1.5">
-        <Label htmlFor="review-comment">Comentario</Label>
+        <Label htmlFor="review-comment">{t('comment_label')}</Label>
         <Input
           id="review-comment"
           value={comment}
@@ -64,7 +66,7 @@ export function ReviewForm({
         />
       </div>
       <Button type="submit" className="mt-4 w-full" disabled={createReview.isPending}>
-        Guardar valoracion
+        {t('save')}
       </Button>
     </form>
   );

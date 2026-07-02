@@ -14,6 +14,7 @@ import type {
   TransactionStatus,
 } from '@dorsal/schemas';
 import { useSession } from 'next-auth/react';
+import { useTranslations } from 'next-intl';
 import { use } from 'react';
 
 const SELLER_PROBLEM_STATUSES: TransactionStatus[] = ['RELEASED_TO_SELLER', 'REFUNDED_TO_BUYER'];
@@ -31,12 +32,13 @@ function Header({
   tx: BuyerTransactionDetail | SellerTransactionDetail;
   role: 'buyer' | 'seller';
 }) {
+  const t = useTranslations('tracking');
   return (
     <header className="mb-8">
       <p className="text-sm font-medium uppercase text-coral">
-        {role === 'buyer' ? 'Compra' : 'Venta'}
+        {role === 'buyer' ? t('role_buyer') : t('role_seller')}
       </p>
-      <h1 className="mt-1 text-3xl font-bold">Seguimiento</h1>
+      <h1 className="mt-1 text-3xl font-bold">{t('heading')}</h1>
       <p className="mt-2 text-text-secondary">
         {STATUS_LABEL[tx.status]} - {formatPrice(tx.order_summary.amount_eur)}
       </p>
@@ -49,6 +51,7 @@ export default function TransactionTrackingPage({
 }: {
   params: Promise<{ transactionId: string }>;
 }) {
+  const t = useTranslations('tracking');
   const { transactionId } = use(params);
   const { data } = useSession();
   const buyer = useBuyerTransaction(transactionId);
@@ -65,7 +68,7 @@ export default function TransactionTrackingPage({
     return (
       <main className="container mx-auto max-w-4xl px-4 py-10">
         <div className="rounded-lg border border-border bg-bg-card p-6 text-text-secondary">
-          Cargando seguimiento...
+          {t('loading')}
         </div>
       </main>
     );

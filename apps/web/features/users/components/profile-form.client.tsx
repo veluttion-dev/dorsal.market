@@ -4,6 +4,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import type { PatchUserProfileInput, UserProfile } from '@dorsal/schemas';
 import { Save } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 
 interface ProfileFormValues {
@@ -37,13 +38,6 @@ const TEXT_FIELDS = [
 ] as const;
 
 type TextField = (typeof TEXT_FIELDS)[number];
-
-const GENDER_OPTIONS = [
-  { value: 'male', label: 'Masculino' },
-  { value: 'female', label: 'Femenino' },
-  { value: 'other', label: 'Otro' },
-  { value: 'prefer_not_to_say', label: 'Prefiero no indicarlo' },
-] as const;
 
 const DNI_PATTERN = /^\d{8}[A-Za-z]$/;
 const DNI_FORMAT_ERROR = 'El DNI debe tener 8 numeros y una letra';
@@ -201,6 +195,7 @@ export function ProfileForm({
   user: UserProfile;
   onSubmit: (input: PatchUserProfileInput) => Promise<void> | void;
 }) {
+  const t = useTranslations('profile');
   const initial = valuesFromUser(user);
   const [values, setValues] = useState(initial);
   const [saving, setSaving] = useState(false);
@@ -208,6 +203,13 @@ export function ProfileForm({
   const [fieldErrors, setFieldErrors] = useState<Partial<Record<keyof ProfileFormValues, string>>>(
     {},
   );
+
+  const genderOptions = [
+    { value: 'male', label: t('gender_male') },
+    { value: 'female', label: t('gender_female') },
+    { value: 'other', label: t('gender_other') },
+    { value: 'prefer_not_to_say', label: t('gender_prefer_not') },
+  ] as const;
 
   async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -222,7 +224,7 @@ export function ProfileForm({
     try {
       await onSubmit(buildPatch(initial, values));
     } catch {
-      setSubmitError('No se pudo guardar el perfil. Inténtalo de nuevo.');
+      setSubmitError('No se pudo guardar el perfil. Intentalo de nuevo.');
     } finally {
       setSaving(false);
     }
@@ -231,27 +233,28 @@ export function ProfileForm({
   return (
     <form className="space-y-8" onSubmit={submit}>
       <section className="space-y-4">
-        <h2 className="text-lg font-semibold">Identidad</h2>
+        <h2 className="text-lg font-semibold">{t('section_identity')}</h2>
         <p className="text-sm text-text-muted">* Campos obligatorios</p>
         <div className="grid gap-4 md:grid-cols-2">
-          {field('first_name', 'Nombre', values, setValues, fieldErrors, 'text', 'required')}
-          {field('last_name', 'Apellidos', values, setValues, fieldErrors, 'text', 'required')}
-          {field('dni', 'DNI', values, setValues, fieldErrors, 'text', 'required')}
+          {field('first_name', t('label_first_name'), values, setValues, fieldErrors, 'text', 'required')}
+          {field('last_name', t('label_last_name'), values, setValues, fieldErrors, 'text', 'required')}
+          {field('dni', t('label_dni'), values, setValues, fieldErrors, 'text', 'required')}
           <div className="space-y-1.5">
             <Label htmlFor="gender">
-              Genero<span aria-hidden="true"> *</span>
+              {t('label_gender')}
+              <span aria-hidden="true"> *</span>
             </Label>
             <select
               id="gender"
-              aria-label="Genero"
+              aria-label={t('label_gender')}
               className="flex h-9 w-full rounded-md border border-border bg-bg-elevated px-3 py-1 text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-coral"
               value={values.gender}
               onChange={(event) => setValues({ ...values, gender: event.target.value })}
               aria-invalid={fieldErrors.gender ? 'true' : undefined}
               aria-describedby={fieldErrors.gender ? 'gender-error' : undefined}
             >
-              <option value="">Selecciona una opcion</option>
-              {GENDER_OPTIONS.map((option) => (
+              <option value="">{t('label_gender_select')}</option>
+              {genderOptions.map((option) => (
                 <option key={option.value} value={option.value}>
                   {option.label}
                 </option>
@@ -263,31 +266,31 @@ export function ProfileForm({
               </p>
             )}
           </div>
-          {field('age', 'Edad', values, setValues, fieldErrors, 'number', 'required')}
+          {field('age', t('label_age'), values, setValues, fieldErrors, 'number', 'required')}
           <div className="space-y-1.5">
-            <Label htmlFor="email">Email</Label>
+            <Label htmlFor="email">{t('label_email')}</Label>
             <Input id="email" value={user.email} disabled readOnly />
           </div>
         </div>
       </section>
 
       <section className="space-y-4">
-        <h2 className="text-lg font-semibold">Contacto</h2>
+        <h2 className="text-lg font-semibold">{t('section_contact')}</h2>
         <div className="grid gap-4 md:grid-cols-2">
-          {field('phone_number', 'Telefono', values, setValues, fieldErrors, 'text', 'optional')}
+          {field('phone_number', t('label_phone'), values, setValues, fieldErrors, 'text', 'optional')}
           {field(
             'postal_code',
-            'Codigo postal',
+            t('label_postal_code'),
             values,
             setValues,
             fieldErrors,
             'text',
             'optional',
           )}
-          {field('address', 'Direccion', values, setValues, fieldErrors, 'text', 'optional')}
+          {field('address', t('label_address'), values, setValues, fieldErrors, 'text', 'optional')}
           {field(
             'emergency_contact',
-            'Contacto de emergencia',
+            t('label_emergency_contact'),
             values,
             setValues,
             fieldErrors,
@@ -298,12 +301,12 @@ export function ProfileForm({
       </section>
 
       <section className="space-y-4">
-        <h2 className="text-lg font-semibold">Información adicional</h2>
+        <h2 className="text-lg font-semibold">{t('section_additional')}</h2>
         <div className="grid gap-4 md:grid-cols-2">
-          {field('club', 'Club', values, setValues, fieldErrors, 'text', 'optional')}
+          {field('club', t('label_club'), values, setValues, fieldErrors, 'text', 'optional')}
           {field(
             'federation_license',
-            'Licencia federativa',
+            t('label_federation_license'),
             values,
             setValues,
             fieldErrors,
@@ -312,7 +315,7 @@ export function ProfileForm({
           )}
           {field(
             'medical_info',
-            'Informacion medica',
+            t('label_medical_info'),
             values,
             setValues,
             fieldErrors,
@@ -321,7 +324,7 @@ export function ProfileForm({
           )}
           {field(
             'additional_info',
-            'Informacion adicional',
+            t('label_additional_info'),
             values,
             setValues,
             fieldErrors,
@@ -338,7 +341,7 @@ export function ProfileForm({
       )}
       <Button type="submit" disabled={saving}>
         <Save />
-        Guardar perfil
+        {t('save')}
       </Button>
     </form>
   );

@@ -11,6 +11,20 @@ export default defineConfig({
     exclude: ['e2e/**', 'node_modules/**', '.next/**'],
   },
   resolve: {
-    alias: { '@': path.resolve(__dirname, '.') },
+    alias: [
+      {
+        find: 'next-intl/server',
+        replacement: path.resolve(__dirname, './__mocks__/next-intl-server.ts'),
+      },
+      {
+        find: 'next-intl/plugin',
+        replacement: path.resolve(__dirname, './__mocks__/next-intl-server.ts'),
+      },
+      {
+        find: 'next-intl',
+        replacement: path.resolve(__dirname, './__mocks__/next-intl.tsx'),
+      },
+      { find: '@', replacement: path.resolve(__dirname, '.') },
+    ],
   },
 });

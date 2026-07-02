@@ -3,10 +3,12 @@ import { Button } from '@/components/ui/button';
 import { useBuyerTransaction } from '@/features/transactions/hooks/use-buyer-transaction';
 import { STATUS_LABEL } from '@/features/transactions/lib/labels';
 import { CheckCircle2, ListChecks } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 
 export default function ConfirmationPage() {
+  const t = useTranslations('confirmation');
   const searchParams = useSearchParams();
   const transactionId = searchParams.get('tx');
   const tx = useBuyerTransaction(transactionId);
@@ -16,11 +18,11 @@ export default function ConfirmationPage() {
       <div className="space-y-6 rounded-lg border border-border bg-bg-card p-6">
         <CheckCircle2 className="h-10 w-10 text-olive" />
         <div>
-          <h1 className="text-3xl font-bold">Compra confirmada</h1>
+          <h1 className="text-3xl font-bold">{t('title')}</h1>
           <p className="mt-2 text-text-secondary">
             {tx.data
-              ? `Estado actual: ${STATUS_LABEL[tx.data.status]}`
-              : 'Estamos preparando el estado de tu compra.'}
+              ? t('current_status', { status: STATUS_LABEL[tx.data.status] })
+              : t('preparing')}
           </p>
         </div>
         <div className="flex flex-wrap gap-3">
@@ -28,12 +30,12 @@ export default function ConfirmationPage() {
             <Button asChild>
               <Link href={`/compra/${transactionId}`}>
                 <ListChecks />
-                Ver seguimiento
+                {t('view_tracking')}
               </Link>
             </Button>
           )}
           <Button asChild variant="outline">
-            <Link href="/perfil/historial">Mi historial</Link>
+            <Link href="/perfil/historial">{t('my_history')}</Link>
           </Button>
         </div>
       </div>

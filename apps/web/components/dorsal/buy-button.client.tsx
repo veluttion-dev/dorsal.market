@@ -4,13 +4,8 @@ import { useMe } from '@/features/users/hooks/use-me';
 import type { DorsalStatus } from '@dorsal/schemas';
 import { ShoppingCart } from 'lucide-react';
 import { useSession } from 'next-auth/react';
+import { useTranslations } from 'next-intl';
 import Link from 'next/link';
-
-const REASON_LABEL = {
-  checking_profile: 'Comprobando perfil',
-  own_dorsal: 'Es tu dorsal',
-  not_available: 'No disponible',
-} as const;
 
 export function BuyButton({
   dorsalId,
@@ -21,6 +16,7 @@ export function BuyButton({
   sellerId: string;
   status: DorsalStatus;
 }) {
+  const t = useTranslations('buy_button');
   const { data } = useSession();
   const me = useMe();
   const userId = data?.user?.id ?? null;
@@ -39,7 +35,7 @@ export function BuyButton({
     return (
       <Button type="button" className="mt-5 w-full" disabled>
         <ShoppingCart />
-        {REASON_LABEL[unavailableReason]}
+        {t(unavailableReason)}
       </Button>
     );
   }
@@ -50,7 +46,7 @@ export function BuyButton({
     <Button asChild className="mt-5 w-full">
       <Link href={href}>
         <ShoppingCart />
-        Comprar dorsal
+        {t('buy')}
       </Link>
     </Button>
   );

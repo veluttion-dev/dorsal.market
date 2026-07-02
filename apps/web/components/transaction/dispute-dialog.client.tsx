@@ -10,6 +10,7 @@ import {
 } from '@/components/ui/dialog';
 import { useOpenDispute } from '@/features/transactions/hooks/use-open-dispute';
 import { AlertTriangle } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { toast } from 'sonner';
 
@@ -17,6 +18,7 @@ export function DisputeDialog({
   transactionId,
   buyerId,
 }: { transactionId: string; buyerId: string }) {
+  const t = useTranslations('dispute');
   const dispute = useOpenDispute(transactionId);
   const [open, setOpen] = useState(false);
   const [reason, setReason] = useState('');
@@ -25,7 +27,7 @@ export function DisputeDialog({
   async function submit() {
     if (!valid) return;
     await dispute.mutateAsync({ buyerId, reason: reason.trim() });
-    toast.success('Disputa abierta');
+    toast.success(t('opened_toast'));
     setOpen(false);
     setReason('');
   }
@@ -35,15 +37,13 @@ export function DisputeDialog({
       <DialogTrigger asChild>
         <Button type="button" variant="destructive">
           <AlertTriangle />
-          Abrir disputa
+          {t('trigger')}
         </Button>
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Abrir disputa</DialogTitle>
-          <DialogDescription>
-            Describe el problema para que soporte pueda revisarlo.
-          </DialogDescription>
+          <DialogTitle>{t('title')}</DialogTitle>
+          <DialogDescription>{t('description')}</DialogDescription>
         </DialogHeader>
         <textarea
           className="min-h-28 rounded-md border border-border bg-bg-elevated p-3 text-sm outline-none focus:ring-1 focus:ring-coral"
@@ -51,7 +51,7 @@ export function DisputeDialog({
           onChange={(event) => setReason(event.currentTarget.value)}
         />
         <Button type="button" disabled={!valid || dispute.isPending} onClick={submit}>
-          Abrir disputa
+          {t('submit')}
         </Button>
       </DialogContent>
     </Dialog>

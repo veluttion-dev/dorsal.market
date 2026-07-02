@@ -15,6 +15,7 @@ import {
 import { Distance, PaymentMethod, PublishDorsalInput, ShirtSize } from '@dorsal/schemas';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Camera, CreditCard, MapPin, Phone, Trophy } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
@@ -28,13 +29,6 @@ const distances: Distance[] = [...Distance.options];
 const payments: PaymentMethod[] = [...PaymentMethod.options];
 const shirtSizes: ShirtSize[] = [...ShirtSize.options];
 const itemKeys = ['chip', 'shirt', 'bag', 'medal', 'refreshments'] as const;
-const itemLabels: Record<(typeof itemKeys)[number], string> = {
-  chip: 'Chip',
-  shirt: 'Camiseta',
-  bag: 'Bolsa',
-  medal: 'Medalla',
-  refreshments: 'Avituallamientos',
-};
 
 function FieldError({ message }: { message: string | undefined }) {
   if (!message) return null;
@@ -42,6 +36,7 @@ function FieldError({ message }: { message: string | undefined }) {
 }
 
 export function PublishWizard() {
+  const t = useTranslations('publish_wizard');
   const router = useRouter();
   const publish = usePublishDorsal();
   const persistedDraft = loadPublishDraft();
@@ -75,10 +70,10 @@ export function PublishWizard() {
     publish.mutate(payload, {
       onSuccess: ({ dorsal_id }) => {
         clearPublishDraft();
-        toast.success(publishMode ? 'Dorsal publicado' : 'Borrador guardado');
+        toast.success(publishMode ? t('toast_published') : t('toast_draft'));
         router.push(`/dorsales/${dorsal_id}`);
       },
-      onError: (e) => toast.error(e.message ?? 'No se pudo publicar el dorsal'),
+      onError: (e) => toast.error(e.message ?? t('toast_error')),
     });
   }
 
@@ -92,6 +87,20 @@ export function PublishWizard() {
     void form.handleSubmit((values) => publishValues(values, true))();
   }
 
+  const itemLabels = {
+    chip: t('item_chip'),
+    shirt: t('item_shirt'),
+    bag: t('item_bag'),
+    medal: t('item_medal'),
+    refreshments: t('item_refreshments'),
+  };
+
+  const paymentLabels: Record<PaymentMethod, string> = {
+    bizum: t('pay_bizum'),
+    paypal: t('pay_paypal'),
+    card: t('pay_card'),
+  };
+
   return (
     <form
       noValidate
@@ -101,7 +110,11 @@ export function PublishWizard() {
       }}
       className="space-y-5"
     >
-      <FormSection icon={<Camera className="h-4 w-4" />} title="Foto del dorsal" badge="Paso 1">
+      <FormSection
+        icon={<Camera className="h-4 w-4" />}
+        title={t('step1_title')}
+        badge={t('step1_badge')}
+      >
         <PhotoUpload
           value={form.watch('photo_url') || null}
           onChange={(url) => form.setValue('photo_url', url ?? '', { shouldValidate: true })}
@@ -109,36 +122,44 @@ export function PublishWizard() {
         <FieldError message={form.formState.errors.photo_url?.message} />
       </FormSection>
 
-      <FormSection icon={<Trophy className="h-4 w-4" />} title="Datos de la carrera" badge="Paso 2">
+      <FormSection
+        icon={<Trophy className="h-4 w-4" />}
+        title={t('step2_title')}
+        badge={t('step2_badge')}
+      >
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div className="space-y-1.5">
-            <Label htmlFor="race_name">Nombre carrera</Label>
+            <Label htmlFor="race_name">{t('label_race_name')}</Label>
             <Input id="race_name" {...form.register('race_name')} />
             <FieldError message={form.formState.errors.race_name?.message} />
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="bib_number">Número dorsal</Label>
+            <Label htmlFor="bib_number">{t('label_bib_number')}</Label>
             <Input id="bib_number" {...form.register('bib_number')} />
             <FieldError message={form.formState.errors.bib_number?.message} />
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="race_date">Fecha</Label>
+            <Label htmlFor="race_date">{t('label_race_date')}</Label>
             <Input id="race_date" type="date" {...form.register('race_date')} />
             <FieldError message={form.formState.errors.race_date?.message} />
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="location">Ubicación</Label>
-            <Input id="location" {...form.register('location')} placeholder="Madrid, Valencia…" />
+            <Label htmlFor="location">{t('label_location')}</Label>
+            <Input
+              id="location"
+              {...form.register('location')}
+              placeholder={t('location_placeholder')}
+            />
             <FieldError message={form.formState.errors.location?.message} />
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="distance">Distancia</Label>
+            <Label htmlFor="distance">{t('label_distance')}</Label>
             <select
               id="distance"
               {...form.register('distance')}
               className="w-full rounded-md border border-border bg-bg-elevated px-3 py-2 text-sm"
             >
-              <option value="">Selecciona</option>
+              <option value="">{t('label_distance_placeholder')}</option>
               {distances.map((d) => (
                 <option key={d} value={d}>
                   {distanceLabel(d)}
@@ -148,7 +169,7 @@ export function PublishWizard() {
             <FieldError message={form.formState.errors.distance?.message} />
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="start_corral">Cajón salida (opcional)</Label>
+            <Label htmlFor="start_corral">{t('label_start_corral')}</Label>
             <Input id="start_corral" {...form.register('start_corral')} />
             <FieldError message={form.formState.errors.start_corral?.message} />
           </div>
@@ -156,7 +177,11 @@ export function PublishWizard() {
         <FieldError message={form.formState.errors.included_items?.message} />
       </FormSection>
 
-      <FormSection icon={<MapPin className="h-4 w-4" />} title="¿Qué incluye?" badge="Paso 3">
+      <FormSection
+        icon={<MapPin className="h-4 w-4" />}
+        title={t('step3_title')}
+        badge={t('step3_badge')}
+      >
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
           {itemKeys.map((k) => (
             <label
@@ -264,12 +289,12 @@ export function PublishWizard() {
 
       <FormSection
         icon={<CreditCard className="h-4 w-4" />}
-        title="Precio y método de pago"
-        badge="Paso 4"
+        title={t('step4_title')}
+        badge={t('step4_badge')}
       >
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div className="space-y-1.5">
-            <Label htmlFor="price_amount">Precio (€)</Label>
+            <Label htmlFor="price_amount">{t('label_price')}</Label>
             <Input
               id="price_amount"
               type="number"
@@ -279,7 +304,7 @@ export function PublishWizard() {
             <FieldError message={form.formState.errors.price_amount?.message} />
           </div>
           <div className="space-y-1.5">
-            <Label>Métodos de pago aceptados</Label>
+            <Label>{t('label_payment_methods')}</Label>
             <div className="flex flex-wrap gap-2">
               {payments.map((p) => (
                 <label
@@ -298,7 +323,7 @@ export function PublishWizard() {
                       );
                     }}
                   />
-                  {p === 'bizum' ? 'Bizum' : p === 'paypal' ? 'PayPal' : 'Tarjeta'}
+                  {paymentLabels[p]}
                 </label>
               ))}
             </div>
@@ -307,15 +332,19 @@ export function PublishWizard() {
         </div>
       </FormSection>
 
-      <FormSection icon={<Phone className="h-4 w-4" />} title="Contacto y motivo" badge="Paso 5">
+      <FormSection
+        icon={<Phone className="h-4 w-4" />}
+        title={t('step5_title')}
+        badge={t('step5_badge')}
+      >
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div className="space-y-1.5">
-            <Label htmlFor="contact_phone">Teléfono</Label>
+            <Label htmlFor="contact_phone">{t('label_phone')}</Label>
             <Input id="contact_phone" {...form.register('contact.phone')} />
             <FieldError message={form.formState.errors.contact?.phone?.message} />
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="contact_email">Email</Label>
+            <Label htmlFor="contact_email">{t('label_email')}</Label>
             <Input id="contact_email" type="email" {...form.register('contact.email')} />
             <FieldError message={form.formState.errors.contact?.email?.message} />
           </div>
@@ -325,7 +354,7 @@ export function PublishWizard() {
               checked={form.watch('contact.phone_visible')}
               onCheckedChange={(c) => form.setValue('contact.phone_visible', c === true)}
             />
-            Mostrar teléfono
+            {t('label_show_phone')}
           </label>
           <label htmlFor="email_visible" className="flex items-center gap-2 text-sm">
             <Checkbox
@@ -333,11 +362,11 @@ export function PublishWizard() {
               checked={form.watch('contact.email_visible')}
               onCheckedChange={(c) => form.setValue('contact.email_visible', c === true)}
             />
-            Mostrar email
+            {t('label_show_email')}
           </label>
         </div>
         <div className="mt-3 space-y-1.5">
-          <Label htmlFor="sale_reason">Motivo de venta (opcional)</Label>
+          <Label htmlFor="sale_reason">{t('label_sale_reason')}</Label>
           <textarea
             id="sale_reason"
             {...form.register('sale_reason')}
@@ -355,10 +384,10 @@ export function PublishWizard() {
           disabled={publish.isPending}
           onClick={submitAsDraft}
         >
-          Guardar borrador
+          {t('save_draft')}
         </Button>
         <Button type="button" disabled={publish.isPending} onClick={submitAsPublished}>
-          {publish.isPending ? 'Publicando…' : 'Publicar dorsal'}
+          {publish.isPending ? t('publishing') : t('publish')}
         </Button>
       </div>
     </form>
