@@ -236,8 +236,24 @@ export function ProfileForm({
         <h2 className="text-lg font-semibold">{t('section_identity')}</h2>
         <p className="text-sm text-text-muted">* Campos obligatorios</p>
         <div className="grid gap-4 md:grid-cols-2">
-          {field('first_name', t('label_first_name'), values, setValues, fieldErrors, 'text', 'required')}
-          {field('last_name', t('label_last_name'), values, setValues, fieldErrors, 'text', 'required')}
+          {field(
+            'first_name',
+            t('label_first_name'),
+            values,
+            setValues,
+            fieldErrors,
+            'text',
+            'required',
+          )}
+          {field(
+            'last_name',
+            t('label_last_name'),
+            values,
+            setValues,
+            fieldErrors,
+            'text',
+            'required',
+          )}
           {field('dni', t('label_dni'), values, setValues, fieldErrors, 'text', 'required')}
           <div className="space-y-1.5">
             <Label htmlFor="gender">

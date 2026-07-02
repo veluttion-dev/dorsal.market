@@ -61,7 +61,6 @@ describe('ProfileForm', () => {
 
     await waitFor(() => expect(onSubmit).toHaveBeenCalledWith({ gender: 'male' }));
   });
-
   it('shows a DNI validation error before submitting malformed values', async () => {
     const onSubmit = vi.fn(async () => undefined);
     const actor = userEvent.setup();
