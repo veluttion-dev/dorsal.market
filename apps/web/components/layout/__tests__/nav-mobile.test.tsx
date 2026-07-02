@@ -23,8 +23,11 @@ describe('NavMobile', () => {
 
     const dialog = await screen.findByRole('dialog');
     expect(dialog).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'Dorsales' })).toHaveAttribute('href', '/');
     expect(screen.getByRole('link', { name: 'Vender' })).toHaveAttribute('href', '/vender');
+    expect(screen.getByRole('link', { name: 'Cómo comprar' })).toHaveAttribute(
+      'href',
+      '/guias/comprar',
+    );
   });
 
   it('shows auth actions for anonymous and signed-in users', async () => {
