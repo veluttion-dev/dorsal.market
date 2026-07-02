@@ -293,7 +293,15 @@ export function ProfileForm({
       <section className="space-y-4">
         <h2 className="text-lg font-semibold">{t('section_contact')}</h2>
         <div className="grid gap-4 md:grid-cols-2">
-          {field('phone_number', t('label_phone'), values, setValues, fieldErrors, 'text', 'optional')}
+          {field(
+            'phone_number',
+            t('label_phone'),
+            values,
+            setValues,
+            fieldErrors,
+            'text',
+            'optional',
+          )}
           {field(
             'postal_code',
             t('label_postal_code'),
