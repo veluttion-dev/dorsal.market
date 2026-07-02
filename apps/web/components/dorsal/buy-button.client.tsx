@@ -1,11 +1,13 @@
 'use client';
 import { Button } from '@/components/ui/button';
+import { useMe } from '@/features/users/hooks/use-me';
 import type { DorsalStatus } from '@dorsal/schemas';
 import { ShoppingCart } from 'lucide-react';
 import { useSession } from 'next-auth/react';
 import Link from 'next/link';
 
 const REASON_LABEL = {
+  checking_profile: 'Comprobando perfil',
   own_dorsal: 'Es tu dorsal',
   not_available: 'No disponible',
 } as const;
@@ -20,10 +22,18 @@ export function BuyButton({
   status: DorsalStatus;
 }) {
   const { data } = useSession();
+  const me = useMe();
   const userId = data?.user?.id ?? null;
+  const localUserId = me.data?.id ?? userId;
   const checkoutHref = `/compra/checkout/${dorsalId}`;
   const unavailableReason =
-    status !== 'published' ? 'not_available' : userId === sellerId ? 'own_dorsal' : null;
+    status !== 'published'
+      ? 'not_available'
+      : userId && me.isLoading
+        ? 'checking_profile'
+        : localUserId === sellerId
+          ? 'own_dorsal'
+          : null;
 
   if (unavailableReason) {
     return (

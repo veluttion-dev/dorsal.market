@@ -4,15 +4,21 @@ import { BuyButton } from '../buy-button.client';
 
 const mocks = vi.hoisted(() => ({
   session: null as { user?: { id?: string } } | null,
+  localUserId: null as string | null,
 }));
 
 vi.mock('next-auth/react', () => ({
   useSession: () => ({ data: mocks.session }),
 }));
 
+vi.mock('@/features/users/hooks/use-me', () => ({
+  useMe: () => ({ data: mocks.localUserId ? { id: mocks.localUserId } : null }),
+}));
+
 describe('BuyButton', () => {
   beforeEach(() => {
     mocks.session = null;
+    mocks.localUserId = null;
   });
 
   it('links anonymous buyers to login with checkout callback', () => {
@@ -57,5 +63,20 @@ describe('BuyButton', () => {
     );
 
     expect(screen.getByRole('button', { name: /no disponible/i })).toBeDisabled();
+  });
+
+  it('keeps own dorsals disabled using the local backend user id', () => {
+    mocks.session = { user: { id: 'cognito-sub-1' } };
+    mocks.localUserId = 'local-seller-1';
+
+    render(
+      <BuyButton
+        dorsalId="550e8400-e29b-41d4-a716-446655440010"
+        sellerId="local-seller-1"
+        status="published"
+      />,
+    );
+
+    expect(screen.getByRole('button', { name: /es tu dorsal/i })).toBeDisabled();
   });
 });

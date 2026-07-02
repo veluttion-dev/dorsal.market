@@ -1,5 +1,5 @@
 import type { UserProfile } from '@dorsal/schemas';
-import { render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 import { ProfileForm } from '../profile-form.client';
@@ -60,6 +60,76 @@ describe('ProfileForm', () => {
     await actor.click(screen.getByRole('button', { name: 'Guardar perfil' }));
 
     await waitFor(() => expect(onSubmit).toHaveBeenCalledWith({ gender: 'male' }));
+  });
+
+  it('shows a DNI validation error before submitting malformed values', async () => {
+    const onSubmit = vi.fn(async () => undefined);
+    const actor = userEvent.setup();
+
+    render(<ProfileForm user={user} onSubmit={onSubmit} />);
+
+    await actor.clear(screen.getByLabelText('DNI'));
+    await actor.type(screen.getByLabelText('DNI'), '888888888L');
+    await actor.click(screen.getByRole('button', { name: 'Guardar perfil' }));
+
+    expect(await screen.findByText('El DNI debe tener 8 numeros y una letra')).toBeVisible();
+    expect(onSubmit).not.toHaveBeenCalled();
+  });
+
+  it('shows field validation errors for values the backend would reject', async () => {
+    const onSubmit = vi.fn(async () => undefined);
+    const actor = userEvent.setup();
+    const incompleteUser: UserProfile = {
+      ...user,
+      first_name: '',
+      last_name: '',
+      dni: '',
+      gender: null,
+      age: null,
+    };
+
+    render(<ProfileForm user={incompleteUser} onSubmit={onSubmit} />);
+
+    fireEvent.change(screen.getByLabelText('Telefono'), { target: { value: '1'.repeat(33) } });
+    fireEvent.change(screen.getByLabelText('Codigo postal'), { target: { value: '1'.repeat(21) } });
+    fireEvent.change(screen.getByLabelText('Direccion'), { target: { value: 'a'.repeat(256) } });
+    fireEvent.change(screen.getByLabelText('Contacto de emergencia (opcional)'), {
+      target: { value: 'a'.repeat(121) },
+    });
+    fireEvent.change(screen.getByLabelText('Club'), { target: { value: 'a'.repeat(121) } });
+    fireEvent.change(screen.getByLabelText('Licencia federativa'), {
+      target: { value: 'a'.repeat(121) },
+    });
+    fireEvent.change(screen.getByLabelText('Informacion medica'), {
+      target: { value: 'a'.repeat(501) },
+    });
+    fireEvent.change(screen.getByLabelText('Informacion adicional'), {
+      target: { value: 'a'.repeat(501) },
+    });
+    fireEvent.change(screen.getByLabelText('Edad'), { target: { value: '13' } });
+
+    await actor.click(screen.getByRole('button', { name: 'Guardar perfil' }));
+
+    expect(await screen.findByText('El nombre es obligatorio')).toBeVisible();
+    expect(screen.getByText('Los apellidos son obligatorios')).toBeVisible();
+    expect(screen.getByText('El DNI es obligatorio')).toBeVisible();
+    expect(screen.getByText('Selecciona un genero')).toBeVisible();
+    expect(screen.getByText('La edad debe estar entre 14 y 120')).toBeVisible();
+    expect(screen.getByText('El telefono no puede superar 32 caracteres')).toBeVisible();
+    expect(screen.getByText('El codigo postal no puede superar 20 caracteres')).toBeVisible();
+    expect(screen.getByText('La direccion no puede superar 255 caracteres')).toBeVisible();
+    expect(
+      screen.getByText('El contacto de emergencia no puede superar 120 caracteres'),
+    ).toBeVisible();
+    expect(screen.getByText('El club no puede superar 120 caracteres')).toBeVisible();
+    expect(
+      screen.getByText('La licencia federativa no puede superar 120 caracteres'),
+    ).toBeVisible();
+    expect(screen.getByText('La informacion medica no puede superar 500 caracteres')).toBeVisible();
+    expect(
+      screen.getByText('La informacion adicional no puede superar 500 caracteres'),
+    ).toBeVisible();
+    expect(onSubmit).not.toHaveBeenCalled();
   });
 
   it('re-enables saving after a rejected submission', async () => {

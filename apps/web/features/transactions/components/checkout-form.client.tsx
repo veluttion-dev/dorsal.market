@@ -8,11 +8,12 @@ import { getTransactionErrorMessage } from '@/features/transactions/lib/errors';
 import { getStripe } from '@/features/transactions/lib/stripe';
 import { useMe } from '@/features/users/hooks/use-me';
 import { canBuyWithProfile } from '@/features/users/lib/profile-completion';
+import { SESSION_EXPIRED_MESSAGE, isSessionAuthError } from '@/features/users/lib/session-errors';
 import { formatPrice } from '@dorsal/domain';
 import { type PurchaseRequirements, type RunnerDataInput, ShirtSize } from '@dorsal/schemas';
 import { Elements, PaymentElement, useElements, useStripe } from '@stripe/react-stripe-js';
 import { CreditCard, Loader2 } from 'lucide-react';
-import { useSession } from 'next-auth/react';
+import { signOut, useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
@@ -75,6 +76,7 @@ export function CheckoutForm({
   const { data } = useSession();
   const me = useMe();
   const reserve = useReserveListing();
+  const stripeConfigured = Boolean(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY);
   const [clientSecret, setClientSecret] = useState<string | null>(null);
   const [transactionId, setTransactionId] = useState<string | null>(null);
   const [runnerData, setRunnerData] = useState({
@@ -99,13 +101,28 @@ export function CheckoutForm({
   }, [me.data?.emergency_contact, runnerData.emergency_contact]);
 
   async function startCheckout() {
-    const buyerId = data?.user?.id;
-    if (!buyerId) {
+    if (!data?.user?.id) {
       toast.error('Inicia sesion para comprar');
       return;
     }
     if (me.isLoading) {
       toast.error('Estamos comprobando tu perfil');
+      return;
+    }
+    if (isSessionAuthError(me.error)) {
+      toast.error(SESSION_EXPIRED_MESSAGE);
+      await signOut({
+        callbackUrl: `/login?callbackUrl=${encodeURIComponent(`/compra/checkout/${dorsalId}`)}`,
+      });
+      return;
+    }
+    if (me.isError) {
+      toast.error('No se pudo comprobar tu perfil. Intentalo de nuevo en unos minutos.');
+      return;
+    }
+    const buyerId = me.data?.id;
+    if (!buyerId) {
+      toast.error('No se pudo identificar tu usuario local. Vuelve a iniciar sesion.');
       return;
     }
     if (!canBuyWithProfile(me.data)) {
@@ -172,6 +189,21 @@ export function CheckoutForm({
         isLoading={me.isLoading}
         profile={me.data}
       />
+
+      <section className="rounded-lg border border-border bg-bg-card p-5">
+        <h2 className="font-semibold">Pago</h2>
+        {stripeConfigured ? (
+          <p className="mt-1 text-sm text-text-secondary">
+            Al continuar, reservaremos el dorsal y aqui aparecera el formulario seguro de tarjeta de
+            Stripe.
+          </p>
+        ) : (
+          <p className="mt-1 text-sm text-text-secondary">
+            Stripe no esta configurado en local. Esta compra se confirmara con pago simulado.
+            Configura NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY para mostrar el formulario real de pago.
+          </p>
+        )}
+      </section>
 
       {(purchaseRequirements.requires_estimated_time ||
         purchaseRequirements.requires_shirt_size ||
@@ -272,7 +304,7 @@ export function CheckoutForm({
           onClick={startCheckout}
         >
           {reserve.isPending ? <Loader2 className="animate-spin" /> : <CreditCard />}
-          {process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY ? 'Continuar al pago' : 'Simular pago'}
+          {stripeConfigured ? 'Continuar al pago' : 'Simular pago'}
         </Button>
       ) : (
         <Elements stripe={stripePromise} options={{ clientSecret }}>

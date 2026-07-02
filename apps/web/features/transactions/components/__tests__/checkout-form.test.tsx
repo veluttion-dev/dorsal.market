@@ -1,4 +1,4 @@
-import { ApiError } from '@dorsal/api-client';
+import { ApiError, UnauthorizedError } from '@dorsal/api-client';
 import type { UserProfile } from '@dorsal/schemas';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
@@ -10,6 +10,7 @@ const mocks = vi.hoisted(() => ({
   push: vi.fn(),
   toastError: vi.fn(),
   currentProfile: undefined as UserProfile | undefined,
+  profileError: null as unknown,
 }));
 
 vi.mock('@/features/transactions/hooks/use-reserve-listing', () => ({
@@ -21,11 +22,17 @@ vi.mock('@/features/transactions/lib/stripe', () => ({
 }));
 
 vi.mock('@/features/users/hooks/use-me', () => ({
-  useMe: () => ({ data: mocks.currentProfile, isLoading: false }),
+  useMe: () => ({
+    data: mocks.currentProfile,
+    isLoading: false,
+    isError: Boolean(mocks.profileError),
+    error: mocks.profileError,
+  }),
 }));
 
 vi.mock('next-auth/react', () => ({
-  useSession: () => ({ data: { user: { id: 'buyer-1' } } }),
+  useSession: () => ({ data: { user: { id: 'cognito-sub-1' } } }),
+  signOut: vi.fn(),
 }));
 
 vi.mock('next/navigation', () => ({
@@ -41,6 +48,7 @@ describe('CheckoutForm', () => {
     mocks.mutateAsync.mockReset();
     mocks.push.mockReset();
     mocks.toastError.mockReset();
+    mocks.profileError = null;
     mocks.currentProfile = {
       id: '11111111-1111-4111-8111-111111111111',
       email: 'buyer@example.com',
@@ -137,6 +145,42 @@ describe('CheckoutForm', () => {
     expect(screen.getByLabelText('Contacto de emergencia')).toHaveValue('Pedro 600000001');
   });
 
+  it('explains when Stripe is not configured locally', () => {
+    render(
+      <CheckoutForm
+        dorsalId="55555555-5555-4555-8555-555555555555"
+        raceName="Madrid"
+        amount={35}
+      />,
+    );
+
+    expect(screen.getByText(/stripe no esta configurado/i)).toBeVisible();
+    expect(screen.getByText(/NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY/i)).toBeVisible();
+  });
+
+  it('does not redirect to profile completion when the stored session is rejected', async () => {
+    mocks.currentProfile = undefined;
+    mocks.profileError = new UnauthorizedError();
+    const user = userEvent.setup();
+
+    render(
+      <CheckoutForm
+        dorsalId="55555555-5555-4555-8555-555555555555"
+        raceName="Madrid"
+        amount={35}
+      />,
+    );
+    await user.click(screen.getByRole('button', { name: /Simular pago|Continuar al pago/ }));
+
+    expect(mocks.mutateAsync).not.toHaveBeenCalled();
+    expect(mocks.push).not.toHaveBeenCalledWith(
+      '/perfil/completar?callbackUrl=%2Fcompra%2Fcheckout%2F55555555-5555-4555-8555-555555555555',
+    );
+    expect(mocks.toastError).toHaveBeenCalledWith(
+      'Tu sesion ha caducado. Vuelve a iniciar sesion para continuar.',
+    );
+  });
+
   it('sends edited runner data only to the reservation', async () => {
     mocks.mutateAsync.mockResolvedValueOnce({
       transaction_id: '11111111-1111-4111-8111-111111111111',
@@ -166,7 +210,7 @@ describe('CheckoutForm', () => {
     await waitFor(() =>
       expect(mocks.mutateAsync).toHaveBeenCalledWith({
         dorsalId: '55555555-5555-4555-8555-555555555555',
-        buyerId: 'buyer-1',
+        buyerId: '11111111-1111-4111-8111-111111111111',
         runnerData: {
           estimated_time: '01:45:00',
           emergency_contact: 'Solo esta compra',

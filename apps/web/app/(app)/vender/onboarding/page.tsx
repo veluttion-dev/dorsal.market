@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { useOnboardSeller } from '@/features/transactions/hooks/use-onboard-seller';
 import { isTransactionsMocked } from '@/features/transactions/lib/environment';
 import { getTransactionErrorMessage } from '@/features/transactions/lib/errors';
+import { useMe } from '@/features/users/hooks/use-me';
 import type { SellerOnboardingResponse } from '@dorsal/schemas';
 import { CheckCircle2, ExternalLink, Loader2 } from 'lucide-react';
 import { useSession } from 'next-auth/react';
@@ -11,14 +12,23 @@ import { toast } from 'sonner';
 
 export default function SellerOnboardingPage() {
   const { data } = useSession();
+  const me = useMe();
   const onboard = useOnboardSeller();
   const [lastResult, setLastResult] = useState<SellerOnboardingResponse | null>(null);
   const mockedTransactions = isTransactionsMocked();
 
   async function start() {
-    const sellerId = data?.user?.id;
-    if (!sellerId) {
+    if (!data?.user?.id) {
       toast.error('Inicia sesion para configurar pagos');
+      return;
+    }
+    if (me.isLoading) {
+      toast.error('Estamos comprobando tu perfil');
+      return;
+    }
+    const sellerId = me.data?.id;
+    if (!sellerId) {
+      toast.error('No se pudo identificar tu usuario local. Vuelve a iniciar sesion.');
       return;
     }
     try {
