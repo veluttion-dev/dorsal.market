@@ -157,7 +157,8 @@ function field(
   id: keyof ProfileFormValues,
   label: string,
   values: ProfileFormValues,
-  setValues: (values: ProfileFormValues) => void,
+  setFieldValue: (id: keyof ProfileFormValues, value: string) => void,
+  validateField: (id: keyof ProfileFormValues) => void,
   errors: Partial<Record<keyof ProfileFormValues, string>>,
   type = 'text',
   requirement: 'required' | 'optional' | undefined = undefined,
@@ -175,7 +176,8 @@ function field(
         aria-label={label}
         type={type}
         value={values[id]}
-        onChange={(event) => setValues({ ...values, [id]: event.target.value })}
+        onChange={(event) => setFieldValue(id, event.target.value)}
+        onBlur={() => validateField(id)}
         aria-invalid={error ? 'true' : undefined}
         aria-describedby={error ? `${id}-error` : undefined}
       />
@@ -203,6 +205,32 @@ export function ProfileForm({
   const [fieldErrors, setFieldErrors] = useState<Partial<Record<keyof ProfileFormValues, string>>>(
     {},
   );
+
+  function withFieldError(
+    previousErrors: Partial<Record<keyof ProfileFormValues, string>>,
+    id: keyof ProfileFormValues,
+    error: string | undefined,
+  ): Partial<Record<keyof ProfileFormValues, string>> {
+    const nextErrors = { ...previousErrors };
+    if (error) {
+      nextErrors[id] = error;
+    } else {
+      delete nextErrors[id];
+    }
+    return nextErrors;
+  }
+
+  function setFieldValue(id: keyof ProfileFormValues, value: string) {
+    const nextValues = { ...values, [id]: value };
+    setValues(nextValues);
+    const nextFieldErrors = validate(nextValues);
+    setFieldErrors((currentErrors) => withFieldError(currentErrors, id, nextFieldErrors[id]));
+  }
+
+  function validateField(id: keyof ProfileFormValues) {
+    const nextFieldErrors = validate(values);
+    setFieldErrors((currentErrors) => withFieldError(currentErrors, id, nextFieldErrors[id]));
+  }
 
   const genderOptions = [
     { value: 'male', label: t('gender_male') },
@@ -240,7 +268,8 @@ export function ProfileForm({
             'first_name',
             t('label_first_name'),
             values,
-            setValues,
+            setFieldValue,
+            validateField,
             fieldErrors,
             'text',
             'required',
@@ -249,12 +278,22 @@ export function ProfileForm({
             'last_name',
             t('label_last_name'),
             values,
-            setValues,
+            setFieldValue,
+            validateField,
             fieldErrors,
             'text',
             'required',
           )}
-          {field('dni', t('label_dni'), values, setValues, fieldErrors, 'text', 'required')}
+          {field(
+            'dni',
+            t('label_dni'),
+            values,
+            setFieldValue,
+            validateField,
+            fieldErrors,
+            'text',
+            'required',
+          )}
           <div className="space-y-1.5">
             <Label htmlFor="gender">
               {t('label_gender')}
@@ -265,7 +304,8 @@ export function ProfileForm({
               aria-label={t('label_gender')}
               className="flex h-9 w-full rounded-md border border-border bg-bg-elevated px-3 py-1 text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-coral"
               value={values.gender}
-              onChange={(event) => setValues({ ...values, gender: event.target.value })}
+              onChange={(event) => setFieldValue('gender', event.target.value)}
+              onBlur={() => validateField('gender')}
               aria-invalid={fieldErrors.gender ? 'true' : undefined}
               aria-describedby={fieldErrors.gender ? 'gender-error' : undefined}
             >
@@ -282,7 +322,16 @@ export function ProfileForm({
               </p>
             )}
           </div>
-          {field('age', t('label_age'), values, setValues, fieldErrors, 'number', 'required')}
+          {field(
+            'age',
+            t('label_age'),
+            values,
+            setFieldValue,
+            validateField,
+            fieldErrors,
+            'number',
+            'required',
+          )}
           <div className="space-y-1.5">
             <Label htmlFor="email">{t('label_email')}</Label>
             <Input id="email" value={user.email} disabled readOnly />
@@ -297,7 +346,8 @@ export function ProfileForm({
             'phone_number',
             t('label_phone'),
             values,
-            setValues,
+            setFieldValue,
+            validateField,
             fieldErrors,
             'text',
             'optional',
@@ -306,17 +356,28 @@ export function ProfileForm({
             'postal_code',
             t('label_postal_code'),
             values,
-            setValues,
+            setFieldValue,
+            validateField,
             fieldErrors,
             'text',
             'optional',
           )}
-          {field('address', t('label_address'), values, setValues, fieldErrors, 'text', 'optional')}
+          {field(
+            'address',
+            t('label_address'),
+            values,
+            setFieldValue,
+            validateField,
+            fieldErrors,
+            'text',
+            'optional',
+          )}
           {field(
             'emergency_contact',
             t('label_emergency_contact'),
             values,
-            setValues,
+            setFieldValue,
+            validateField,
             fieldErrors,
             'text',
             'optional',
@@ -327,12 +388,22 @@ export function ProfileForm({
       <section className="space-y-4">
         <h2 className="text-lg font-semibold">{t('section_additional')}</h2>
         <div className="grid gap-4 md:grid-cols-2">
-          {field('club', t('label_club'), values, setValues, fieldErrors, 'text', 'optional')}
+          {field(
+            'club',
+            t('label_club'),
+            values,
+            setFieldValue,
+            validateField,
+            fieldErrors,
+            'text',
+            'optional',
+          )}
           {field(
             'federation_license',
             t('label_federation_license'),
             values,
-            setValues,
+            setFieldValue,
+            validateField,
             fieldErrors,
             'text',
             'optional',
@@ -341,7 +412,8 @@ export function ProfileForm({
             'medical_info',
             t('label_medical_info'),
             values,
-            setValues,
+            setFieldValue,
+            validateField,
             fieldErrors,
             'text',
             'optional',
@@ -350,7 +422,8 @@ export function ProfileForm({
             'additional_info',
             t('label_additional_info'),
             values,
-            setValues,
+            setFieldValue,
+            validateField,
             fieldErrors,
             'text',
             'optional',

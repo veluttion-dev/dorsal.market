@@ -42,6 +42,8 @@ export function PublishWizard() {
   const persistedDraft = loadPublishDraft();
   const form = useForm<FormInput, unknown, FormValues>({
     resolver: zodResolver(PublishDorsalInput),
+    mode: 'all',
+    reValidateMode: 'onChange',
     defaultValues: {
       publish: true,
       photo_url: '',
@@ -194,10 +196,14 @@ export function PublishWizard() {
                 checked={form.watch(`included_items.${k}`)}
                 onCheckedChange={(c) => {
                   const checked = c === true;
-                  form.setValue(`included_items.${k}`, checked);
+                  form.setValue(`included_items.${k}`, checked, { shouldValidate: true });
                   if (k === 'shirt' && !checked) {
-                    form.setValue('purchase_requirements.fixed_shirt_size', null);
-                    form.setValue('purchase_requirements.requires_shirt_size', false);
+                    form.setValue('purchase_requirements.fixed_shirt_size', null, {
+                      shouldValidate: true,
+                    });
+                    form.setValue('purchase_requirements.requires_shirt_size', false, {
+                      shouldValidate: true,
+                    });
                   }
                 }}
               />
@@ -218,7 +224,9 @@ export function PublishWizard() {
                 id="requires-estimated-time"
                 checked={form.watch('purchase_requirements.requires_estimated_time') ?? false}
                 onCheckedChange={(checked) =>
-                  form.setValue('purchase_requirements.requires_estimated_time', checked === true)
+                  form.setValue('purchase_requirements.requires_estimated_time', checked === true, {
+                    shouldValidate: true,
+                  })
                 }
               />
               Solicitar tiempo estimado
@@ -231,6 +239,7 @@ export function PublishWizard() {
                   form.setValue(
                     'purchase_requirements.requires_emergency_contact',
                     checked === true,
+                    { shouldValidate: true },
                   )
                 }
               />
@@ -320,6 +329,7 @@ export function PublishWizard() {
                       form.setValue(
                         'payment_methods',
                         c === true ? [...current, p] : current.filter((x) => x !== p),
+                        { shouldValidate: true },
                       );
                     }}
                   />
@@ -352,7 +362,9 @@ export function PublishWizard() {
             <Checkbox
               id="phone_visible"
               checked={form.watch('contact.phone_visible')}
-              onCheckedChange={(c) => form.setValue('contact.phone_visible', c === true)}
+              onCheckedChange={(c) =>
+                form.setValue('contact.phone_visible', c === true, { shouldValidate: true })
+              }
             />
             {t('label_show_phone')}
           </label>
@@ -360,7 +372,9 @@ export function PublishWizard() {
             <Checkbox
               id="email_visible"
               checked={form.watch('contact.email_visible')}
-              onCheckedChange={(c) => form.setValue('contact.email_visible', c === true)}
+              onCheckedChange={(c) =>
+                form.setValue('contact.email_visible', c === true, { shouldValidate: true })
+              }
             />
             {t('label_show_email')}
           </label>

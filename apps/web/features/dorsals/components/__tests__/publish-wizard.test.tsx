@@ -61,6 +61,17 @@ describe('PublishWizard', () => {
     expect(mocks.mutate).not.toHaveBeenCalled();
   });
 
+  it('shows required publish field errors after touching fields without submitting', async () => {
+    const user = userEvent.setup();
+    render(<PublishWizard />);
+
+    await user.click(screen.getByLabelText('Nombre carrera'));
+    await user.tab();
+
+    expect(await screen.findByText('Introduce el nombre de la carrera')).toBeInTheDocument();
+    expect(mocks.mutate).not.toHaveBeenCalled();
+  });
+
   it('publishes with publish=true after a failed draft attempt', async () => {
     const user = userEvent.setup();
     render(<PublishWizard />);

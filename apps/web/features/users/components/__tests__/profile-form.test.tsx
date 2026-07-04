@@ -75,6 +75,19 @@ describe('ProfileForm', () => {
     expect(onSubmit).not.toHaveBeenCalled();
   });
 
+  it('shows a DNI validation error while editing without submitting', async () => {
+    const onSubmit = vi.fn(async () => undefined);
+    const actor = userEvent.setup();
+
+    render(<ProfileForm user={user} onSubmit={onSubmit} />);
+
+    await actor.clear(screen.getByLabelText('DNI'));
+    await actor.type(screen.getByLabelText('DNI'), '888888888L');
+
+    expect(await screen.findByText('El DNI debe tener 8 numeros y una letra')).toBeVisible();
+    expect(onSubmit).not.toHaveBeenCalled();
+  });
+
   it('shows field validation errors for values the backend would reject', async () => {
     const onSubmit = vi.fn(async () => undefined);
     const actor = userEvent.setup();
