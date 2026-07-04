@@ -1,5 +1,6 @@
 'use client';
 import { Button } from '@/components/ui/button';
+import { buildLocalCognitoLogoutPath } from '@/lib/cognito-logout';
 import { LogOut } from 'lucide-react';
 import { signOut } from 'next-auth/react';
 import { useTranslations } from 'next-intl';
@@ -11,7 +12,7 @@ export function SignOutButton() {
 
   async function submit() {
     setPending(true);
-    await signOut({ callbackUrl: '/' });
+    await signOut({ callbackUrl: buildLocalCognitoLogoutPath('/') });
   }
 
   return (

@@ -13,6 +13,7 @@ const ServerEnvSchema = z.object({
   AUTH_COGNITO_ID: optionalString,
   AUTH_COGNITO_ISSUER: optionalUrl,
   AUTH_COGNITO_CLIENT_SECRET: optionalString,
+  AUTH_COGNITO_DOMAIN: optionalString,
   GOOGLE_CLIENT_ID: optionalString,
   GOOGLE_CLIENT_SECRET: optionalString,
   FACEBOOK_CLIENT_ID: optionalString,
