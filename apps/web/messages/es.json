@@ -207,6 +207,7 @@
   },
   "photo_upload": {
     "preview_alt": "Vista previa del dorsal",
+    "change_aria": "Cambiar foto",
     "remove_aria": "Quitar foto",
     "uploading": "Subiendo…",
     "drop_hint": "Arrastra una foto o haz clic",
