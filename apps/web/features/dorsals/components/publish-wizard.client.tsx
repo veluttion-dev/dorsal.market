@@ -35,11 +35,11 @@ function FieldError({ message }: { message: string | undefined }) {
   return <p className="text-sm text-red-500">{message}</p>;
 }
 
-export function PublishWizard() {
+export function PublishWizard({ draftOwnerId }: { draftOwnerId?: string | null } = {}) {
   const t = useTranslations('publish_wizard');
   const router = useRouter();
   const publish = usePublishDorsal();
-  const persistedDraft = loadPublishDraft();
+  const persistedDraft = loadPublishDraft(draftOwnerId);
   const form = useForm<FormInput, unknown, FormValues>({
     resolver: zodResolver(PublishDorsalInput),
     mode: 'all',
@@ -62,16 +62,16 @@ export function PublishWizard() {
 
   useEffect(() => {
     const subscription = form.watch((value) => {
-      savePublishDraft(value);
+      savePublishDraft(value, draftOwnerId);
     });
     return () => subscription.unsubscribe();
-  }, [form]);
+  }, [form, draftOwnerId]);
 
   function publishValues(values: FormValues, publishMode: boolean) {
     const payload = { ...values, publish: publishMode };
     publish.mutate(payload, {
       onSuccess: ({ dorsal_id }) => {
-        clearPublishDraft();
+        clearPublishDraft(draftOwnerId);
         toast.success(publishMode ? t('toast_published') : t('toast_draft'));
         router.push(`/dorsales/${dorsal_id}`);
       },

@@ -1,6 +1,7 @@
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { PUBLISH_DRAFT_STORAGE_KEY } from '../../lib/publish-draft-storage';
 import { PublishWizard } from '../publish-wizard.client';
 
 const mocks = vi.hoisted(() => ({
@@ -103,6 +104,17 @@ describe('PublishWizard', () => {
 
     expect(screen.getByLabelText('Nombre carrera')).toHaveValue('Carrera guardada');
     expect(screen.getByLabelText(/Precio/)).toHaveValue(35);
+  });
+
+  it('does not hydrate a signed-in user with another account legacy draft', () => {
+    localStorage.setItem(
+      PUBLISH_DRAFT_STORAGE_KEY,
+      JSON.stringify({ publish: true, race_name: 'Carrera de otra cuenta' }),
+    );
+
+    render(<PublishWizard draftOwnerId="seller-current" />);
+
+    expect(screen.getByLabelText('Nombre carrera')).toHaveValue('');
   });
 
   it('submits configurable buyer requirements', async () => {

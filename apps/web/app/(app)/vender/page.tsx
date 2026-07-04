@@ -1,4 +1,5 @@
 import { PublishWizard } from '@/features/dorsals/components/publish-wizard.client';
+import { auth } from '@/lib/auth';
 import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
 import Link from 'next/link';
@@ -7,6 +8,7 @@ export const metadata: Metadata = { title: 'Vender dorsal' };
 
 export default async function VenderPage() {
   const t = await getTranslations('sell');
+  const session = await auth();
   return (
     <main className="container mx-auto max-w-3xl px-4 py-10">
       <header className="mb-8">
@@ -22,7 +24,7 @@ export default async function VenderPage() {
           {t('configure_link')}
         </Link>
       </header>
-      <PublishWizard />
+      <PublishWizard draftOwnerId={session?.user?.id ?? null} />
     </main>
   );
 }

@@ -39,6 +39,15 @@ describe('publish draft storage', () => {
     expect(localStorage.getItem(PUBLISH_DRAFT_STORAGE_KEY)).toContain('Media Madrid');
   });
 
+  it('keeps saved drafts isolated by owner', () => {
+    savePublishDraft({ publish: true, race_name: 'Cuenta antigua' }, 'seller-old');
+    savePublishDraft({ publish: true, race_name: 'Cuenta actual' }, 'seller-current');
+
+    expect(loadPublishDraft('seller-old')?.race_name).toBe('Cuenta antigua');
+    expect(loadPublishDraft('seller-current')?.race_name).toBe('Cuenta actual');
+    expect(loadPublishDraft('seller-new')).toBeNull();
+  });
+
   it('returns null and clears corrupted local storage', () => {
     localStorage.setItem(PUBLISH_DRAFT_STORAGE_KEY, '{bad json');
 
