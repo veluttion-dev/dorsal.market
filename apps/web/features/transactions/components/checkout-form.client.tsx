@@ -1,7 +1,10 @@
 'use client';
+import { IncludedItemsList } from '@/components/dorsal/included-items-list';
+import { PaymentMethodPills } from '@/components/dorsal/payment-method-pills';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { distanceLabel } from '@/features/dorsals/lib/distances';
 import { BuyerDataNotice } from '@/features/transactions/components/buyer-data-notice.client';
 import { useReserveListing } from '@/features/transactions/hooks/use-reserve-listing';
 import { getTransactionErrorMessage } from '@/features/transactions/lib/errors';
@@ -9,8 +12,8 @@ import { getStripe } from '@/features/transactions/lib/stripe';
 import { useMe } from '@/features/users/hooks/use-me';
 import { canBuyWithProfile } from '@/features/users/lib/profile-completion';
 import { SESSION_EXPIRED_MESSAGE, isSessionAuthError } from '@/features/users/lib/session-errors';
-import { formatPrice } from '@dorsal/domain';
-import { type PurchaseRequirements, type RunnerDataInput, ShirtSize } from '@dorsal/schemas';
+import { formatPrice, formatRaceDate } from '@dorsal/domain';
+import { type DorsalDetail, type RunnerDataInput, ShirtSize } from '@dorsal/schemas';
 import { Elements, PaymentElement, useElements, useStripe } from '@stripe/react-stripe-js';
 import { CreditCard, Loader2 } from 'lucide-react';
 import { signOut, useSession } from 'next-auth/react';
@@ -20,12 +23,6 @@ import { useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 
 const stripePromise = getStripe();
-const defaultPurchaseRequirements: PurchaseRequirements = {
-  requires_estimated_time: false,
-  requires_shirt_size: false,
-  requires_emergency_contact: false,
-  fixed_shirt_size: null,
-};
 const CHECKOUT_RUNNER_DATA_STORAGE_PREFIX = 'dorsal.market.checkout-runner-data.v1';
 
 type CheckoutRunnerDataState = {
@@ -71,6 +68,15 @@ function clearCheckoutRunnerData(dorsalId: string) {
   window.sessionStorage.removeItem(getCheckoutRunnerDataStorageKey(dorsalId));
 }
 
+function DetailItem({ label, value }: { label: string; value: string | null | undefined }) {
+  return (
+    <div className="rounded-md border border-border bg-bg-elevated px-3 py-2">
+      <dt className="text-xs font-medium uppercase text-text-muted">{label}</dt>
+      <dd className="mt-1 text-sm font-medium text-text-primary">{value || '-'}</dd>
+    </div>
+  );
+}
+
 function StripePaymentForm({ transactionId }: { transactionId: string }) {
   const t = useTranslations('checkout');
   const stripe = useStripe();
@@ -108,15 +114,9 @@ function StripePaymentForm({ transactionId }: { transactionId: string }) {
 }
 
 export function CheckoutForm({
-  dorsalId,
-  raceName,
-  amount,
-  purchaseRequirements = defaultPurchaseRequirements,
+  dorsal,
 }: {
-  dorsalId: string;
-  raceName: string;
-  amount: number;
-  purchaseRequirements?: PurchaseRequirements;
+  dorsal: DorsalDetail;
 }) {
   const t = useTranslations('checkout');
   const router = useRouter();
@@ -124,6 +124,8 @@ export function CheckoutForm({
   const me = useMe();
   const reserve = useReserveListing();
   const stripeConfigured = Boolean(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY);
+  const dorsalId = dorsal.id;
+  const purchaseRequirements = dorsal.purchase_requirements;
   const [clientSecret, setClientSecret] = useState<string | null>(null);
   const [transactionId, setTransactionId] = useState<string | null>(null);
   const restoredRunnerDataRef = useRef<CheckoutRunnerDataState | null>(null);
@@ -238,9 +240,56 @@ export function CheckoutForm({
   return (
     <div className="space-y-5">
       <div className="rounded-lg border border-border bg-bg-card p-5">
-        <p className="text-sm text-text-secondary">{t('buying')}</p>
-        <h2 className="mt-1 text-xl font-semibold">{raceName}</h2>
-        <p className="mt-3 text-3xl font-bold">{formatPrice(amount)}</p>
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+          <div>
+            <p className="text-sm text-text-secondary">{t('buying')}</p>
+            <h2 className="mt-1 text-2xl font-semibold">{dorsal.race_name}</h2>
+            <p className="mt-1 text-sm text-text-secondary">
+              {formatRaceDate(dorsal.race_date)} - {dorsal.location}
+            </p>
+          </div>
+          <p className="text-3xl font-bold">{formatPrice(dorsal.price_amount)}</p>
+        </div>
+
+        <dl className="mt-5 grid gap-3 sm:grid-cols-2">
+          <DetailItem label="Fecha" value={formatRaceDate(dorsal.race_date)} />
+          <DetailItem label="Ubicacion" value={dorsal.location} />
+          <DetailItem label="Distancia" value={distanceLabel(dorsal.distance)} />
+          <DetailItem label="Numero de dorsal" value={dorsal.bib_number} />
+          <DetailItem label="Cajon" value={dorsal.start_corral} />
+          <DetailItem label="Estado" value={dorsal.status} />
+        </dl>
+
+        <div className="mt-5 grid gap-5 border-t border-border pt-5 sm:grid-cols-2">
+          <section>
+            <h3 className="mb-3 text-sm font-semibold text-text-secondary">Incluye</h3>
+            <IncludedItemsList items={dorsal.included_items} />
+          </section>
+          <section className="space-y-4">
+            <div>
+              <h3 className="mb-2 text-sm font-semibold text-text-secondary">Metodos de pago</h3>
+              <PaymentMethodPills methods={dorsal.payment_methods} />
+            </div>
+            {(dorsal.contact_phone || dorsal.contact_email) && (
+              <div>
+                <h3 className="mb-2 text-sm font-semibold text-text-secondary">
+                  Contacto del vendedor
+                </h3>
+                <div className="space-y-1 text-sm">
+                  {dorsal.contact_phone && <p>{dorsal.contact_phone}</p>}
+                  {dorsal.contact_email && <p>{dorsal.contact_email}</p>}
+                </div>
+              </div>
+            )}
+          </section>
+        </div>
+
+        {dorsal.sale_reason && (
+          <section className="mt-5 border-t border-border pt-5">
+            <h3 className="mb-2 text-sm font-semibold text-text-secondary">Motivo de venta</h3>
+            <p className="text-sm">{dorsal.sale_reason}</p>
+          </section>
+        )}
       </div>
 
       <BuyerDataNotice
@@ -249,28 +298,13 @@ export function CheckoutForm({
         profile={me.data}
       />
 
-      <section className="rounded-lg border border-border bg-bg-card p-5">
-        <h2 className="font-semibold">Pago</h2>
-        {stripeConfigured ? (
-          <p className="mt-1 text-sm text-text-secondary">
-            Al continuar, reservaremos el dorsal y aqui aparecera el formulario seguro de tarjeta de
-            Stripe.
-          </p>
-        ) : (
-          <p className="mt-1 text-sm text-text-secondary">
-            Stripe no esta configurado en local. Esta compra se confirmara con pago simulado.
-            Configura NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY para mostrar el formulario real de pago.
-          </p>
-        )}
-      </section>
-
       {(purchaseRequirements.requires_estimated_time ||
         purchaseRequirements.requires_shirt_size ||
         purchaseRequirements.requires_emergency_contact ||
         purchaseRequirements.fixed_shirt_size) && (
-        <section className="space-y-4 border-y border-border py-5">
+        <section className="space-y-4 rounded-lg border border-border bg-bg-card p-5">
           <div>
-            <h2 className="font-semibold">Datos para esta carrera</h2>
+            <h2 className="font-semibold">Datos que faltan para esta compra</h2>
             <p className="mt-1 text-sm text-text-muted">
               Se guardarán solo en esta compra y no modificarán tu perfil.
             </p>
@@ -354,6 +388,35 @@ export function CheckoutForm({
           </div>
         </section>
       )}
+
+      {!(
+        purchaseRequirements.requires_estimated_time ||
+        purchaseRequirements.requires_shirt_size ||
+        purchaseRequirements.requires_emergency_contact ||
+        purchaseRequirements.fixed_shirt_size
+      ) && (
+        <section className="rounded-lg border border-border bg-bg-card p-5">
+          <h2 className="font-semibold">Datos que faltan para esta compra</h2>
+          <p className="mt-1 text-sm text-text-secondary">
+            Este dorsal no requiere datos adicionales antes del pago.
+          </p>
+        </section>
+      )}
+
+      <section className="rounded-lg border border-border bg-bg-card p-5">
+        <h2 className="font-semibold">Pago</h2>
+        {stripeConfigured ? (
+          <p className="mt-1 text-sm text-text-secondary">
+            Al continuar, reservaremos el dorsal y aqui aparecera el formulario seguro de tarjeta de
+            Stripe.
+          </p>
+        ) : (
+          <p className="mt-1 text-sm text-text-secondary">
+            Stripe no esta configurado en local. Esta compra se confirmara con pago simulado.
+            Configura NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY para mostrar el formulario real de pago.
+          </p>
+        )}
+      </section>
 
       {!clientSecret || !transactionId ? (
         <Button

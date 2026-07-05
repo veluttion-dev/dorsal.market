@@ -1,5 +1,5 @@
 import { ApiError, UnauthorizedError } from '@dorsal/api-client';
-import type { UserProfile } from '@dorsal/schemas';
+import type { DorsalDetail, UserProfile } from '@dorsal/schemas';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -43,6 +43,42 @@ vi.mock('sonner', () => ({
   toast: { error: mocks.toastError },
 }));
 
+function makeDorsal(overrides: Partial<DorsalDetail> = {}): DorsalDetail {
+  return {
+    id: '55555555-5555-4555-8555-555555555555',
+    seller_id: '22222222-2222-4222-8222-222222222222',
+    photo_url: 'https://example.com/photos/madrid.jpg',
+    race_name: 'San Silvestre Vallecana',
+    bib_number: 'A-1234',
+    race_date: '2026-12-31',
+    location: 'Madrid',
+    distance: '10k',
+    start_corral: 'B',
+    included_items: {
+      chip: true,
+      shirt: true,
+      bag: false,
+      medal: true,
+      refreshments: true,
+    },
+    purchase_requirements: {
+      requires_estimated_time: false,
+      requires_shirt_size: false,
+      requires_emergency_contact: false,
+      fixed_shirt_size: null,
+    },
+    price_amount: 35,
+    payment_methods: ['bizum', 'paypal'],
+    contact_phone: '612345678',
+    contact_email: 'ana.runner@example.com',
+    sale_reason: 'Lesion muscular, no puedo correr',
+    status: 'published',
+    created_at: '2026-06-20T09:58:41.674225Z',
+    updated_at: '2026-06-27T00:53:19.933388Z',
+    ...overrides,
+  };
+}
+
 describe('CheckoutForm', () => {
   beforeEach(() => {
     sessionStorage.clear();
@@ -82,13 +118,7 @@ describe('CheckoutForm', () => {
     );
     const user = userEvent.setup();
 
-    render(
-      <CheckoutForm
-        dorsalId="55555555-5555-4555-8555-555555555555"
-        raceName="Madrid"
-        amount={35}
-      />,
-    );
+    render(<CheckoutForm dorsal={makeDorsal({ race_name: 'Madrid' })} />);
     await user.click(screen.getByRole('button', { name: /Simular pago|Continuar al pago/ }));
 
     await waitFor(() =>
@@ -108,13 +138,7 @@ describe('CheckoutForm', () => {
     };
     const user = userEvent.setup();
 
-    render(
-      <CheckoutForm
-        dorsalId="55555555-5555-4555-8555-555555555555"
-        raceName="Madrid"
-        amount={35}
-      />,
-    );
+    render(<CheckoutForm dorsal={makeDorsal({ race_name: 'Madrid' })} />);
     await user.click(screen.getByRole('button', { name: /Simular pago|Continuar al pago/ }));
 
     expect(mocks.mutateAsync).not.toHaveBeenCalled();
@@ -129,15 +153,14 @@ describe('CheckoutForm', () => {
   it('renders only the runner fields requested by the dorsal', () => {
     render(
       <CheckoutForm
-        dorsalId="55555555-5555-4555-8555-555555555555"
-        raceName="Madrid"
-        amount={35}
-        purchaseRequirements={{
-          requires_estimated_time: true,
-          requires_shirt_size: false,
-          requires_emergency_contact: true,
-          fixed_shirt_size: null,
-        }}
+        dorsal={makeDorsal({
+          purchase_requirements: {
+            requires_estimated_time: true,
+            requires_shirt_size: false,
+            requires_emergency_contact: true,
+            fixed_shirt_size: null,
+          },
+        })}
       />,
     );
 
@@ -147,13 +170,7 @@ describe('CheckoutForm', () => {
   });
 
   it('explains when Stripe is not configured locally', () => {
-    render(
-      <CheckoutForm
-        dorsalId="55555555-5555-4555-8555-555555555555"
-        raceName="Madrid"
-        amount={35}
-      />,
-    );
+    render(<CheckoutForm dorsal={makeDorsal({ race_name: 'Madrid' })} />);
 
     expect(screen.getByText(/stripe no esta configurado/i)).toBeVisible();
     expect(screen.getByText(/NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY/i)).toBeVisible();
@@ -164,13 +181,7 @@ describe('CheckoutForm', () => {
     mocks.profileError = new UnauthorizedError();
     const user = userEvent.setup();
 
-    render(
-      <CheckoutForm
-        dorsalId="55555555-5555-4555-8555-555555555555"
-        raceName="Madrid"
-        amount={35}
-      />,
-    );
+    render(<CheckoutForm dorsal={makeDorsal({ race_name: 'Madrid' })} />);
     await user.click(screen.getByRole('button', { name: /Simular pago|Continuar al pago/ }));
 
     expect(mocks.mutateAsync).not.toHaveBeenCalled();
@@ -191,15 +202,14 @@ describe('CheckoutForm', () => {
     const user = userEvent.setup();
     render(
       <CheckoutForm
-        dorsalId="55555555-5555-4555-8555-555555555555"
-        raceName="Madrid"
-        amount={35}
-        purchaseRequirements={{
-          requires_estimated_time: true,
-          requires_shirt_size: false,
-          requires_emergency_contact: true,
-          fixed_shirt_size: null,
-        }}
+        dorsal={makeDorsal({
+          purchase_requirements: {
+            requires_estimated_time: true,
+            requires_shirt_size: false,
+            requires_emergency_contact: true,
+            fixed_shirt_size: null,
+          },
+        })}
       />,
     );
 
@@ -224,15 +234,15 @@ describe('CheckoutForm', () => {
   it('restores runner data after returning from a login redirect', async () => {
     const user = userEvent.setup();
     const props = {
-      dorsalId: '55555555-5555-4555-8555-555555555555',
-      raceName: 'Madrid',
-      amount: 35,
-      purchaseRequirements: {
-        requires_estimated_time: true,
-        requires_shirt_size: true,
-        requires_emergency_contact: true,
-        fixed_shirt_size: null,
-      },
+      dorsal: makeDorsal({
+        race_name: 'Madrid',
+        purchase_requirements: {
+          requires_estimated_time: true,
+          requires_shirt_size: true,
+          requires_emergency_contact: true,
+          fixed_shirt_size: null,
+        },
+      }),
     };
 
     const { unmount } = render(<CheckoutForm {...props} />);
@@ -248,5 +258,36 @@ describe('CheckoutForm', () => {
     expect(screen.getByLabelText('Tiempo estimado')).toHaveValue('01:45:00');
     expect(screen.getByLabelText('Talla')).toHaveValue('M');
     expect(screen.getByLabelText('Contacto de emergencia')).toHaveValue('Solo esta compra');
+  });
+
+  it('shows a detailed pre-payment review with missing buyer data fields', () => {
+    render(
+      <CheckoutForm
+        dorsal={makeDorsal({
+          purchase_requirements: {
+            requires_estimated_time: true,
+            requires_shirt_size: true,
+            requires_emergency_contact: true,
+            fixed_shirt_size: null,
+          },
+        })}
+      />,
+    );
+
+    expect(screen.getByRole('heading', { name: 'San Silvestre Vallecana' })).toBeVisible();
+    expect(screen.getByText('31 dic 2026')).toBeVisible();
+    expect(screen.getByText('Madrid')).toBeVisible();
+    expect(screen.getByText('10K')).toBeVisible();
+    expect(screen.getByText('A-1234')).toBeVisible();
+    expect(screen.getByText('B')).toBeVisible();
+    expect(screen.getByText('Lesion muscular, no puedo correr')).toBeVisible();
+    expect(screen.getByText('612345678')).toBeVisible();
+    expect(screen.getByText('ana.runner@example.com')).toBeVisible();
+    expect(screen.getByText('Bizum')).toBeVisible();
+    expect(screen.getByText('PayPal')).toBeVisible();
+    expect(screen.getByText('Camiseta')).toBeVisible();
+    expect(screen.getByLabelText('Tiempo estimado')).toBeVisible();
+    expect(screen.getByLabelText('Talla')).toBeVisible();
+    expect(screen.getByLabelText('Contacto de emergencia')).toBeVisible();
   });
 });

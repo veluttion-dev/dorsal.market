@@ -22,12 +22,7 @@ export default async function CheckoutPage({
         <p className="text-sm font-medium uppercase text-coral">{t('eyebrow')}</p>
         <h1 className="mt-1 text-3xl font-bold">{t('heading')}</h1>
       </header>
-      <CheckoutForm
-        dorsalId={dorsal.id}
-        raceName={dorsal.race_name}
-        amount={dorsal.price_amount}
-        purchaseRequirements={dorsal.purchase_requirements}
-      />
+      <CheckoutForm dorsal={dorsal} />
     </main>
   );
 }
