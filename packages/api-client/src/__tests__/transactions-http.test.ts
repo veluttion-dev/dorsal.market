@@ -137,4 +137,16 @@ describe('TransactionsHttpAdapter', () => {
       },
     });
   });
+
+  it('expires a checkout reservation through the buyer endpoint', async () => {
+    const post = vi.fn(async () => ({ processed: true }));
+    const http = createHttpStub({ post });
+    const adapter = new TransactionsHttpAdapter(http);
+
+    await adapter.expireReservation('11111111-1111-4111-8111-111111111111');
+
+    expect(post).toHaveBeenCalledWith(
+      'api/v1/transactions/11111111-1111-4111-8111-111111111111/expire-reservation',
+    );
+  });
 });

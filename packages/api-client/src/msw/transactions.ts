@@ -210,6 +210,19 @@ export const transactionsHandlers = [
     );
   }),
 
+  http.post(`${BASE}/api/v1/transactions/:id/expire-reservation`, ({ params }) => {
+    const tx = mockStore.transactions.get(params.id as string);
+    if (tx?.status === 'PENDING_PAYMENT') {
+      mockStore.transactions.set(params.id as string, {
+        ...tx,
+        status: 'CANCELLED',
+        lifecycle_state: 'CANCELLED',
+        timeline: [...tx.timeline, event('reservation_expired', 'Reservation expired')],
+      });
+    }
+    return HttpResponse.json({ processed: true });
+  }),
+
   http.get(`${BASE}/api/v1/transactions/buyer/:id`, ({ params }) => {
     const tx = mockStore.transactions.get(params.id as string);
     if (!tx) return HttpResponse.json({ detail: 'not found' }, { status: 404 });

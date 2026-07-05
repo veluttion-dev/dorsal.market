@@ -7,6 +7,7 @@ import { CheckoutForm } from '../checkout-form.client';
 
 const mocks = vi.hoisted(() => ({
   mutateAsync: vi.fn(),
+  expireMutateAsync: vi.fn(),
   push: vi.fn(),
   toastError: vi.fn(),
   currentProfile: undefined as UserProfile | undefined,
@@ -17,8 +18,21 @@ vi.mock('@/features/transactions/hooks/use-reserve-listing', () => ({
   useReserveListing: () => ({ mutateAsync: mocks.mutateAsync, isPending: false }),
 }));
 
+vi.mock('@/features/transactions/hooks/use-expire-reservation', () => ({
+  useExpireReservation: () => ({ mutateAsync: mocks.expireMutateAsync, isPending: false }),
+}));
+
 vi.mock('@/features/transactions/lib/stripe', () => ({
-  getStripe: () => Promise.resolve(null),
+  getStripe: () => Promise.resolve(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY ? {} : null),
+}));
+
+vi.mock('@stripe/react-stripe-js', () => ({
+  Elements: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
+  PaymentElement: () => <div>Formulario de tarjeta</div>,
+  useElements: () => ({}),
+  useStripe: () => ({
+    confirmPayment: vi.fn(async () => ({})),
+  }),
 }));
 
 vi.mock('@/features/users/hooks/use-me', () => ({
@@ -81,8 +95,11 @@ function makeDorsal(overrides: Partial<DorsalDetail> = {}): DorsalDetail {
 
 describe('CheckoutForm', () => {
   beforeEach(() => {
+    vi.useRealTimers();
+    process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY = '';
     sessionStorage.clear();
     mocks.mutateAsync.mockReset();
+    mocks.expireMutateAsync.mockReset();
     mocks.push.mockReset();
     mocks.toastError.mockReset();
     mocks.profileError = null;
@@ -289,5 +306,31 @@ describe('CheckoutForm', () => {
     expect(screen.getByLabelText('Tiempo estimado')).toBeVisible();
     expect(screen.getByLabelText('Talla')).toBeVisible();
     expect(screen.getByLabelText('Contacto de emergencia')).toBeVisible();
+  });
+
+  it('shows an active reservation countdown and releases it when time runs out', async () => {
+    process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY = 'pk_test_123';
+    mocks.mutateAsync.mockResolvedValueOnce({
+      transaction_id: '11111111-1111-4111-8111-111111111111',
+      payment_client_secret: 'secret',
+      reservation_expires_at: new Date(Date.now() + 150).toISOString(),
+    });
+    mocks.expireMutateAsync.mockResolvedValueOnce({ processed: true });
+    const user = userEvent.setup();
+
+    render(<CheckoutForm dorsal={makeDorsal({ race_name: 'Madrid' })} />);
+    await user.click(screen.getByRole('button', { name: 'Continuar al pago' }));
+
+    expect(await screen.findByText('Reserva activa')).toBeVisible();
+    expect(screen.getByText(/00:0[1-9]/)).toBeVisible();
+
+    await waitFor(
+      () =>
+        expect(mocks.expireMutateAsync).toHaveBeenCalledWith(
+          '11111111-1111-4111-8111-111111111111',
+        ),
+      { timeout: 2500 },
+    );
+    expect(mocks.push).toHaveBeenCalledWith('/');
   });
 });

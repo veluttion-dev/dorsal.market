@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { distanceLabel } from '@/features/dorsals/lib/distances';
 import { BuyerDataNotice } from '@/features/transactions/components/buyer-data-notice.client';
+import { useExpireReservation } from '@/features/transactions/hooks/use-expire-reservation';
 import { useReserveListing } from '@/features/transactions/hooks/use-reserve-listing';
 import { getTransactionErrorMessage } from '@/features/transactions/lib/errors';
 import { getStripe } from '@/features/transactions/lib/stripe';
@@ -15,15 +16,15 @@ import { SESSION_EXPIRED_MESSAGE, isSessionAuthError } from '@/features/users/li
 import { formatPrice, formatRaceDate } from '@dorsal/domain';
 import { type DorsalDetail, type RunnerDataInput, ShirtSize } from '@dorsal/schemas';
 import { Elements, PaymentElement, useElements, useStripe } from '@stripe/react-stripe-js';
-import { CreditCard, Loader2 } from 'lucide-react';
+import { Clock, CreditCard, Loader2 } from 'lucide-react';
 import { signOut, useSession } from 'next-auth/react';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
 
-const stripePromise = getStripe();
 const CHECKOUT_RUNNER_DATA_STORAGE_PREFIX = 'dorsal.market.checkout-runner-data.v1';
+const CHECKOUT_RESERVATION_STORAGE_PREFIX = 'dorsal.market.checkout-reservation.v1';
 
 type CheckoutRunnerDataState = {
   estimated_time: string;
@@ -31,8 +32,18 @@ type CheckoutRunnerDataState = {
   emergency_contact: string;
 };
 
+type CheckoutReservationState = {
+  transactionId: string;
+  clientSecret: string;
+  reservationExpiresAt: string;
+};
+
 function getCheckoutRunnerDataStorageKey(dorsalId: string) {
   return `${CHECKOUT_RUNNER_DATA_STORAGE_PREFIX}.${dorsalId}`;
+}
+
+function getCheckoutReservationStorageKey(dorsalId: string) {
+  return `${CHECKOUT_RESERVATION_STORAGE_PREFIX}.${dorsalId}`;
 }
 
 function loadCheckoutRunnerData(dorsalId: string): CheckoutRunnerDataState | null {
@@ -66,6 +77,61 @@ function saveCheckoutRunnerData(dorsalId: string, value: CheckoutRunnerDataState
 function clearCheckoutRunnerData(dorsalId: string) {
   if (typeof window === 'undefined') return;
   window.sessionStorage.removeItem(getCheckoutRunnerDataStorageKey(dorsalId));
+}
+
+function loadCheckoutReservation(dorsalId: string): CheckoutReservationState | null {
+  if (typeof window === 'undefined') return null;
+  const key = getCheckoutReservationStorageKey(dorsalId);
+  try {
+    const raw = window.sessionStorage.getItem(key);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as Partial<CheckoutReservationState>;
+    if (
+      typeof parsed.transactionId !== 'string' ||
+      typeof parsed.clientSecret !== 'string' ||
+      typeof parsed.reservationExpiresAt !== 'string'
+    ) {
+      window.sessionStorage.removeItem(key);
+      return null;
+    }
+    return {
+      transactionId: parsed.transactionId,
+      clientSecret: parsed.clientSecret,
+      reservationExpiresAt: parsed.reservationExpiresAt,
+    };
+  } catch {
+    window.sessionStorage.removeItem(key);
+    return null;
+  }
+}
+
+function saveCheckoutReservation(dorsalId: string, value: CheckoutReservationState) {
+  if (typeof window === 'undefined') return;
+  try {
+    window.sessionStorage.setItem(
+      getCheckoutReservationStorageKey(dorsalId),
+      JSON.stringify(value),
+    );
+  } catch {
+    // Storage can fail in restricted browser modes; the countdown still runs in memory.
+  }
+}
+
+function clearCheckoutReservation(dorsalId: string) {
+  if (typeof window === 'undefined') return;
+  window.sessionStorage.removeItem(getCheckoutReservationStorageKey(dorsalId));
+}
+
+function getReservationRemainingMs(reservation: CheckoutReservationState | null) {
+  if (!reservation) return 0;
+  return Math.max(0, new Date(reservation.reservationExpiresAt).getTime() - Date.now());
+}
+
+function formatCountdown(ms: number) {
+  const totalSeconds = Math.max(0, Math.ceil(ms / 1000));
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+  return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
 }
 
 function DetailItem({ label, value }: { label: string; value: string | null | undefined }) {
@@ -123,11 +189,17 @@ export function CheckoutForm({
   const { data } = useSession();
   const me = useMe();
   const reserve = useReserveListing();
+  const expireReservation = useExpireReservation();
   const stripeConfigured = Boolean(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY);
+  const stripePromise = useMemo(() => getStripe(), []);
   const dorsalId = dorsal.id;
   const purchaseRequirements = dorsal.purchase_requirements;
-  const [clientSecret, setClientSecret] = useState<string | null>(null);
-  const [transactionId, setTransactionId] = useState<string | null>(null);
+  const [activeReservation, setActiveReservation] = useState<CheckoutReservationState | null>(() =>
+    loadCheckoutReservation(dorsalId),
+  );
+  const [reservationRemainingMs, setReservationRemainingMs] = useState(() =>
+    getReservationRemainingMs(activeReservation),
+  );
   const restoredRunnerDataRef = useRef<CheckoutRunnerDataState | null>(null);
   const [runnerData, setRunnerData] = useState<CheckoutRunnerDataState>(() => {
     const restored = loadCheckoutRunnerData(dorsalId);
@@ -142,6 +214,9 @@ export function CheckoutForm({
   });
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const emergencyContactEdited = useRef(Boolean(restoredRunnerDataRef.current));
+  const expiringReservationRef = useRef<string | null>(null);
+  const clientSecret = activeReservation?.clientSecret ?? null;
+  const transactionId = activeReservation?.transactionId ?? null;
 
   useEffect(() => {
     if (
@@ -159,6 +234,33 @@ export function CheckoutForm({
   useEffect(() => {
     saveCheckoutRunnerData(dorsalId, runnerData);
   }, [dorsalId, runnerData]);
+
+  useEffect(() => {
+    if (!activeReservation) return;
+    expiringReservationRef.current = null;
+
+    const finishReservation = async () => {
+      if (expiringReservationRef.current === activeReservation.transactionId) return;
+      expiringReservationRef.current = activeReservation.transactionId;
+      try {
+        await expireReservation.mutateAsync(activeReservation.transactionId);
+      } finally {
+        clearCheckoutReservation(dorsalId);
+        setActiveReservation(null);
+        router.push('/');
+      }
+    };
+
+    const tick = () => {
+      const remaining = getReservationRemainingMs(activeReservation);
+      setReservationRemainingMs(remaining);
+      if (remaining <= 0) void finishReservation();
+    };
+
+    tick();
+    const intervalId = window.setInterval(tick, 1000);
+    return () => window.clearInterval(intervalId);
+  }, [activeReservation, dorsalId, expireReservation.mutateAsync, router.push]);
 
   async function startCheckout() {
     if (!data?.user?.id) {
@@ -227,11 +329,20 @@ export function CheckoutForm({
         buyerId,
         ...(hasRunnerData ? { runnerData: checkoutRunnerData } : {}),
       });
-      setTransactionId(result.transaction_id);
-      setClientSecret(result.payment_client_secret);
       clearCheckoutRunnerData(dorsalId);
       const stripe = await stripePromise;
-      if (!stripe) router.push(`/compra/confirmada?tx=${result.transaction_id}`);
+      if (!stripe) {
+        clearCheckoutReservation(dorsalId);
+        router.push(`/compra/confirmada?tx=${result.transaction_id}`);
+        return;
+      }
+      const reservation = {
+        transactionId: result.transaction_id,
+        clientSecret: result.payment_client_secret,
+        reservationExpiresAt: result.reservation_expires_at,
+      };
+      saveCheckoutReservation(dorsalId, reservation);
+      setActiveReservation(reservation);
     } catch (error) {
       toast.error(getTransactionErrorMessage(error));
     }
@@ -417,6 +528,23 @@ export function CheckoutForm({
           </p>
         )}
       </section>
+
+      {activeReservation && (
+        <section className="flex items-center justify-between gap-4 rounded-lg border border-border bg-bg-card p-5">
+          <div className="flex items-center gap-3">
+            <Clock className="size-5 text-accent" />
+            <div>
+              <h2 className="font-semibold">Reserva activa</h2>
+              <p className="mt-1 text-sm text-text-secondary">
+                Completa el pago antes de que el dorsal vuelva al catalogo.
+              </p>
+            </div>
+          </div>
+          <p className="shrink-0 font-mono text-2xl font-semibold">
+            {formatCountdown(reservationRemainingMs)}
+          </p>
+        </section>
+      )}
 
       {!clientSecret || !transactionId ? (
         <Button

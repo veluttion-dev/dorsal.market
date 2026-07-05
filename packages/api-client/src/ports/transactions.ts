@@ -19,6 +19,7 @@ export interface TransactionsPort {
     buyerId: string;
     runnerData?: RunnerDataInput;
   }): Promise<ReserveListingResponse>;
+  expireReservation(id: string): Promise<{ processed: boolean }>;
 
   getBuyerTransaction(id: string): Promise<BuyerTransactionDetail>;
   getSellerTransaction(id: string): Promise<SellerTransactionDetail>;
