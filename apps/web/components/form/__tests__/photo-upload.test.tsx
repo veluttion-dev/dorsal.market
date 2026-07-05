@@ -32,8 +32,12 @@ describe('PhotoUpload', () => {
 
     render(<PhotoUpload value="https://example.com/current.jpg" onChange={onChange} />);
 
+    const changeInput = screen.getByLabelText('Cambiar foto', { selector: 'input' });
+    expect(screen.getByRole('button', { name: 'Cambiar foto' })).toBeInTheDocument();
+    expect(changeInput.closest('label')).toBeNull();
+
     const file = new File(['replacement'], 'replacement.jpg', { type: 'image/jpeg' });
-    await user.upload(screen.getByLabelText('Cambiar foto'), file);
+    await user.upload(changeInput, file);
 
     await waitFor(() =>
       expect(onChange).toHaveBeenCalledWith('https://example.com/replacement.jpg'),

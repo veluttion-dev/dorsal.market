@@ -46,28 +46,34 @@ export function PhotoUpload({
     [presign, onChange, setPreviewUrl],
   );
 
-  const { getRootProps, getInputProps, isDragActive } = useDropzone({
+  const { getRootProps, getInputProps, isDragActive, open } = useDropzone({
     onDrop,
     accept: { 'image/*': ['.png', '.jpg', '.jpeg', '.webp'] },
     maxSize: 8 * 1024 * 1024,
     multiple: false,
+    noClick: true,
   });
 
   return (
     <div className="space-y-2">
+      <input {...getInputProps({ 'aria-label': preview ? t('change_aria') : t('drop_hint') })} />
       {preview ? (
-        <div className="relative aspect-video overflow-hidden rounded-lg border border-border bg-bg-elevated">
+        <div
+          {...getRootProps({
+            tabIndex: -1,
+            className:
+              'relative aspect-video overflow-hidden rounded-lg border border-border bg-bg-elevated',
+          })}
+        >
           <img src={preview} alt={t('preview_alt')} className="h-full w-full object-cover" />
-          <label
-            {...getRootProps({
-              className:
-                'absolute left-2 top-2 inline-flex cursor-pointer items-center rounded-full bg-bg-primary/80 p-1.5 text-text-primary hover:bg-bg-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-coral focus-visible:ring-offset-2 focus-visible:ring-offset-bg-primary',
-            })}
+          <button
+            type="button"
+            onClick={open}
+            className="absolute left-2 top-2 inline-flex items-center rounded-full bg-bg-primary/80 p-1.5 text-text-primary hover:bg-bg-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-coral focus-visible:ring-offset-2 focus-visible:ring-offset-bg-primary"
+            aria-label={t('change_aria')}
           >
-            <input {...getInputProps()} />
             <Upload className="h-4 w-4" />
-            <span className="sr-only">{t('change_aria')}</span>
-          </label>
+          </button>
           <button
             type="button"
             onClick={() => {
@@ -81,14 +87,17 @@ export function PhotoUpload({
           </button>
         </div>
       ) : (
-        <div
-          {...getRootProps()}
-          className={cn(
-            'flex aspect-video cursor-pointer flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed border-border bg-bg-elevated text-text-secondary transition',
-            isDragActive && 'border-coral bg-coral-subtle text-coral',
-          )}
+        <button
+          {...getRootProps({
+            onClick: open,
+            role: 'button',
+            className: cn(
+              'flex aspect-video cursor-pointer flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed border-border bg-bg-elevated text-text-secondary transition',
+              isDragActive && 'border-coral bg-coral-subtle text-coral',
+            ),
+          })}
+          type="button"
         >
-          <input {...getInputProps()} />
           {presign.isPending ? (
             <p>{t('uploading')}</p>
           ) : (
@@ -101,7 +110,7 @@ export function PhotoUpload({
               <p className="text-xs">{t('file_types')}</p>
             </>
           )}
-        </div>
+        </button>
       )}
       {presign.isError && <p className="text-sm text-red-500">{t('upload_error')}</p>}
     </div>
