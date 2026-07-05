@@ -37,6 +37,22 @@ describe('TransactionsHttpAdapter', () => {
     expect(result.payment_client_secret).toBe('pi_secret_x');
   });
 
+  it('normalizes timezone-less backend reservation expiry as UTC', async () => {
+    const post = vi.fn(async () => ({
+      transaction_id: '11111111-1111-4111-8111-111111111111',
+      payment_client_secret: 'pi_secret_x',
+      reservation_expires_at: '2026-07-05T18:46:20.256562',
+    }));
+    const adapter = new TransactionsHttpAdapter(createHttpStub({ post }));
+
+    const result = await adapter.reserveListing({
+      dorsalId: '55555555-5555-4555-8555-555555555555',
+      buyerId: '22222222-2222-4222-8222-222222222222',
+    });
+
+    expect(result.reservation_expires_at).toBe('2026-07-05T18:46:20.256562Z');
+  });
+
   it('gets buyer transaction detail from the buyer-specific route', async () => {
     const get = vi.fn(async () => ({
       transaction_id: '11111111-1111-4111-8111-111111111111',

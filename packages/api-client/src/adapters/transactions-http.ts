@@ -17,6 +17,10 @@ import type { TransactionsPort } from '../ports';
 const ProofUploadMultipartResponse = z.object({ proof_file_url: z.string().url() });
 const ExpireReservationResponse = z.object({ processed: z.boolean() });
 
+function normalizeUtcDateTime(value: string) {
+  return /(?:Z|[+-]\d{2}:\d{2})$/i.test(value) ? value : `${value}Z`;
+}
+
 export class TransactionsHttpAdapter implements TransactionsPort {
   constructor(private http: HttpClient) {}
 
@@ -27,7 +31,7 @@ export class TransactionsHttpAdapter implements TransactionsPort {
   }
 
   async reserveListing(input: { dorsalId: string; buyerId: string; runnerData?: RunnerDataInput }) {
-    return ReserveListingResponse.parse(
+    const response = ReserveListingResponse.parse(
       await this.http.post('api/v1/transactions', {
         body: {
           dorsal_id: input.dorsalId,
@@ -36,6 +40,10 @@ export class TransactionsHttpAdapter implements TransactionsPort {
         },
       }),
     );
+    return {
+      ...response,
+      reservation_expires_at: normalizeUtcDateTime(response.reservation_expires_at),
+    };
   }
 
   async expireReservation(id: string) {

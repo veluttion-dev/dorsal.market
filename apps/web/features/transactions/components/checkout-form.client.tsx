@@ -79,6 +79,10 @@ function clearCheckoutRunnerData(dorsalId: string) {
   window.sessionStorage.removeItem(getCheckoutRunnerDataStorageKey(dorsalId));
 }
 
+function normalizeUtcDateTime(value: string) {
+  return /(?:Z|[+-]\d{2}:\d{2})$/i.test(value) ? value : `${value}Z`;
+}
+
 function loadCheckoutReservation(dorsalId: string): CheckoutReservationState | null {
   if (typeof window === 'undefined') return null;
   const key = getCheckoutReservationStorageKey(dorsalId);
@@ -97,7 +101,7 @@ function loadCheckoutReservation(dorsalId: string): CheckoutReservationState | n
     return {
       transactionId: parsed.transactionId,
       clientSecret: parsed.clientSecret,
-      reservationExpiresAt: parsed.reservationExpiresAt,
+      reservationExpiresAt: normalizeUtcDateTime(parsed.reservationExpiresAt),
     };
   } catch {
     window.sessionStorage.removeItem(key);
