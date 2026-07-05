@@ -26,6 +26,50 @@ const defaultPurchaseRequirements: PurchaseRequirements = {
   requires_emergency_contact: false,
   fixed_shirt_size: null,
 };
+const CHECKOUT_RUNNER_DATA_STORAGE_PREFIX = 'dorsal.market.checkout-runner-data.v1';
+
+type CheckoutRunnerDataState = {
+  estimated_time: string;
+  t_shirt_size: string;
+  emergency_contact: string;
+};
+
+function getCheckoutRunnerDataStorageKey(dorsalId: string) {
+  return `${CHECKOUT_RUNNER_DATA_STORAGE_PREFIX}.${dorsalId}`;
+}
+
+function loadCheckoutRunnerData(dorsalId: string): CheckoutRunnerDataState | null {
+  if (typeof window === 'undefined') return null;
+  const key = getCheckoutRunnerDataStorageKey(dorsalId);
+  try {
+    const raw = window.sessionStorage.getItem(key);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as Partial<CheckoutRunnerDataState>;
+    return {
+      estimated_time: typeof parsed.estimated_time === 'string' ? parsed.estimated_time : '',
+      t_shirt_size: typeof parsed.t_shirt_size === 'string' ? parsed.t_shirt_size : '',
+      emergency_contact:
+        typeof parsed.emergency_contact === 'string' ? parsed.emergency_contact : '',
+    };
+  } catch {
+    window.sessionStorage.removeItem(key);
+    return null;
+  }
+}
+
+function saveCheckoutRunnerData(dorsalId: string, value: CheckoutRunnerDataState) {
+  if (typeof window === 'undefined') return;
+  try {
+    window.sessionStorage.setItem(getCheckoutRunnerDataStorageKey(dorsalId), JSON.stringify(value));
+  } catch {
+    // Storage can fail in restricted browser modes; the checkout should still work.
+  }
+}
+
+function clearCheckoutRunnerData(dorsalId: string) {
+  if (typeof window === 'undefined') return;
+  window.sessionStorage.removeItem(getCheckoutRunnerDataStorageKey(dorsalId));
+}
 
 function StripePaymentForm({ transactionId }: { transactionId: string }) {
   const t = useTranslations('checkout');
@@ -82,13 +126,20 @@ export function CheckoutForm({
   const stripeConfigured = Boolean(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY);
   const [clientSecret, setClientSecret] = useState<string | null>(null);
   const [transactionId, setTransactionId] = useState<string | null>(null);
-  const [runnerData, setRunnerData] = useState({
-    estimated_time: '',
-    t_shirt_size: '',
-    emergency_contact: me.data?.emergency_contact ?? '',
+  const restoredRunnerDataRef = useRef<CheckoutRunnerDataState | null>(null);
+  const [runnerData, setRunnerData] = useState<CheckoutRunnerDataState>(() => {
+    const restored = loadCheckoutRunnerData(dorsalId);
+    restoredRunnerDataRef.current = restored;
+    return (
+      restored ?? {
+        estimated_time: '',
+        t_shirt_size: '',
+        emergency_contact: '',
+      }
+    );
   });
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
-  const emergencyContactEdited = useRef(false);
+  const emergencyContactEdited = useRef(Boolean(restoredRunnerDataRef.current));
 
   useEffect(() => {
     if (
@@ -102,6 +153,10 @@ export function CheckoutForm({
       }));
     }
   }, [me.data?.emergency_contact, runnerData.emergency_contact]);
+
+  useEffect(() => {
+    saveCheckoutRunnerData(dorsalId, runnerData);
+  }, [dorsalId, runnerData]);
 
   async function startCheckout() {
     if (!data?.user?.id) {
@@ -172,6 +227,7 @@ export function CheckoutForm({
       });
       setTransactionId(result.transaction_id);
       setClientSecret(result.payment_client_secret);
+      clearCheckoutRunnerData(dorsalId);
       const stripe = await stripePromise;
       if (!stripe) router.push(`/compra/confirmada?tx=${result.transaction_id}`);
     } catch (error) {

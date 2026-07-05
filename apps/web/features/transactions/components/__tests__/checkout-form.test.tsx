@@ -45,6 +45,7 @@ vi.mock('sonner', () => ({
 
 describe('CheckoutForm', () => {
   beforeEach(() => {
+    sessionStorage.clear();
     mocks.mutateAsync.mockReset();
     mocks.push.mockReset();
     mocks.toastError.mockReset();
@@ -218,5 +219,34 @@ describe('CheckoutForm', () => {
       }),
     );
     expect(mocks.currentProfile?.emergency_contact).toBe('Pedro 600000001');
+  });
+
+  it('restores runner data after returning from a login redirect', async () => {
+    const user = userEvent.setup();
+    const props = {
+      dorsalId: '55555555-5555-4555-8555-555555555555',
+      raceName: 'Madrid',
+      amount: 35,
+      purchaseRequirements: {
+        requires_estimated_time: true,
+        requires_shirt_size: true,
+        requires_emergency_contact: true,
+        fixed_shirt_size: null,
+      },
+    };
+
+    const { unmount } = render(<CheckoutForm {...props} />);
+
+    await user.type(screen.getByLabelText('Tiempo estimado'), '01:45:00');
+    await user.selectOptions(screen.getByLabelText('Talla'), 'M');
+    await user.clear(screen.getByLabelText('Contacto de emergencia'));
+    await user.type(screen.getByLabelText('Contacto de emergencia'), 'Solo esta compra');
+
+    unmount();
+    render(<CheckoutForm {...props} />);
+
+    expect(screen.getByLabelText('Tiempo estimado')).toHaveValue('01:45:00');
+    expect(screen.getByLabelText('Talla')).toHaveValue('M');
+    expect(screen.getByLabelText('Contacto de emergencia')).toHaveValue('Solo esta compra');
   });
 });
