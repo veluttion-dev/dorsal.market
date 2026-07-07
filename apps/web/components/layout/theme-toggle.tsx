@@ -1,13 +1,13 @@
 'use client';
+import { useTheme } from '@/components/layout/theme-provider';
 import { Button } from '@/components/ui/button';
 import { Moon, Sun } from 'lucide-react';
-import { useTheme } from 'next-themes';
 import { useEffect, useState } from 'react';
 
 export function ThemeToggle() {
   const { resolvedTheme, setTheme } = useTheme();
-  // next-themes can't know the theme during SSR. Until mounted, render a
-  // theme-agnostic label so the server HTML and the first client render match.
+  // Until mounted, render a theme-agnostic label so the server HTML and the first
+  // client render match.
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
 

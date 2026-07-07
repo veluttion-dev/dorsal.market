@@ -23,7 +23,12 @@ export const metadata: Metadata = {
 export default async function RootLayout({ children }: { children: ReactNode }) {
   const messages = await getMessages();
   return (
-    <html lang="es" className={`${outfit.variable} ${spaceMono.variable}`} suppressHydrationWarning>
+    <html
+      lang="es"
+      data-theme="dark"
+      className={`${outfit.variable} ${spaceMono.variable}`}
+      suppressHydrationWarning
+    >
       <body>
         <NextIntlClientProvider messages={messages}>
           <Providers>{children}</Providers>

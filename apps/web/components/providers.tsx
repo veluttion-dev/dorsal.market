@@ -1,9 +1,9 @@
 'use client';
 import { FeedbackTab } from '@/components/feedback/feedback-tab.client';
+import { ThemeProvider } from '@/components/layout/theme-provider';
 import { Toaster } from '@/components/ui/sonner';
 import { QueryProvider } from '@dorsal/api-client';
 import { SessionProvider } from 'next-auth/react';
-import { ThemeProvider } from 'next-themes';
 import dynamic from 'next/dynamic';
 import { NuqsAdapter } from 'nuqs/adapters/next/app';
 import type { ReactNode } from 'react';
@@ -16,12 +16,7 @@ const MswBootstrap = dynamic(
 
 export function Providers({ children }: { children: ReactNode }) {
   return (
-    <ThemeProvider
-      attribute="data-theme"
-      defaultTheme="dark"
-      enableSystem={false}
-      disableTransitionOnChange
-    >
+    <ThemeProvider>
       <SessionProvider>
         <NuqsAdapter>
           <QueryProvider>
