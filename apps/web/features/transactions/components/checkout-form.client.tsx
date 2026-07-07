@@ -8,6 +8,7 @@ import { distanceLabel } from '@/features/dorsals/lib/distances';
 import { BuyerDataNotice } from '@/features/transactions/components/buyer-data-notice.client';
 import { useExpireReservation } from '@/features/transactions/hooks/use-expire-reservation';
 import { useReserveListing } from '@/features/transactions/hooks/use-reserve-listing';
+import { useUpdateCheckoutRunnerData } from '@/features/transactions/hooks/use-update-checkout-runner-data';
 import { getTransactionErrorMessage } from '@/features/transactions/lib/errors';
 import { getStripe } from '@/features/transactions/lib/stripe';
 import { useMe } from '@/features/users/hooks/use-me';
@@ -20,7 +21,7 @@ import { Clock, CreditCard, Loader2 } from 'lucide-react';
 import { signOut, useSession } from 'next-auth/react';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
 
 const CHECKOUT_RUNNER_DATA_STORAGE_PREFIX = 'dorsal.market.checkout-runner-data.v1';
@@ -147,7 +148,13 @@ function DetailItem({ label, value }: { label: string; value: string | null | un
   );
 }
 
-function StripePaymentForm({ transactionId }: { transactionId: string }) {
+function StripePaymentForm({
+  transactionId,
+  onBeforePayment,
+}: {
+  transactionId: string;
+  onBeforePayment: () => Promise<boolean>;
+}) {
   const t = useTranslations('checkout');
   const stripe = useStripe();
   const elements = useElements();
@@ -157,6 +164,11 @@ function StripePaymentForm({ transactionId }: { transactionId: string }) {
   async function submitPayment() {
     if (!stripe || !elements) return;
     setSubmitting(true);
+    const canContinue = await onBeforePayment();
+    if (!canContinue) {
+      setSubmitting(false);
+      return;
+    }
     const result = await stripe.confirmPayment({
       elements,
       confirmParams: {
@@ -194,6 +206,7 @@ export function CheckoutForm({
   const me = useMe();
   const reserve = useReserveListing();
   const expireReservation = useExpireReservation();
+  const updateCheckoutRunnerData = useUpdateCheckoutRunnerData();
   const stripeConfigured = Boolean(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY);
   const stripePromise = useMemo(() => getStripe(), []);
   const dorsalId = dorsal.id;
@@ -219,7 +232,7 @@ export function CheckoutForm({
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const emergencyContactEdited = useRef(Boolean(restoredRunnerDataRef.current));
   const expiringReservationRef = useRef<string | null>(null);
-  const clientSecret = activeReservation?.clientSecret ?? null;
+  const autoReserveStartedRef = useRef(false);
   const transactionId = activeReservation?.transactionId ?? null;
 
   useEffect(() => {
@@ -266,40 +279,78 @@ export function CheckoutForm({
     return () => window.clearInterval(intervalId);
   }, [activeReservation, dorsalId, expireReservation.mutateAsync, router.push]);
 
-  async function startCheckout() {
+  const createReservation = useCallback(async () => {
     if (!data?.user?.id) {
       toast.error(t('need_login'));
-      return;
+      router.push(`/login?callbackUrl=${encodeURIComponent(`/compra/checkout/${dorsalId}`)}`);
+      return false;
     }
     if (me.isLoading) {
-      toast.error(t('checking_profile'));
-      return;
+      return false;
     }
     if (isSessionAuthError(me.error)) {
       toast.error(SESSION_EXPIRED_MESSAGE);
       await signOut({
         callbackUrl: `/login?callbackUrl=${encodeURIComponent(`/compra/checkout/${dorsalId}`)}`,
       });
-      return;
+      return false;
     }
     if (me.isError) {
       toast.error('No se pudo comprobar tu perfil. Intentalo de nuevo en unos minutos.');
-      return;
+      return false;
     }
     const buyerId = me.data?.id;
     if (!buyerId) {
       toast.error('No se pudo identificar tu usuario local. Vuelve a iniciar sesion.');
-      return;
+      return false;
     }
     if (!canBuyWithProfile(me.data)) {
       toast.error('Completa tus datos de identidad antes de comprar');
       router.push(
         `/perfil/completar?callbackUrl=${encodeURIComponent(`/compra/checkout/${dorsalId}`)}`,
       );
-      return;
+      return false;
     }
 
+    try {
+      const result = await reserve.mutateAsync({ dorsalId, buyerId });
+      const reservation = {
+        transactionId: result.transaction_id,
+        clientSecret: result.payment_client_secret,
+        reservationExpiresAt: result.reservation_expires_at,
+      };
+      saveCheckoutReservation(dorsalId, reservation);
+      setActiveReservation(reservation);
+      return true;
+    } catch (error) {
+      toast.error(getTransactionErrorMessage(error));
+      return false;
+    }
+  }, [
+    data?.user?.id,
+    dorsalId,
+    me.data,
+    me.error,
+    me.isError,
+    me.isLoading,
+    reserve.mutateAsync,
+    router.push,
+    t,
+  ]);
+
+  useEffect(() => {
+    if (activeReservation || reserve.isPending || autoReserveStartedRef.current) return;
+    if (me.isLoading) return;
+
+    autoReserveStartedRef.current = true;
+    void createReservation().then((created) => {
+      if (!created) autoReserveStartedRef.current = false;
+    });
+  }, [activeReservation, createReservation, me.isLoading, reserve.isPending]);
+
+  function buildCheckoutRunnerData() {
     const errors: Record<string, string> = {};
+
     if (
       purchaseRequirements.requires_estimated_time &&
       !/^\d{2}:\d{2}:\d{2}$/.test(runnerData.estimated_time.trim())
@@ -313,7 +364,7 @@ export function CheckoutForm({
       errors.emergency_contact = 'Introduce un contacto de emergencia';
     }
     setFieldErrors(errors);
-    if (Object.keys(errors).length) return;
+    if (Object.keys(errors).length) return null;
 
     const checkoutRunnerData: RunnerDataInput = {};
     if (purchaseRequirements.requires_estimated_time) {
@@ -325,31 +376,40 @@ export function CheckoutForm({
     if (purchaseRequirements.requires_emergency_contact) {
       checkoutRunnerData.emergency_contact = runnerData.emergency_contact.trim();
     }
+    return checkoutRunnerData;
+  }
 
+  async function saveRunnerDataBeforePayment() {
+    if (!transactionId) {
+      toast.error('La reserva aun no esta lista. Espera unos segundos e intentalo de nuevo.');
+      return false;
+    }
+    const checkoutRunnerData = buildCheckoutRunnerData();
+    if (!checkoutRunnerData) return false;
+    const mustSaveRunnerData =
+      purchaseRequirements.requires_estimated_time ||
+      purchaseRequirements.requires_shirt_size ||
+      purchaseRequirements.requires_emergency_contact ||
+      Boolean(purchaseRequirements.fixed_shirt_size);
+    if (!mustSaveRunnerData) return true;
     try {
-      const hasRunnerData = Object.keys(checkoutRunnerData).length > 0;
-      const result = await reserve.mutateAsync({
-        dorsalId,
-        buyerId,
-        ...(hasRunnerData ? { runnerData: checkoutRunnerData } : {}),
+      await updateCheckoutRunnerData.mutateAsync({
+        transactionId,
+        runnerData: checkoutRunnerData,
       });
       clearCheckoutRunnerData(dorsalId);
-      const stripe = await stripePromise;
-      if (!stripe) {
-        clearCheckoutReservation(dorsalId);
-        router.push(`/compra/confirmada?tx=${result.transaction_id}`);
-        return;
-      }
-      const reservation = {
-        transactionId: result.transaction_id,
-        clientSecret: result.payment_client_secret,
-        reservationExpiresAt: result.reservation_expires_at,
-      };
-      saveCheckoutReservation(dorsalId, reservation);
-      setActiveReservation(reservation);
+      return true;
     } catch (error) {
       toast.error(getTransactionErrorMessage(error));
+      return false;
     }
+  }
+
+  async function submitSimulatedPayment() {
+    const canContinue = await saveRunnerDataBeforePayment();
+    if (!canContinue || !transactionId) return;
+    clearCheckoutReservation(dorsalId);
+    router.push(`/compra/confirmada?tx=${transactionId}`);
   }
 
   return (
@@ -522,13 +582,14 @@ export function CheckoutForm({
         <h2 className="font-semibold">Pago</h2>
         {stripeConfigured ? (
           <p className="mt-1 text-sm text-text-secondary">
-            Al continuar, reservaremos el dorsal y aqui aparecera el formulario seguro de tarjeta de
-            Stripe.
+            Tu reserva se activa al entrar en esta pantalla. Completa los datos pendientes y paga
+            antes de que termine el contador.
           </p>
         ) : (
           <p className="mt-1 text-sm text-text-secondary">
-            Stripe no esta configurado en local. Esta compra se confirmara con pago simulado.
-            Configura NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY para mostrar el formulario real de pago.
+            Stripe no esta configurado en local. El dorsal queda reservado con contador y podras
+            usar el pago simulado. Configura NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY para mostrar el
+            formulario real de pago.
           </p>
         )}
       </section>
@@ -550,19 +611,36 @@ export function CheckoutForm({
         </section>
       )}
 
-      {!clientSecret || !transactionId ? (
+      {!activeReservation ? (
         <Button
           type="button"
           className="w-full"
           disabled={reserve.isPending || me.isLoading}
-          onClick={startCheckout}
+          onClick={createReservation}
         >
-          {reserve.isPending ? <Loader2 className="animate-spin" /> : <CreditCard />}
-          {stripeConfigured ? t('continue') : t('simulate')}
+          <Loader2 className="animate-spin" />
+          Preparando reserva
+        </Button>
+      ) : !stripeConfigured ? (
+        <Button
+          type="button"
+          className="w-full"
+          disabled={updateCheckoutRunnerData.isPending}
+          onClick={submitSimulatedPayment}
+        >
+          {updateCheckoutRunnerData.isPending ? (
+            <Loader2 className="animate-spin" />
+          ) : (
+            <CreditCard />
+          )}
+          {t('simulate')}
         </Button>
       ) : (
-        <Elements stripe={stripePromise} options={{ clientSecret }}>
-          <StripePaymentForm transactionId={transactionId} />
+        <Elements stripe={stripePromise} options={{ clientSecret: activeReservation.clientSecret }}>
+          <StripePaymentForm
+            transactionId={activeReservation.transactionId}
+            onBeforePayment={saveRunnerDataBeforePayment}
+          />
         </Elements>
       )}
     </div>

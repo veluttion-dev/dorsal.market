@@ -7,6 +7,7 @@ import { CheckoutForm } from '../checkout-form.client';
 
 const mocks = vi.hoisted(() => ({
   mutateAsync: vi.fn(),
+  updateRunnerDataMutateAsync: vi.fn(),
   expireMutateAsync: vi.fn(),
   push: vi.fn(),
   toastError: vi.fn(),
@@ -20,6 +21,13 @@ vi.mock('@/features/transactions/hooks/use-reserve-listing', () => ({
 
 vi.mock('@/features/transactions/hooks/use-expire-reservation', () => ({
   useExpireReservation: () => ({ mutateAsync: mocks.expireMutateAsync, isPending: false }),
+}));
+
+vi.mock('@/features/transactions/hooks/use-update-checkout-runner-data', () => ({
+  useUpdateCheckoutRunnerData: () => ({
+    mutateAsync: mocks.updateRunnerDataMutateAsync,
+    isPending: false,
+  }),
 }));
 
 vi.mock('@/features/transactions/lib/stripe', () => ({
@@ -99,6 +107,7 @@ describe('CheckoutForm', () => {
     process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY = '';
     sessionStorage.clear();
     mocks.mutateAsync.mockReset();
+    mocks.updateRunnerDataMutateAsync.mockReset();
     mocks.expireMutateAsync.mockReset();
     mocks.push.mockReset();
     mocks.toastError.mockReset();
@@ -133,10 +142,8 @@ describe('CheckoutForm', () => {
         detail: 'Dorsal 55555555-5555-4555-8555-555555555555 is not available (status: published)',
       }),
     );
-    const user = userEvent.setup();
 
     render(<CheckoutForm dorsal={makeDorsal({ race_name: 'Madrid' })} />);
-    await user.click(screen.getByRole('button', { name: /Simular pago|Continuar al pago/ }));
 
     await waitFor(() =>
       expect(mocks.toastError).toHaveBeenCalledWith(
@@ -153,15 +160,15 @@ describe('CheckoutForm', () => {
       ...mocks.currentProfile,
       profile_complete: false,
     };
-    const user = userEvent.setup();
 
     render(<CheckoutForm dorsal={makeDorsal({ race_name: 'Madrid' })} />);
-    await user.click(screen.getByRole('button', { name: /Simular pago|Continuar al pago/ }));
 
-    expect(mocks.mutateAsync).not.toHaveBeenCalled();
-    expect(mocks.toastError).toHaveBeenCalledWith(
-      'Completa tus datos de identidad antes de comprar',
+    await waitFor(() =>
+      expect(mocks.toastError).toHaveBeenCalledWith(
+        'Completa tus datos de identidad antes de comprar',
+      ),
     );
+    expect(mocks.mutateAsync).not.toHaveBeenCalled();
     expect(mocks.push).toHaveBeenCalledWith(
       '/perfil/completar?callbackUrl=%2Fcompra%2Fcheckout%2F55555555-5555-4555-8555-555555555555',
     );
@@ -196,26 +203,46 @@ describe('CheckoutForm', () => {
   it('does not redirect to profile completion when the stored session is rejected', async () => {
     mocks.currentProfile = undefined;
     mocks.profileError = new UnauthorizedError();
-    const user = userEvent.setup();
 
     render(<CheckoutForm dorsal={makeDorsal({ race_name: 'Madrid' })} />);
-    await user.click(screen.getByRole('button', { name: /Simular pago|Continuar al pago/ }));
 
+    await waitFor(() =>
+      expect(mocks.toastError).toHaveBeenCalledWith(
+        'Tu sesion ha caducado. Vuelve a iniciar sesion para continuar.',
+      ),
+    );
     expect(mocks.mutateAsync).not.toHaveBeenCalled();
     expect(mocks.push).not.toHaveBeenCalledWith(
       '/perfil/completar?callbackUrl=%2Fcompra%2Fcheckout%2F55555555-5555-4555-8555-555555555555',
     );
-    expect(mocks.toastError).toHaveBeenCalledWith(
-      'Tu sesion ha caducado. Vuelve a iniciar sesion para continuar.',
-    );
   });
 
-  it('sends edited runner data only to the reservation', async () => {
+  it('reserves automatically when the authenticated buyer enters checkout', async () => {
     mocks.mutateAsync.mockResolvedValueOnce({
       transaction_id: '11111111-1111-4111-8111-111111111111',
       payment_client_secret: 'secret',
-      reservation_expires_at: '2026-06-26T12:00:00Z',
+      reservation_expires_at: new Date(Date.now() + 15 * 60 * 1000).toISOString(),
     });
+
+    render(<CheckoutForm dorsal={makeDorsal({ race_name: 'Madrid' })} />);
+
+    await waitFor(() =>
+      expect(mocks.mutateAsync).toHaveBeenCalledWith({
+        dorsalId: '55555555-5555-4555-8555-555555555555',
+        buyerId: '11111111-1111-4111-8111-111111111111',
+      }),
+    );
+    expect(await screen.findByText('Reserva activa')).toBeVisible();
+  });
+
+  it('sends edited runner data only before payment', async () => {
+    process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY = 'pk_test_123';
+    mocks.mutateAsync.mockResolvedValueOnce({
+      transaction_id: '11111111-1111-4111-8111-111111111111',
+      payment_client_secret: 'secret',
+      reservation_expires_at: new Date(Date.now() + 15 * 60 * 1000).toISOString(),
+    });
+    mocks.updateRunnerDataMutateAsync.mockResolvedValueOnce({ processed: true });
     const user = userEvent.setup();
     render(
       <CheckoutForm
@@ -230,15 +257,15 @@ describe('CheckoutForm', () => {
       />,
     );
 
+    expect(await screen.findByText('Reserva activa')).toBeVisible();
     await user.type(screen.getByLabelText('Tiempo estimado'), '01:45:00');
     await user.clear(screen.getByLabelText('Contacto de emergencia'));
     await user.type(screen.getByLabelText('Contacto de emergencia'), 'Solo esta compra');
-    await user.click(screen.getByRole('button', { name: /Simular pago|Continuar al pago/ }));
+    await user.click(screen.getByRole('button', { name: 'Pagar' }));
 
     await waitFor(() =>
-      expect(mocks.mutateAsync).toHaveBeenCalledWith({
-        dorsalId: '55555555-5555-4555-8555-555555555555',
-        buyerId: '11111111-1111-4111-8111-111111111111',
+      expect(mocks.updateRunnerDataMutateAsync).toHaveBeenCalledWith({
+        transactionId: '11111111-1111-4111-8111-111111111111',
         runnerData: {
           estimated_time: '01:45:00',
           emergency_contact: 'Solo esta compra',
@@ -313,16 +340,14 @@ describe('CheckoutForm', () => {
     mocks.mutateAsync.mockResolvedValueOnce({
       transaction_id: '11111111-1111-4111-8111-111111111111',
       payment_client_secret: 'secret',
-      reservation_expires_at: new Date(Date.now() + 150).toISOString(),
+      reservation_expires_at: new Date(Date.now() + 1500).toISOString(),
     });
     mocks.expireMutateAsync.mockResolvedValueOnce({ processed: true });
-    const user = userEvent.setup();
 
     render(<CheckoutForm dorsal={makeDorsal({ race_name: 'Madrid' })} />);
-    await user.click(screen.getByRole('button', { name: 'Continuar al pago' }));
 
     expect(await screen.findByText('Reserva activa')).toBeVisible();
-    expect(screen.getByText(/00:0[1-9]/)).toBeVisible();
+    expect(screen.getByText(/\d{2}:\d{2}/)).toBeVisible();
 
     await waitFor(
       () =>

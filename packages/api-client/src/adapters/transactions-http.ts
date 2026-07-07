@@ -16,6 +16,7 @@ import type { TransactionsPort } from '../ports';
 
 const ProofUploadMultipartResponse = z.object({ proof_file_url: z.string().url() });
 const ExpireReservationResponse = z.object({ processed: z.boolean() });
+const UpdateCheckoutRunnerDataResponse = z.object({ processed: z.boolean() });
 
 function normalizeUtcDateTime(value: string) {
   return /(?:Z|[+-]\d{2}:\d{2})$/i.test(value) ? value : `${value}Z`;
@@ -49,6 +50,14 @@ export class TransactionsHttpAdapter implements TransactionsPort {
   async expireReservation(id: string) {
     return ExpireReservationResponse.parse(
       await this.http.post(`api/v1/transactions/${id}/expire-reservation`),
+    );
+  }
+
+  async updateCheckoutRunnerData(id: string, runnerData: RunnerDataInput) {
+    return UpdateCheckoutRunnerDataResponse.parse(
+      await this.http.patch(`api/v1/transactions/${id}/runner-data`, {
+        body: runnerData,
+      }),
     );
   }
 

@@ -165,4 +165,26 @@ describe('TransactionsHttpAdapter', () => {
       'api/v1/transactions/11111111-1111-4111-8111-111111111111/expire-reservation',
     );
   });
+
+  it('updates checkout runner data through the buyer endpoint', async () => {
+    const patch = vi.fn(async () => ({ processed: true }));
+    const adapter = new TransactionsHttpAdapter(createHttpStub({ patch }));
+
+    await adapter.updateCheckoutRunnerData('11111111-1111-4111-8111-111111111111', {
+      estimated_time: '01:45:00',
+      t_shirt_size: 'M',
+      emergency_contact: 'Ana +34600000000',
+    });
+
+    expect(patch).toHaveBeenCalledWith(
+      'api/v1/transactions/11111111-1111-4111-8111-111111111111/runner-data',
+      {
+        body: {
+          estimated_time: '01:45:00',
+          t_shirt_size: 'M',
+          emergency_contact: 'Ana +34600000000',
+        },
+      },
+    );
+  });
 });
