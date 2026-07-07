@@ -18,10 +18,11 @@ export function LoginForm({
   const params = useSearchParams();
   const callbackUrl = params.get('callbackUrl') ?? '/perfil';
   const [loadingProvider, setLoadingProvider] = useState<string | null>(null);
+  const redirectOptions = { callbackUrl, redirectTo: callbackUrl };
 
   async function loginWithCognito() {
     setLoadingProvider('cognito');
-    await signIn('cognito', { callbackUrl });
+    await signIn('cognito', redirectOptions);
   }
 
   async function loginAsDemo() {
@@ -29,7 +30,7 @@ export function LoginForm({
     await signIn('credentials', {
       email: 'demo@dorsal.market',
       password: 'demo1234',
-      callbackUrl,
+      ...redirectOptions,
     });
   }
 

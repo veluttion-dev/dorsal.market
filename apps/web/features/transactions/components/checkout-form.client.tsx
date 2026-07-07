@@ -151,9 +151,11 @@ function DetailItem({ label, value }: { label: string; value: string | null | un
 function StripePaymentForm({
   transactionId,
   onBeforePayment,
+  onPaymentComplete,
 }: {
   transactionId: string;
   onBeforePayment: () => Promise<boolean>;
+  onPaymentComplete: () => void;
 }) {
   const t = useTranslations('checkout');
   const stripe = useStripe();
@@ -181,6 +183,7 @@ function StripePaymentForm({
       toast.error(result.error.message ?? 'No se pudo confirmar el pago');
       return;
     }
+    onPaymentComplete();
     router.push(`/compra/confirmada?tx=${transactionId}`);
   }
 
@@ -233,7 +236,18 @@ export function CheckoutForm({
   const emergencyContactEdited = useRef(Boolean(restoredRunnerDataRef.current));
   const expiringReservationRef = useRef<string | null>(null);
   const autoReserveStartedRef = useRef(false);
+  const activeReservationRef = useRef<CheckoutReservationState | null>(activeReservation);
+  const expireReservationMutateRef = useRef(expireReservation.mutateAsync);
+  const checkoutCompletedRef = useRef(false);
   const transactionId = activeReservation?.transactionId ?? null;
+
+  useEffect(() => {
+    activeReservationRef.current = activeReservation;
+  }, [activeReservation]);
+
+  useEffect(() => {
+    expireReservationMutateRef.current = expireReservation.mutateAsync;
+  }, [expireReservation.mutateAsync]);
 
   useEffect(() => {
     if (
@@ -319,6 +333,7 @@ export function CheckoutForm({
         clientSecret: result.payment_client_secret,
         reservationExpiresAt: result.reservation_expires_at,
       };
+      checkoutCompletedRef.current = false;
       saveCheckoutReservation(dorsalId, reservation);
       setActiveReservation(reservation);
       return true;
@@ -347,6 +362,20 @@ export function CheckoutForm({
       if (!created) autoReserveStartedRef.current = false;
     });
   }, [activeReservation, createReservation, me.isLoading, reserve.isPending]);
+
+  useEffect(() => {
+    return () => {
+      const reservation = activeReservationRef.current;
+      if (!reservation || checkoutCompletedRef.current) return;
+      if (expiringReservationRef.current === reservation.transactionId) return;
+
+      expiringReservationRef.current = reservation.transactionId;
+      clearCheckoutReservation(dorsalId);
+      void Promise.resolve(expireReservationMutateRef.current(reservation.transactionId)).catch(
+        () => undefined,
+      );
+    };
+  }, [dorsalId]);
 
   function buildCheckoutRunnerData() {
     const errors: Record<string, string> = {};
@@ -408,6 +437,7 @@ export function CheckoutForm({
   async function submitSimulatedPayment() {
     const canContinue = await saveRunnerDataBeforePayment();
     if (!canContinue || !transactionId) return;
+    checkoutCompletedRef.current = true;
     clearCheckoutReservation(dorsalId);
     router.push(`/compra/confirmada?tx=${transactionId}`);
   }
@@ -640,6 +670,10 @@ export function CheckoutForm({
           <StripePaymentForm
             transactionId={activeReservation.transactionId}
             onBeforePayment={saveRunnerDataBeforePayment}
+            onPaymentComplete={() => {
+              checkoutCompletedRef.current = true;
+              clearCheckoutReservation(dorsalId);
+            }}
           />
         </Elements>
       )}

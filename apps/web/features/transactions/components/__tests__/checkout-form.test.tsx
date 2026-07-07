@@ -358,4 +358,28 @@ describe('CheckoutForm', () => {
     );
     expect(mocks.push).toHaveBeenCalledWith('/');
   });
+
+  it('releases the active reservation when the buyer leaves checkout before paying', async () => {
+    mocks.mutateAsync.mockResolvedValueOnce({
+      transaction_id: '11111111-1111-4111-8111-111111111111',
+      payment_client_secret: 'secret',
+      reservation_expires_at: new Date(Date.now() + 15 * 60 * 1000).toISOString(),
+    });
+    mocks.expireMutateAsync.mockResolvedValueOnce({ processed: true });
+
+    const { unmount } = render(<CheckoutForm dorsal={makeDorsal({ race_name: 'Madrid' })} />);
+
+    expect(await screen.findByText('Reserva activa')).toBeVisible();
+    unmount();
+
+    await waitFor(() =>
+      expect(mocks.expireMutateAsync).toHaveBeenCalledWith('11111111-1111-4111-8111-111111111111'),
+    );
+    expect(
+      sessionStorage.getItem(
+        'dorsal.market.checkout-reservation.v1.55555555-5555-4555-8555-555555555555',
+      ),
+    ).toBeNull();
+    expect(mocks.push).not.toHaveBeenCalledWith('/');
+  });
 });

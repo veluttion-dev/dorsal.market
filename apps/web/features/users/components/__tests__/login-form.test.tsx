@@ -28,7 +28,10 @@ describe('LoginForm', () => {
     await user.click(screen.getByRole('button', { name: /entrar con cognito/i }));
 
     await waitFor(() =>
-      expect(mocks.signIn).toHaveBeenCalledWith('cognito', { callbackUrl: '/perfil' }),
+      expect(mocks.signIn).toHaveBeenCalledWith('cognito', {
+        callbackUrl: '/perfil',
+        redirectTo: '/perfil',
+      }),
     );
   });
 
@@ -44,6 +47,7 @@ describe('LoginForm', () => {
         email: 'demo@dorsal.market',
         password: 'demo1234',
         callbackUrl: '/perfil',
+        redirectTo: '/perfil',
       }),
     );
   });
