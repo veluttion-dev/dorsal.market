@@ -1,6 +1,6 @@
 import { ApiError, NetworkError } from '@dorsal/api-client';
 import { describe, expect, it } from 'vitest';
-import { getTransactionErrorMessage } from '../errors';
+import { getTransactionErrorMessage, isDorsalUnavailableError } from '../errors';
 
 describe('getTransactionErrorMessage', () => {
   it('maps network failures to a retryable backend message', () => {
@@ -21,5 +21,19 @@ describe('getTransactionErrorMessage', () => {
     expect(getTransactionErrorMessage(new Error('boom'))).toBe(
       'No se pudo completar la operacion. Intentalo de nuevo en unos minutos.',
     );
+  });
+
+  it('detects unavailable dorsal reservation errors', () => {
+    expect(
+      isDorsalUnavailableError(
+        new ApiError('HTTP 400', 400, { detail: 'Dorsal is not available (status: reserved)' }),
+      ),
+    ).toBe(true);
+    expect(isDorsalUnavailableError(new ApiError('HTTP 409', 409, { detail: 'Conflict' }))).toBe(
+      true,
+    );
+    expect(
+      isDorsalUnavailableError(new ApiError('HTTP 422', 422, { detail: 'Invalid data' })),
+    ).toBe(false);
   });
 });

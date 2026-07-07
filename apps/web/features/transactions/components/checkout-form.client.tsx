@@ -9,7 +9,10 @@ import { BuyerDataNotice } from '@/features/transactions/components/buyer-data-n
 import { useExpireReservation } from '@/features/transactions/hooks/use-expire-reservation';
 import { useReserveListing } from '@/features/transactions/hooks/use-reserve-listing';
 import { useUpdateCheckoutRunnerData } from '@/features/transactions/hooks/use-update-checkout-runner-data';
-import { getTransactionErrorMessage } from '@/features/transactions/lib/errors';
+import {
+  getTransactionErrorMessage,
+  isDorsalUnavailableError,
+} from '@/features/transactions/lib/errors';
 import { getStripe } from '@/features/transactions/lib/stripe';
 import { useMe } from '@/features/users/hooks/use-me';
 import { canBuyWithProfile } from '@/features/users/lib/profile-completion';
@@ -338,6 +341,11 @@ export function CheckoutForm({
       setActiveReservation(reservation);
       return true;
     } catch (error) {
+      if (isDorsalUnavailableError(error)) {
+        toast.error('Este dorsal ya esta reservado por otra persona. Te devolvemos al catalogo.');
+        router.push('/');
+        return false;
+      }
       toast.error(getTransactionErrorMessage(error));
       return false;
     }

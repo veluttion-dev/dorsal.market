@@ -18,3 +18,15 @@ export function getTransactionErrorMessage(error: unknown) {
   }
   return 'No se pudo completar la operacion. Intentalo de nuevo en unos minutos.';
 }
+
+export function isDorsalUnavailableError(error: unknown) {
+  if (!(error instanceof ApiError)) return false;
+
+  const detail = detailToMessage(error.detail)?.toLowerCase() ?? '';
+  return (
+    error.status === 409 ||
+    detail.includes('not available') ||
+    detail.includes('reserved') ||
+    detail.includes('reservado')
+  );
+}

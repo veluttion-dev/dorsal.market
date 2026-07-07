@@ -136,10 +136,10 @@ describe('CheckoutForm', () => {
     };
   });
 
-  it('shows backend reservation failures without throwing runtime overlay', async () => {
+  it('redirects home when another buyer has already reserved the dorsal', async () => {
     mocks.mutateAsync.mockRejectedValueOnce(
       new ApiError('HTTP 400', 400, {
-        detail: 'Dorsal 55555555-5555-4555-8555-555555555555 is not available (status: published)',
+        detail: 'Dorsal 55555555-5555-4555-8555-555555555555 is not available (status: reserved)',
       }),
     );
 
@@ -147,9 +147,10 @@ describe('CheckoutForm', () => {
 
     await waitFor(() =>
       expect(mocks.toastError).toHaveBeenCalledWith(
-        'Dorsal 55555555-5555-4555-8555-555555555555 is not available (status: published)',
+        'Este dorsal ya esta reservado por otra persona. Te devolvemos al catalogo.',
       ),
     );
+    expect(mocks.push).toHaveBeenCalledWith('/');
   });
 
   it('redirects to profile completion before reserving when identity is incomplete', async () => {
