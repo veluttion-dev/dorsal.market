@@ -1,11 +1,39 @@
 'use client';
+import { FormSection } from '@/components/form/form-section';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import type { PatchUserProfileInput, UserProfile } from '@dorsal/schemas';
-import { Save } from 'lucide-react';
+import { FileText, IdCard, Phone, Save } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
+
+const PLACEHOLDERS: Partial<Record<keyof ProfileFormValues, string>> = {
+  first_name: 'Ej: Maria',
+  last_name: 'Ej: Garcia Lopez',
+  dni: 'Ej: 12345678A',
+  phone_number: 'Ej: 612 345 678',
+  postal_code: 'Ej: 28001',
+  address: 'Ej: Calle Mayor 12, 3ºB',
+  club: 'Ej: Club Atletismo Madrid',
+  federation_license: 'Ej: RFEA-123456',
+  emergency_contact: 'Ej: Juan Perez - 612 345 678',
+  medical_info: 'Ej: alergias, medicacion habitual...',
+  additional_info: 'Cualquier informacion que quieras compartir...',
+};
+
+const MIN_AGE = 14;
+const MAX_AGE = 120;
+const AGE_OPTIONS = Array.from({ length: MAX_AGE - MIN_AGE + 1 }, (_, i) =>
+  (MIN_AGE + i).toString(),
+);
 
 interface ProfileFormValues {
   first_name: string;
@@ -178,9 +206,54 @@ function field(
         value={values[id]}
         onChange={(event) => setFieldValue(id, event.target.value)}
         onBlur={() => validateField(id)}
+        placeholder={PLACEHOLDERS[id]}
         aria-invalid={error ? 'true' : undefined}
         aria-describedby={error ? `${id}-error` : undefined}
       />
+      {error && (
+        <p id={`${id}-error`} role="alert" className="text-sm text-red-500">
+          {error}
+        </p>
+      )}
+    </div>
+  );
+}
+
+function selectField(
+  id: keyof ProfileFormValues,
+  label: string,
+  values: ProfileFormValues,
+  setFieldValue: (id: keyof ProfileFormValues, value: string) => void,
+  errors: Partial<Record<keyof ProfileFormValues, string>>,
+  placeholder: string,
+  options: readonly { value: string; label: string }[],
+  requirement: 'required' | 'optional' | undefined = undefined,
+) {
+  const error = errors[id];
+  return (
+    <div className="space-y-1.5">
+      <Label htmlFor={id}>
+        {label}
+        {requirement === 'required' && <span aria-hidden="true"> *</span>}
+        {requirement === 'optional' && ' (opcional)'}
+      </Label>
+      <Select value={values[id]} onValueChange={(value) => setFieldValue(id, value)}>
+        <SelectTrigger
+          id={id}
+          aria-label={label}
+          aria-invalid={error ? 'true' : undefined}
+          aria-describedby={error ? `${id}-error` : undefined}
+        >
+          <SelectValue placeholder={placeholder} />
+        </SelectTrigger>
+        <SelectContent>
+          {options.map((option) => (
+            <SelectItem key={option.value} value={option.value}>
+              {option.label}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
       {error && (
         <p id={`${id}-error`} role="alert" className="text-sm text-red-500">
           {error}
@@ -259,11 +332,10 @@ export function ProfileForm({
   }
 
   return (
-    <form className="space-y-8" onSubmit={submit}>
-      <section className="space-y-4">
-        <h2 className="text-lg font-semibold">{t('section_identity')}</h2>
+    <form className="space-y-6" onSubmit={submit}>
+      <FormSection icon={<IdCard className="h-4 w-4" />} title={t('section_identity')}>
         <p className="text-sm text-text-muted">* Campos obligatorios</p>
-        <div className="grid gap-4 md:grid-cols-2">
+        <div className="grid gap-5 md:grid-cols-2">
           {field(
             'first_name',
             t('label_first_name'),
@@ -294,42 +366,24 @@ export function ProfileForm({
             'text',
             'required',
           )}
-          <div className="space-y-1.5">
-            <Label htmlFor="gender">
-              {t('label_gender')}
-              <span aria-hidden="true"> *</span>
-            </Label>
-            <select
-              id="gender"
-              aria-label={t('label_gender')}
-              className="flex h-9 w-full rounded-md border border-border bg-bg-elevated px-3 py-1 text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-coral"
-              value={values.gender}
-              onChange={(event) => setFieldValue('gender', event.target.value)}
-              onBlur={() => validateField('gender')}
-              aria-invalid={fieldErrors.gender ? 'true' : undefined}
-              aria-describedby={fieldErrors.gender ? 'gender-error' : undefined}
-            >
-              <option value="">{t('label_gender_select')}</option>
-              {genderOptions.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
-            {fieldErrors.gender && (
-              <p id="gender-error" role="alert" className="text-sm text-red-500">
-                {fieldErrors.gender}
-              </p>
-            )}
-          </div>
-          {field(
+          {selectField(
+            'gender',
+            t('label_gender'),
+            values,
+            setFieldValue,
+            fieldErrors,
+            t('label_gender_select'),
+            genderOptions,
+            'required',
+          )}
+          {selectField(
             'age',
             t('label_age'),
             values,
             setFieldValue,
-            validateField,
             fieldErrors,
-            'number',
+            t('label_gender_select'),
+            AGE_OPTIONS.map((age) => ({ value: age, label: age })),
             'required',
           )}
           <div className="space-y-1.5">
@@ -337,11 +391,10 @@ export function ProfileForm({
             <Input id="email" value={user.email} disabled readOnly />
           </div>
         </div>
-      </section>
+      </FormSection>
 
-      <section className="space-y-4">
-        <h2 className="text-lg font-semibold">{t('section_contact')}</h2>
-        <div className="grid gap-4 md:grid-cols-2">
+      <FormSection icon={<Phone className="h-4 w-4" />} title={t('section_contact')}>
+        <div className="grid gap-5 md:grid-cols-2">
           {field(
             'phone_number',
             t('label_phone'),
@@ -383,11 +436,10 @@ export function ProfileForm({
             'optional',
           )}
         </div>
-      </section>
+      </FormSection>
 
-      <section className="space-y-4">
-        <h2 className="text-lg font-semibold">{t('section_additional')}</h2>
-        <div className="grid gap-4 md:grid-cols-2">
+      <FormSection icon={<FileText className="h-4 w-4" />} title={t('section_additional')}>
+        <div className="grid gap-5 md:grid-cols-2">
           {field(
             'club',
             t('label_club'),
@@ -429,7 +481,7 @@ export function ProfileForm({
             'optional',
           )}
         </div>
-      </section>
+      </FormSection>
 
       {submitError && (
         <p role="alert" className="text-sm text-red-500">
