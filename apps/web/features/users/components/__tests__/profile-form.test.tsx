@@ -56,7 +56,8 @@ describe('ProfileForm', () => {
 
     render(<ProfileForm user={user} onSubmit={onSubmit} />);
 
-    await actor.selectOptions(screen.getByRole('combobox', { name: 'Genero' }), 'male');
+    await actor.click(screen.getByRole('combobox', { name: 'Genero' }));
+    await actor.click(await screen.findByRole('option', { name: 'Masculino' }));
     await actor.click(screen.getByRole('button', { name: 'Guardar perfil' }));
 
     await waitFor(() => expect(onSubmit).toHaveBeenCalledWith({ gender: 'male' }));
@@ -118,7 +119,6 @@ describe('ProfileForm', () => {
     fireEvent.change(screen.getByLabelText('Informacion adicional'), {
       target: { value: 'a'.repeat(501) },
     });
-    fireEvent.change(screen.getByLabelText('Edad'), { target: { value: '13' } });
 
     await actor.click(screen.getByRole('button', { name: 'Guardar perfil' }));
 
@@ -126,7 +126,7 @@ describe('ProfileForm', () => {
     expect(screen.getByText('Los apellidos son obligatorios')).toBeVisible();
     expect(screen.getByText('El DNI es obligatorio')).toBeVisible();
     expect(screen.getByText('Selecciona un genero')).toBeVisible();
-    expect(screen.getByText('La edad debe estar entre 14 y 120')).toBeVisible();
+    expect(screen.getByText('La edad es obligatoria')).toBeVisible();
     expect(screen.getByText('El telefono no puede superar 32 caracteres')).toBeVisible();
     expect(screen.getByText('El codigo postal no puede superar 20 caracteres')).toBeVisible();
     expect(screen.getByText('La direccion no puede superar 255 caracteres')).toBeVisible();
