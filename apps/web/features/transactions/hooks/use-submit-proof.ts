@@ -2,7 +2,6 @@
 import { useApi } from '@/lib/api-client';
 import type { ProofUploadUrlResponse } from '@dorsal/schemas';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { transactionKeys } from './keys';
 
 async function uploadToPresignedUrl(
   file: File,
@@ -37,7 +36,10 @@ export function useSubmitProof(id: string) {
       });
     },
     onSuccess: () => {
-      void qc.invalidateQueries({ queryKey: transactionKeys.seller(id) });
+      void qc.invalidateQueries({ queryKey: ['transactions', 'buyer'] });
+      void qc.invalidateQueries({ queryKey: ['transactions', 'seller'] });
+      void qc.invalidateQueries({ queryKey: ['transactions', 'purchases'] });
+      void qc.invalidateQueries({ queryKey: ['transactions', 'sales'] });
     },
   });
 }

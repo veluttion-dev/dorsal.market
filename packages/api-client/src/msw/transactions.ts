@@ -186,7 +186,7 @@ export const transactionsHandlers = [
       distance: '10k',
       location: 'Madrid',
       bib_number: null,
-      payment_method: 'card',
+      payment_method: 'stripe',
       proof_file_url: null,
       estimated_time: body.runner_data?.estimated_time ?? null,
       t_shirt_size: body.runner_data?.t_shirt_size ?? null,
@@ -250,12 +250,19 @@ export const transactionsHandlers = [
       event('transfer_in_progress', 'Transfer in progress'),
     );
     if (!updated) return HttpResponse.json({ detail: 'not found' }, { status: 404 });
-    return HttpResponse.json(toSellerDetail(updated));
+    return HttpResponse.json({ processed: true });
   }),
 
   http.post(`${BASE}/api/v1/transactions/:id/upload-proof`, ({ params }) => {
     const proofFileUrl = `https://example.com/proofs/${params.id}.pdf`;
-    return HttpResponse.json({ proof_file_url: proofFileUrl }, { status: 201 });
+    const updated = updateTransaction(
+      params.id as string,
+      'TRANSFER_SUBMITTED',
+      event('validation_pending', 'Seller proof submitted'),
+      proofFileUrl,
+    );
+    if (!updated) return HttpResponse.json({ detail: 'not found' }, { status: 404 });
+    return HttpResponse.json({ processed: true });
   }),
 
   http.post(`${BASE}/api/v1/transactions/:id/proof`, async ({ params, request }) => {
@@ -267,7 +274,7 @@ export const transactionsHandlers = [
       body.proof_file_url,
     );
     if (!updated) return HttpResponse.json({ detail: 'not found' }, { status: 404 });
-    return HttpResponse.json(toSellerDetail(updated));
+    return HttpResponse.json({ processed: true });
   }),
 
   http.post(`${BASE}/api/v1/transactions/:id/confirm`, ({ params }) => {
@@ -277,7 +284,7 @@ export const transactionsHandlers = [
       event('completed', 'Funds released to seller'),
     );
     if (!updated) return HttpResponse.json({ detail: 'not found' }, { status: 404 });
-    return HttpResponse.json(toBuyerDetail(updated));
+    return HttpResponse.json({ processed: true });
   }),
 
   http.post(`${BASE}/api/v1/transactions/:id/dispute`, async ({ params, request }) => {

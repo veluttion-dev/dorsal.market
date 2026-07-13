@@ -16,7 +16,21 @@ export function MswBootstrap() {
     const mocked = deriveMockedModules(real).filter(
       (m): m is Exclude<ApiModule, 'dorsals'> => m !== 'dorsals',
     );
-    if (mocked.length === 0) return;
+    if (mocked.length === 0) {
+      navigator.serviceWorker
+        .getRegistrations()
+        .then((registrations) =>
+          Promise.all(
+            registrations
+              .filter((registration) =>
+                registration.active?.scriptURL.endsWith('/mockServiceWorker.js'),
+              )
+              .map((registration) => registration.unregister()),
+          ),
+        )
+        .catch(() => undefined);
+      return;
+    }
     startMswBrowser(mocked, () => import('msw/browser')).catch(() => {
       // Worker failed to start — dev requests fall through to the network.
     });

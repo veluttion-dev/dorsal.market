@@ -1,4 +1,4 @@
-import { ApiError, NetworkError } from '@dorsal/api-client';
+import { ApiError, ForbiddenError, NetworkError } from '@dorsal/api-client';
 
 function detailToMessage(detail: unknown): string | null {
   if (typeof detail === 'string') return detail;
@@ -29,4 +29,11 @@ export function isDorsalUnavailableError(error: unknown) {
     detail.includes('reserved') ||
     detail.includes('reservado')
   );
+}
+
+export function isSellerOnboardingRequiredError(error: unknown) {
+  if (!(error instanceof ForbiddenError)) return false;
+
+  const detail = detailToMessage(error.detail)?.toLowerCase() ?? '';
+  return detail.includes('onboarding') || detail.includes('connect') || detail.includes('seller');
 }

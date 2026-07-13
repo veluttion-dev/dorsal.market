@@ -32,15 +32,15 @@ export interface TransactionsPort {
     id: string,
     input: { sellerId: string; contentType: string },
   ): Promise<ProofUploadUrlResponse>;
-  uploadProofMultipart(id: string, file: File): Promise<{ proof_file_url: string }>;
+  uploadProofMultipart(id: string, file: File): Promise<{ processed: boolean }>;
   submitProofUrl(
     id: string,
     input: { proofFileUrl: string; sellerId: string },
-  ): Promise<SellerTransactionDetail>;
+  ): Promise<{ processed: boolean }>;
 
-  markTransferInProgress(id: string, sellerId: string): Promise<SellerTransactionDetail>;
+  markTransferInProgress(id: string, sellerId: string): Promise<{ processed: boolean }>;
 
-  confirmTransfer(id: string, buyerId: string): Promise<BuyerTransactionDetail>;
+  confirmTransfer(id: string, buyerId: string): Promise<{ processed: boolean }>;
   openDispute(id: string, input: { buyerId: string; reason: string }): Promise<Dispute>;
 
   createSellerProblemReport(input: {

@@ -2,6 +2,7 @@ import type { NextConfig } from 'next';
 import createNextIntlPlugin from 'next-intl/plugin';
 
 const withNextIntl = createNextIntlPlugin('./i18n/request.ts');
+const backendApiUrl = (process.env.BACKEND_API_URL ?? 'http://localhost:8000').replace(/\/$/, '');
 
 const config: NextConfig = {
   reactStrictMode: true,
@@ -25,6 +26,14 @@ const config: NextConfig = {
           { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
           { key: 'Permissions-Policy', value: 'camera=(), microphone=(), geolocation=()' },
         ],
+      },
+    ];
+  },
+  async rewrites() {
+    return [
+      {
+        source: '/backend-api/:path*',
+        destination: `${backendApiUrl}/:path*`,
       },
     ];
   },

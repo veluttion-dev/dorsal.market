@@ -1,8 +1,8 @@
 export const transactionKeys = {
-  buyer: (id: string) => ['transactions', 'buyer', id] as const,
-  seller: (id: string) => ['transactions', 'seller', id] as const,
-  purchases: (query?: { status?: string; limit?: number; offset?: number }) =>
-    ['transactions', 'purchases', query ?? {}] as const,
-  sales: (query?: { status?: string; limit?: number; offset?: number }) =>
-    ['transactions', 'sales', query ?? {}] as const,
+  buyer: (userId: string, id: string) => ['transactions', 'buyer', userId, id] as const,
+  seller: (userId: string, id: string) => ['transactions', 'seller', userId, id] as const,
+  purchases: (userId: string, query?: { status?: string; limit?: number; offset?: number }) =>
+    ['transactions', 'purchases', userId, query ?? {}] as const,
+  sales: (userId: string, query?: { status?: string; limit?: number; offset?: number }) =>
+    ['transactions', 'sales', userId, query ?? {}] as const,
 };

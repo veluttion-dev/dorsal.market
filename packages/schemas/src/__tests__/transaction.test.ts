@@ -34,6 +34,32 @@ describe('ReserveListingResponse', () => {
 });
 
 describe('BuyerTransactionDetail', () => {
+  it('derives optional lifecycle and whatsapp fields from the real backend detail', () => {
+    const parsed = BuyerTransactionDetail.parse({
+      transaction_id: '11111111-1111-4111-8111-111111111111',
+      status: 'PAYMENT_RECEIVED',
+      seller_contact: {
+        seller_id: '33333333-3333-4333-8333-333333333333',
+        full_name: 'Seller Demo',
+        phone_number: null,
+        email: null,
+      },
+      order_summary: {
+        dorsal_id: '55555555-5555-4555-8555-555555555555',
+        race_name: 'Madrid',
+        bib_number: null,
+        amount_eur: '45.00',
+      },
+      buyer_data_checklist: [],
+      timeline: [{ key: 'payment_held', label: 'Payment held', completed_at: null }],
+      seller_deadline_at: null,
+      buyer_deadline_at: null,
+    });
+
+    expect(parsed.lifecycle_state).toBe('PAYMENT_RECEIVED');
+    expect(parsed.seller_contact.whatsapp_number).toBeNull();
+  });
+
   it('parses the current backend detail shape', () => {
     const sample = {
       transaction_id: '11111111-1111-4111-8111-111111111111',
@@ -101,7 +127,7 @@ describe('TransactionListResponse', () => {
           race_date: '2026-12-31',
           distance: '10k',
           location: 'Madrid',
-          payment_method: 'card',
+          payment_method: 'stripe',
           price: '45.00',
           technical_status: 'PAYMENT_RECEIVED',
           ui_status: 'DATA_RELEASED',

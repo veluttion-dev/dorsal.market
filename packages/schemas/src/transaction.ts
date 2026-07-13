@@ -60,7 +60,7 @@ export type TimelineStep = z.infer<typeof TimelineStep>;
 const Contact = z.object({
   full_name: z.string().nullable(),
   phone_number: z.string().nullable(),
-  whatsapp_number: z.string().nullable(),
+  whatsapp_number: z.string().nullable().default(null),
   email: z.string().nullable(),
 });
 
@@ -98,7 +98,7 @@ export type OrderSummary = z.infer<typeof OrderSummary>;
 const BackendDetailBase = z.object({
   transaction_id: Uuid,
   status: TransactionStatus,
-  lifecycle_state: z.string(),
+  lifecycle_state: z.string().optional(),
   order_summary: OrderSummary,
   timeline: z.array(z.union([TimelineEvent, BackendTimelineEvent])),
   seller_deadline_at: IsoDateTime.nullable(),
@@ -108,13 +108,19 @@ const BackendDetailBase = z.object({
 export const BuyerTransactionDetail = BackendDetailBase.extend({
   seller_contact: SellerContact,
   buyer_data_checklist: z.array(z.record(z.unknown())),
-});
+}).transform((value) => ({
+  ...value,
+  lifecycle_state: value.lifecycle_state ?? value.status,
+}));
 export type BuyerTransactionDetail = z.infer<typeof BuyerTransactionDetail>;
 
 export const SellerTransactionDetail = BackendDetailBase.extend({
   buyer_contact: BuyerContact,
   buyer_profile: BuyerTransferProfile.nullable(),
-});
+}).transform((value) => ({
+  ...value,
+  lifecycle_state: value.lifecycle_state ?? value.status,
+}));
 export type SellerTransactionDetail = z.infer<typeof SellerTransactionDetail>;
 
 export const Transaction = z.union([BuyerTransactionDetail, SellerTransactionDetail]);

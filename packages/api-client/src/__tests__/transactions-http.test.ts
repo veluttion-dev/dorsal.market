@@ -31,7 +31,6 @@ describe('TransactionsHttpAdapter', () => {
     expect(post).toHaveBeenCalledWith('api/v1/transactions', {
       body: {
         dorsal_id: '55555555-5555-4555-8555-555555555555',
-        buyer_id: '22222222-2222-4222-8222-222222222222',
       },
     });
     expect(result.payment_client_secret).toBe('pi_secret_x');
@@ -87,6 +86,22 @@ describe('TransactionsHttpAdapter', () => {
     expect(result.order_summary.race_name).toBe('Madrid');
   });
 
+  it('confirms transfer and parses the backend action response', async () => {
+    const post = vi.fn(async () => ({ processed: true }));
+    const adapter = new TransactionsHttpAdapter(createHttpStub({ post }));
+
+    const result = await adapter.confirmTransfer(
+      '11111111-1111-4111-8111-111111111111',
+      '22222222-2222-4222-8222-222222222222',
+    );
+
+    expect(post).toHaveBeenCalledWith(
+      'api/v1/transactions/11111111-1111-4111-8111-111111111111/confirm',
+      { body: { buyer_id: '22222222-2222-4222-8222-222222222222' } },
+    );
+    expect(result.processed).toBe(true);
+  });
+
   it('passes query params through history endpoints', async () => {
     const get = vi.fn(async (_path: string, _opts?: HttpRequest) => ({
       items: [],
@@ -120,7 +135,6 @@ describe('TransactionsHttpAdapter', () => {
     expect(post).toHaveBeenCalledWith('api/v1/transactions', {
       body: {
         dorsal_id: '55555555-5555-4555-8555-555555555555',
-        buyer_id: '22222222-2222-4222-8222-222222222222',
       },
     });
   });
@@ -145,7 +159,6 @@ describe('TransactionsHttpAdapter', () => {
     expect(post).toHaveBeenCalledWith('api/v1/transactions', {
       body: {
         dorsal_id: '55555555-5555-4555-8555-555555555555',
-        buyer_id: '22222222-2222-4222-8222-222222222222',
         runner_data: {
           estimated_time: '01:45:00',
           emergency_contact: 'Ana +34600000000',

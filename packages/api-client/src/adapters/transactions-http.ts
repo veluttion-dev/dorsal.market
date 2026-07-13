@@ -14,9 +14,9 @@ import { z } from 'zod';
 import type { HttpClient } from '../http';
 import type { TransactionsPort } from '../ports';
 
-const ProofUploadMultipartResponse = z.object({ proof_file_url: z.string().url() });
 const ExpireReservationResponse = z.object({ processed: z.boolean() });
 const UpdateCheckoutRunnerDataResponse = z.object({ processed: z.boolean() });
+const TransactionActionResponse = z.object({ processed: z.boolean() });
 
 function normalizeUtcDateTime(value: string) {
   return /(?:Z|[+-]\d{2}:\d{2})$/i.test(value) ? value : `${value}Z`;
@@ -36,7 +36,6 @@ export class TransactionsHttpAdapter implements TransactionsPort {
       await this.http.post('api/v1/transactions', {
         body: {
           dorsal_id: input.dorsalId,
-          buyer_id: input.buyerId,
           ...(input.runnerData ? { runner_data: input.runnerData } : {}),
         },
       }),
@@ -80,13 +79,13 @@ export class TransactionsHttpAdapter implements TransactionsPort {
   async uploadProofMultipart(id: string, file: File) {
     const fd = new FormData();
     fd.append('file', file);
-    return ProofUploadMultipartResponse.parse(
+    return TransactionActionResponse.parse(
       await this.http.post(`api/v1/transactions/${id}/upload-proof`, { body: fd }),
     );
   }
 
   async submitProofUrl(id: string, input: { proofFileUrl: string; sellerId: string }) {
-    return SellerTransactionDetail.parse(
+    return TransactionActionResponse.parse(
       await this.http.post(`api/v1/transactions/${id}/proof`, {
         body: { proof_file_url: input.proofFileUrl, seller_id: input.sellerId },
       }),
@@ -94,7 +93,7 @@ export class TransactionsHttpAdapter implements TransactionsPort {
   }
 
   async markTransferInProgress(id: string, sellerId: string) {
-    return SellerTransactionDetail.parse(
+    return TransactionActionResponse.parse(
       await this.http.post(`api/v1/transactions/${id}/transfer-in-progress`, {
         body: { seller_id: sellerId },
       }),
@@ -102,7 +101,7 @@ export class TransactionsHttpAdapter implements TransactionsPort {
   }
 
   async confirmTransfer(id: string, buyerId: string) {
-    return BuyerTransactionDetail.parse(
+    return TransactionActionResponse.parse(
       await this.http.post(`api/v1/transactions/${id}/confirm`, { body: { buyer_id: buyerId } }),
     );
   }
