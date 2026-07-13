@@ -12,7 +12,11 @@ import {
   loadPublishDraft,
   savePublishDraft,
 } from '@/features/dorsals/lib/publish-draft-storage';
-import { Distance, PaymentMethod, PublishDorsalInput, ShirtSize } from '@dorsal/schemas';
+import {
+  getTransactionErrorMessage,
+  isSellerOnboardingRequiredError,
+} from '@/features/transactions/lib/errors';
+import { Distance, PublishDorsalInput, ShirtSize } from '@dorsal/schemas';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Camera, CreditCard, MapPin, Phone, Trophy } from 'lucide-react';
 import { useTranslations } from 'next-intl';
@@ -26,7 +30,6 @@ type FormInput = z.input<typeof PublishDorsalInput>;
 type FormValues = z.output<typeof PublishDorsalInput>;
 
 const distances: Distance[] = [...Distance.options];
-const payments: PaymentMethod[] = [...PaymentMethod.options];
 const shirtSizes: ShirtSize[] = [...ShirtSize.options];
 const itemKeys = ['chip', 'shirt', 'bag', 'medal', 'refreshments'] as const;
 
@@ -54,7 +57,6 @@ export function PublishWizard({ draftOwnerId }: { draftOwnerId?: string | null }
         requires_emergency_contact: false,
         fixed_shirt_size: null,
       },
-      payment_methods: [],
       contact: { phone: '', email: '', phone_visible: true, email_visible: true },
       ...persistedDraft,
     },
@@ -75,7 +77,18 @@ export function PublishWizard({ draftOwnerId }: { draftOwnerId?: string | null }
         toast.success(publishMode ? t('toast_published') : t('toast_draft'));
         router.push(`/dorsales/${dorsal_id}`);
       },
-      onError: (e) => toast.error(e.message ?? t('toast_error')),
+      onError: (e) => {
+        if (isSellerOnboardingRequiredError(e)) {
+          toast.error(t('onboarding_required_error'), {
+            action: {
+              label: t('onboarding_required_action'),
+              onClick: () => router.push('/vender/onboarding'),
+            },
+          });
+          return;
+        }
+        toast.error(getTransactionErrorMessage(e));
+      },
     });
   }
 
@@ -95,12 +108,6 @@ export function PublishWizard({ draftOwnerId }: { draftOwnerId?: string | null }
     bag: t('item_bag'),
     medal: t('item_medal'),
     refreshments: t('item_refreshments'),
-  };
-
-  const paymentLabels: Record<PaymentMethod, string> = {
-    bizum: t('pay_bizum'),
-    paypal: t('pay_paypal'),
-    card: t('pay_card'),
   };
 
   return (
@@ -312,32 +319,8 @@ export function PublishWizard({ draftOwnerId }: { draftOwnerId?: string | null }
             />
             <FieldError message={form.formState.errors.price_amount?.message} />
           </div>
-          <div className="space-y-1.5">
-            <Label>{t('label_payment_methods')}</Label>
-            <div className="flex flex-wrap gap-2">
-              {payments.map((p) => (
-                <label
-                  key={p}
-                  htmlFor={`pay-${p}`}
-                  className="flex items-center gap-1.5 rounded-full border border-border bg-bg-elevated px-3 py-1 text-sm"
-                >
-                  <Checkbox
-                    id={`pay-${p}`}
-                    checked={form.watch('payment_methods')?.includes(p) ?? false}
-                    onCheckedChange={(c) => {
-                      const current = form.getValues('payment_methods') ?? [];
-                      form.setValue(
-                        'payment_methods',
-                        c === true ? [...current, p] : current.filter((x) => x !== p),
-                        { shouldValidate: true },
-                      );
-                    }}
-                  />
-                  {paymentLabels[p]}
-                </label>
-              ))}
-            </div>
-            <FieldError message={form.formState.errors.payment_methods?.message} />
+          <div className="rounded-md border border-border bg-bg-elevated px-3 py-2 text-sm text-text-secondary">
+            {t('stripe_connect_notice')}
           </div>
         </div>
       </FormSection>

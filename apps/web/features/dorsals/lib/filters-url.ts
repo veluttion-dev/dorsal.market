@@ -1,6 +1,5 @@
 import {
   Distance,
-  type PaymentMethod,
   SearchDorsalsQuery,
   type SearchDorsalsQuery as SearchDorsalsQueryType,
 } from '@dorsal/schemas';
@@ -9,7 +8,6 @@ const SINGLE_KEYS = [
   'race_name',
   'price_min',
   'price_max',
-  'payment_method',
   'location',
   'date_from',
   'date_to',
@@ -28,7 +26,6 @@ export interface DorsalQueryState {
   distance?: Distance[] | null;
   price_min?: number | null;
   price_max?: number | null;
-  payment_method?: PaymentMethod | null;
   date_from?: string | null;
   date_to?: string | null;
   sort_by?: SortBy | null;
@@ -66,7 +63,6 @@ export function filtersFromQueryState(q: DorsalQueryState): SearchDorsalsQueryTy
     distance: q.distance ?? undefined,
     price_min: q.price_min ?? undefined,
     price_max: q.price_max ?? undefined,
-    payment_method: q.payment_method ?? undefined,
     date_from: q.date_from ?? undefined,
     date_to: q.date_to ?? undefined,
     sort_by: q.sort_by ?? undefined,

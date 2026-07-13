@@ -1,6 +1,5 @@
 'use client';
 import { IncludedItemsList } from '@/components/dorsal/included-items-list';
-import { PaymentMethodPills } from '@/components/dorsal/payment-method-pills';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -479,10 +478,6 @@ export function CheckoutForm({
             <IncludedItemsList items={dorsal.included_items} />
           </section>
           <section className="space-y-4">
-            <div>
-              <h3 className="mb-2 text-sm font-semibold text-text-secondary">Metodos de pago</h3>
-              <PaymentMethodPills methods={dorsal.payment_methods} />
-            </div>
             {(dorsal.contact_phone || dorsal.contact_email) && (
               <div>
                 <h3 className="mb-2 text-sm font-semibold text-text-secondary">
@@ -617,7 +612,7 @@ export function CheckoutForm({
       )}
 
       <section className="rounded-lg border border-border bg-bg-card p-5">
-        <h2 className="font-semibold">Pago</h2>
+        <h2 className="font-semibold">Pago seguro con Stripe</h2>
         {stripeConfigured ? (
           <p className="mt-1 text-sm text-text-secondary">
             Tu reserva se activa al entrar en esta pantalla. Completa los datos pendientes y paga
@@ -625,8 +620,8 @@ export function CheckoutForm({
           </p>
         ) : (
           <p className="mt-1 text-sm text-text-secondary">
-            Stripe no esta configurado en local. El dorsal queda reservado con contador y podras
-            usar el pago simulado. Configura NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY para mostrar el
+            Stripe no esta configurado en local. Esta opcion solo sirve para desarrollo con
+            Transaction mockeado. Configura NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY para mostrar el
             formulario real de pago.
           </p>
         )}
@@ -656,8 +651,17 @@ export function CheckoutForm({
           disabled={reserve.isPending || me.isLoading}
           onClick={createReservation}
         >
-          <Loader2 className="animate-spin" />
-          Preparando reserva
+          {reserve.isPending || me.isLoading ? (
+            <>
+              <Loader2 className="animate-spin" />
+              Preparando reserva
+            </>
+          ) : (
+            <>
+              <CreditCard />
+              Reintentar reserva
+            </>
+          )}
         </Button>
       ) : !stripeConfigured ? (
         <Button

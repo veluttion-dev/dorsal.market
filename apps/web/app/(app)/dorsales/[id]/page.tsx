@@ -1,7 +1,6 @@
 import { BuyButton } from '@/components/dorsal/buy-button.client';
 import { STATUS_BADGE } from '@/components/dorsal/dorsal-card';
 import { IncludedItemsList } from '@/components/dorsal/included-items-list';
-import { PaymentMethodPills } from '@/components/dorsal/payment-method-pills';
 import { SellerCardSkeleton, SellerSection } from '@/components/dorsal/seller-section';
 import { distanceLabel } from '@/features/dorsals/lib/distances';
 import { getDorsalDetail } from '@/features/dorsals/server/get-detail';
@@ -87,9 +86,6 @@ export default async function DorsalDetailPage({ params }: { params: Promise<Par
           <div className="rounded-lg border border-border bg-bg-card p-5">
             <p className="text-sm text-text-secondary">{t('price')}</p>
             <p className="text-3xl font-bold">{formatPrice(d.price_amount)}</p>
-            <div className="mt-3">
-              <PaymentMethodPills methods={d.payment_methods} />
-            </div>
             <BuyButton dorsalId={d.id} sellerId={d.seller_id} status={d.status} />
             <p className="mt-2 text-center text-xs text-text-muted">{t('payment_escrow')}</p>
           </div>

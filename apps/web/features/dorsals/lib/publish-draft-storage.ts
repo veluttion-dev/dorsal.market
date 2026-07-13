@@ -18,7 +18,9 @@ export function loadPublishDraft(ownerId?: string | null): PublishDraft | null {
   const raw = window.localStorage.getItem(key);
   if (!raw) return null;
   try {
-    return JSON.parse(raw) as PublishDraft;
+    const parsed = JSON.parse(raw) as Record<string, unknown>;
+    const { payment_methods: _paymentMethods, ...draftWithoutPaymentMethods } = parsed;
+    return draftWithoutPaymentMethods as PublishDraft;
   } catch {
     window.localStorage.removeItem(key);
     return null;

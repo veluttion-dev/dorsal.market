@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { FILTER_PARSERS } from '@/features/dorsals/lib/filter-parsers.client';
-import type { Distance, PaymentMethod } from '@dorsal/schemas';
+import type { Distance } from '@dorsal/schemas';
 import { useTranslations } from 'next-intl';
 import { useQueryStates } from 'nuqs';
 import { DistanceChips } from './distance-chips.client';
@@ -63,26 +63,6 @@ export function DorsalFilters() {
           onChange={(e) => void setQ({ location: e.target.value || null, page: null })}
           placeholder={t('location_placeholder')}
         />
-      </div>
-
-      <div className="space-y-2">
-        <Label htmlFor="payment_method">{t('payment_label')}</Label>
-        <select
-          id="payment_method"
-          value={q.payment_method ?? ''}
-          onChange={(e) =>
-            void setQ({
-              payment_method: (e.target.value || null) as PaymentMethod | null,
-              page: null,
-            })
-          }
-          className="w-full rounded-md border border-border bg-bg-elevated px-3 py-2 text-sm"
-        >
-          <option value="">{t('payment_any')}</option>
-          <option value="bizum">{t('bizum')}</option>
-          <option value="paypal">{t('paypal')}</option>
-          <option value="card">{t('card')}</option>
-        </select>
       </div>
     </aside>
   );

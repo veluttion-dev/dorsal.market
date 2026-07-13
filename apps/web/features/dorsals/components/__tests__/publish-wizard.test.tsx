@@ -1,5 +1,7 @@
+import { ForbiddenError } from '@dorsal/api-client';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { toast } from 'sonner';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { PUBLISH_DRAFT_STORAGE_KEY } from '../../lib/publish-draft-storage';
 import { PublishWizard } from '../publish-wizard.client';
@@ -39,7 +41,6 @@ async function fillPublishForm() {
   await user.type(screen.getByLabelText(/Ubicacion|Ubicación/), 'Madrid');
   await user.selectOptions(screen.getByLabelText('Distancia'), '10k');
   await user.type(screen.getByLabelText(/Precio/), '40');
-  await user.click(screen.getByText('Bizum'));
   await user.type(screen.getByLabelText(/Telefono|Teléfono/), '600000000');
 }
 
@@ -58,8 +59,13 @@ describe('PublishWizard', () => {
     await user.click(screen.getByRole('button', { name: 'Publicar dorsal' }));
 
     expect(await screen.findByText('Introduce el nombre de la carrera')).toBeInTheDocument();
-    expect(screen.getByText('Selecciona al menos un metodo de pago')).toBeInTheDocument();
     expect(mocks.mutate).not.toHaveBeenCalled();
+  });
+
+  it('does not render seller-selected payment method controls', () => {
+    render(<PublishWizard />);
+
+    expect(screen.getByText(/comprador pagara con stripe/i)).toBeInTheDocument();
   });
 
   it('shows required publish field errors after touching fields without submitting', async () => {
@@ -147,5 +153,29 @@ describe('PublishWizard', () => {
     await user.selectOptions(screen.getByLabelText('Talla incluida'), 'M');
 
     expect(screen.getByRole('checkbox', { name: 'Solicitar talla al comprador' })).toBeDisabled();
+  });
+
+  it('guides the seller to configure payouts when publish is forbidden by onboarding', async () => {
+    const user = userEvent.setup();
+    mocks.mutate.mockImplementation((_payload, options) => {
+      options.onError(
+        new ForbiddenError({
+          detail: 'Seller must complete onboarding before publishing a dorsal.',
+        }),
+      );
+    });
+    render(<PublishWizard />);
+
+    await fillPublishForm();
+    await user.click(screen.getByRole('button', { name: 'Publicar dorsal' }));
+
+    await waitFor(() =>
+      expect(toast.error).toHaveBeenCalledWith(
+        expect.stringMatching(/configura tus cobros/i),
+        expect.objectContaining({
+          action: expect.objectContaining({ label: 'Configurar cobros' }),
+        }),
+      ),
+    );
   });
 });

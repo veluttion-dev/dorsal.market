@@ -90,7 +90,6 @@ function makeDorsal(overrides: Partial<DorsalDetail> = {}): DorsalDetail {
       fixed_shirt_size: null,
     },
     price_amount: 35,
-    payment_methods: ['bizum', 'paypal'],
     contact_phone: '612345678',
     contact_email: 'ana.runner@example.com',
     sale_reason: 'Lesion muscular, no puedo correr',
@@ -197,6 +196,7 @@ describe('CheckoutForm', () => {
   it('explains when Stripe is not configured locally', () => {
     render(<CheckoutForm dorsal={makeDorsal({ race_name: 'Madrid' })} />);
 
+    expect(screen.getByText(/pago seguro con stripe/i)).toBeVisible();
     expect(screen.getByText(/stripe no esta configurado/i)).toBeVisible();
     expect(screen.getByText(/NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY/i)).toBeVisible();
   });
@@ -328,8 +328,7 @@ describe('CheckoutForm', () => {
     expect(screen.getByText('Lesion muscular, no puedo correr')).toBeVisible();
     expect(screen.getByText('612345678')).toBeVisible();
     expect(screen.getByText('ana.runner@example.com')).toBeVisible();
-    expect(screen.getByText('Bizum')).toBeVisible();
-    expect(screen.getByText('PayPal')).toBeVisible();
+    expect(screen.getByText(/pago seguro con stripe/i)).toBeVisible();
     expect(screen.getByText('Camiseta')).toBeVisible();
     expect(screen.getByLabelText('Tiempo estimado')).toBeVisible();
     expect(screen.getByLabelText('Talla')).toBeVisible();

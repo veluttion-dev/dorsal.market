@@ -10,13 +10,12 @@ const sample: DorsalSummary = {
   location: 'Madrid',
   distance: '10k',
   price_amount: 45,
-  payment_methods: ['bizum', 'paypal'],
   photo_url: 'https://example.com/p.jpg',
   status: 'published',
 };
 
 describe('DorsalCard', () => {
-  it('renders race info, distance badge, formatted price and payment methods', () => {
+  it('renders race info, distance badge, formatted price and escrow label', () => {
     render(<DorsalCard dorsal={sample} />);
     expect(screen.getByText('San Silvestre Madrid')).toBeInTheDocument();
     // Date + location line (race_name also contains "Madrid", so match the full line).
@@ -24,8 +23,7 @@ describe('DorsalCard', () => {
     expect(screen.getByText('10K')).toBeInTheDocument();
     // formatPrice uses a narrow no-break space before the symbol — match loosely.
     expect(screen.getByText(/45\s*€/)).toBeInTheDocument();
-    expect(screen.getByText('Bizum')).toBeInTheDocument();
-    expect(screen.getByText('PayPal')).toBeInTheDocument();
+    expect(screen.getByText('Pago en custodia')).toBeInTheDocument();
   });
 
   it('links to detail page', () => {

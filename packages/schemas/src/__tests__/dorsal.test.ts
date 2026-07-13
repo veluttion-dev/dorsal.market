@@ -3,7 +3,6 @@ import {
   Distance,
   DorsalDetail,
   DorsalListResponse,
-  PaymentMethod,
   PublishDorsalInput,
   SearchDorsalsQuery,
 } from '../dorsal';
@@ -19,12 +18,6 @@ describe('Distance enum', () => {
   it('rejects unknown distances', () => {
     expect(() => Distance.parse('marathon')).toThrow();
     expect(() => Distance.parse('20k')).toThrow();
-  });
-});
-
-describe('PaymentMethod enum', () => {
-  it('rejects cash', () => {
-    expect(() => PaymentMethod.parse('cash')).toThrow();
   });
 });
 
@@ -48,7 +41,6 @@ describe('DorsalDetail', () => {
         fixed_shirt_size: 'M',
       },
       price_amount: 45,
-      payment_methods: ['bizum', 'paypal'],
       contact_phone: '612345678',
       contact_email: 'seller@example.com',
       sale_reason: 'I broke my ankle',
@@ -74,7 +66,6 @@ describe('DorsalDetail', () => {
       start_corral: null,
       included_items: { chip: false, shirt: false, bag: false, medal: false, refreshments: false },
       price_amount: '45.00',
-      payment_methods: ['bizum'],
       contact_phone: null,
       contact_email: null,
       sale_reason: null,
@@ -98,7 +89,6 @@ describe('DorsalDetail', () => {
       start_corral: null,
       included_items: { chip: true, shirt: true, bag: true, medal: false, refreshments: true },
       price_amount: '35.00',
-      payment_methods: ['bizum', 'card'],
       contact_phone: null,
       contact_email: 'seller@example.com',
       sale_reason: 'No puedo viajar ese fin de semana.',
@@ -128,7 +118,6 @@ describe('DorsalListResponse', () => {
           location: 'Madrid',
           distance: '10k',
           price_amount: '45.00',
-          payment_methods: ['bizum', 'paypal'],
         },
       ],
       total: 1,
@@ -162,7 +151,6 @@ describe('PublishDorsalInput', () => {
       start_corral: '',
       included_items: { chip: false, shirt: false, bag: false, medal: false, refreshments: false },
       price_amount: Number.NaN,
-      payment_methods: [],
       contact: { phone: '', email: '', phone_visible: true, email_visible: true },
       sale_reason: '',
     });
@@ -188,7 +176,6 @@ describe('PublishDorsalInput', () => {
       distance: '10k',
       included_items: { chip: true, shirt: false, bag: false, medal: true, refreshments: false },
       price_amount: 35,
-      payment_methods: ['bizum'],
       contact: { phone: '611111111', email: '', phone_visible: true, email_visible: false },
       sale_reason: 'Schedule conflict',
     });
@@ -210,7 +197,7 @@ describe('PublishDorsalInput', () => {
       const paths = result.error.issues.map((issue) => issue.path.join('.'));
       expect(paths).toContain('race_name');
       expect(paths).toContain('race_date');
-      expect(paths).toContain('payment_methods');
+      expect(paths).toContain('location');
     }
   });
 
@@ -231,7 +218,6 @@ describe('PublishDorsalInput', () => {
           fixed_shirt_size: 'M',
         },
         price_amount: 35,
-        payment_methods: ['card'],
         contact: { phone: '611111111', email: '', phone_visible: true, email_visible: false },
       }),
     ).toThrow(/talla fija/i);

@@ -19,9 +19,6 @@ export const Distance = z.enum([
 ]);
 export type Distance = z.infer<typeof Distance>;
 
-export const PaymentMethod = z.enum(['bizum', 'paypal', 'card']);
-export type PaymentMethod = z.infer<typeof PaymentMethod>;
-
 export const DorsalStatus = z.enum(['draft', 'published', 'sold', 'cancelled']);
 export type DorsalStatus = z.infer<typeof DorsalStatus>;
 
@@ -57,7 +54,6 @@ export const DorsalSummary = z.object({
   location: z.string(),
   distance: Distance,
   price_amount: z.coerce.number().nonnegative(),
-  payment_methods: z.array(PaymentMethod),
   photo_url: z.string().url(),
   status: DorsalStatus.default('published'),
 });
@@ -112,7 +108,6 @@ export const PublishDorsalInput = z
       fixed_shirt_size: null,
     }),
     price_amount: z.preprocess(emptyNumberToUndefined, z.coerce.number().nonnegative().optional()),
-    payment_methods: z.array(PaymentMethod).optional(),
     contact: ContactInfo.optional(),
     sale_reason: z.preprocess(emptyStringToNull, z.string().nullable().optional()),
   })
@@ -149,14 +144,6 @@ export const PublishDorsalInput = z
         ctx.addIssue({ code: z.ZodIssueCode.custom, message, path: [path] });
       }
     }
-
-    if (!v.payment_methods?.length) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: 'Selecciona al menos un metodo de pago',
-        path: ['payment_methods'],
-      });
-    }
   });
 export type PublishDorsalInput = z.infer<typeof PublishDorsalInput>;
 
@@ -171,7 +158,6 @@ export const SearchDorsalsQuery = z.object({
   distance: z.array(Distance).optional(),
   price_min: z.coerce.number().nonnegative().optional(),
   price_max: z.coerce.number().nonnegative().optional(),
-  payment_method: PaymentMethod.optional(),
   location: z.string().optional(),
   date_from: IsoDate.optional(),
   date_to: IsoDate.optional(),

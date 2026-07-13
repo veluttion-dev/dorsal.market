@@ -21,7 +21,6 @@ test('publishing a dorsal redirects to its detail page', async ({ page }) => {
   await page.fill('#location', 'Madrid');
   await page.selectOption('#distance', '10k');
   await page.fill('#price_amount', '40');
-  await page.getByText('Bizum').click();
   await page.fill('#contact_phone', '600000000');
 
   await page.getByRole('button', { name: 'Publicar dorsal' }).click();

@@ -1,5 +1,5 @@
 'use client';
-import { Distance, PaymentMethod, SearchDorsalsQuery } from '@dorsal/schemas';
+import { Distance, SearchDorsalsQuery } from '@dorsal/schemas';
 import { parseAsArrayOf, parseAsInteger, parseAsString, parseAsStringEnum } from 'nuqs';
 
 // Shared nuqs parser config for the filter URL state (one source of truth).
@@ -11,7 +11,6 @@ export const FILTER_PARSERS = {
   distance: parseAsArrayOf(parseAsStringEnum([...Distance.options])),
   price_min: parseAsInteger,
   price_max: parseAsInteger,
-  payment_method: parseAsStringEnum([...PaymentMethod.options]),
   date_from: parseAsString,
   date_to: parseAsString,
   sort_by: parseAsStringEnum([...SearchDorsalsQuery.shape.sort_by.unwrap().options]),

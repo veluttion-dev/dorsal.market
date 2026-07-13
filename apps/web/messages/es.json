@@ -54,11 +54,6 @@
     "medal": "Medalla finisher",
     "refreshments": "Avituallamientos"
   },
-  "payment_methods": {
-    "bizum": "Bizum",
-    "paypal": "PayPal",
-    "card": "Tarjeta"
-  },
   "seller_card": {
     "label": "Vendedor",
     "sales": "{count} ventas",
@@ -79,12 +74,7 @@
     "price_label": "Precio",
     "location_label": "Ubicación",
     "location_placeholder": "Ciudad",
-    "payment_label": "Método de pago",
-    "payment_any": "Cualquiera",
-    "bizum": "Bizum",
-    "paypal": "PayPal",
-    "card": "Tarjeta",
-    "mobile_description": "Filtra los dorsales por carrera, distancia, precio, ubicación y método de pago.",
+    "mobile_description": "Filtra los dorsales por carrera, distancia, precio y ubicación.",
     "see_results": "Ver resultados"
   },
   "pagination": {
@@ -122,6 +112,8 @@
     "purchases": "Compras",
     "sales": "Ventas",
     "no_items": "Sin movimientos.",
+    "loading": "Cargando historial...",
+    "load_error": "No se pudo cargar el historial.",
     "no_race_name": "Carrera sin nombre"
   },
   "tracking": {
@@ -129,6 +121,7 @@
     "role_seller": "Venta",
     "heading": "Seguimiento",
     "loading": "Cargando seguimiento...",
+    "load_error": "No se pudo cargar el seguimiento. Comprueba que la compra pertenece a tu cuenta o vuelve a iniciar sesion.",
     "no_events": "Aun no hay eventos."
   },
   "checkout": {
@@ -221,7 +214,7 @@
     "step2_badge": "Paso 2",
     "step3_title": "¿Qué incluye?",
     "step3_badge": "Paso 3",
-    "step4_title": "Precio y método de pago",
+    "step4_title": "Precio y cobro",
     "step4_badge": "Paso 4",
     "step5_title": "Contacto y motivo",
     "step5_badge": "Paso 5",
@@ -233,7 +226,7 @@
     "label_distance_placeholder": "Selecciona",
     "label_start_corral": "Cajón salida (opcional)",
     "label_price": "Precio (€)",
-    "label_payment_methods": "Métodos de pago aceptados",
+    "stripe_connect_notice": "El comprador pagara con Stripe y recibiras el cobro en tu cuenta Connect cuando se complete la transferencia.",
     "label_phone": "Teléfono",
     "label_email": "Email",
     "label_show_phone": "Mostrar teléfono",
@@ -245,15 +238,14 @@
     "item_bag": "Bolsa",
     "item_medal": "Medalla",
     "item_refreshments": "Avituallamientos",
-    "pay_bizum": "Bizum",
-    "pay_paypal": "PayPal",
-    "pay_card": "Tarjeta",
     "save_draft": "Guardar borrador",
     "publish": "Publicar dorsal",
     "publishing": "Publicando…",
     "toast_published": "Dorsal publicado",
     "toast_draft": "Borrador guardado",
-    "toast_error": "No se pudo publicar el dorsal"
+    "toast_error": "No se pudo publicar el dorsal",
+    "onboarding_required_error": "Configura tus cobros antes de publicar un dorsal.",
+    "onboarding_required_action": "Configurar cobros"
   },
   "review": {
     "title": "Valorar operacion",
@@ -269,6 +261,9 @@
     "load_error": "No se pudo cargar el perfil.",
     "saved_toast": "Perfil guardado",
     "save": "Guardar perfil",
+    "payouts_title": "Cobros",
+    "payouts_body": "Configura tu cuenta de cobros para poder publicar dorsales y recibir el pago cuando el comprador confirme el cambio.",
+    "payouts_cta": "Configurar cobros",
     "session_expired_title": "Tu sesion ha caducado",
     "session_expired_body": "Vuelve a iniciar sesion para cargar tu perfil con un token valido.",
     "session_expired_cta": "Volver a iniciar sesion",
@@ -346,7 +341,7 @@
     "step2_title": "Activa los cobros",
     "step2_body": "Conecta tu método de cobro (onboarding de pagos) para poder recibir el dinero de forma segura cuando vendas.",
     "step3_title": "Publica el dorsal",
-    "step3_body": "Sube una foto y completa los datos: carrera, fecha, distancia, precio, métodos de pago aceptados y qué incluye (chip, camiseta, medalla…).",
+    "step3_body": "Sube una foto y completa los datos: carrera, fecha, distancia, precio y qué incluye (chip, camiseta, medalla…).",
     "step4_title": "Recibe una reserva",
     "step4_body": "Cuando alguien compra, su pago queda retenido en custodia y recibes sus datos de corredor para el cambio.",
     "step5_title": "Realiza el cambio de titularidad",
@@ -364,7 +359,7 @@
     "step1_title": "Crea tu cuenta y completa tus datos de corredor",
     "step1_body": "El cambio de titularidad requiere tus datos reales (nombre, DNI, talla, tiempo estimado…). Sin el perfil de corredor completo no podrás comprar.",
     "step2_title": "Explora y filtra dorsales",
-    "step2_body": "Busca por carrera, distancia, precio, ubicación o método de pago. Los filtros se aplican al instante.",
+    "step2_body": "Busca por carrera, distancia, precio o ubicación. Los filtros se aplican al instante.",
     "step3_title": "Reserva y paga",
     "step3_body": "Al comprar, el importe se retiene en custodia (escrow). El vendedor todavía no recibe el dinero.",
     "step4_title": "El vendedor realiza el cambio",

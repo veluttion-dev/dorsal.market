@@ -6,7 +6,6 @@ import type { DorsalStatus, DorsalSummary } from '@dorsal/schemas';
 import { useTranslations } from 'next-intl';
 import Image from 'next/image';
 import Link from 'next/link';
-import { PaymentMethodPills } from './payment-method-pills';
 
 export const STATUS_BADGE: Record<DorsalStatus, { className: string }> = {
   published: { className: 'bg-olive-subtle text-olive' },
@@ -48,7 +47,7 @@ export function DorsalCard({ dorsal }: { dorsal: DorsalSummary }) {
         </p>
         <div className="flex items-center justify-between pt-2">
           <span className="text-lg font-bold">{formatPrice(dorsal.price_amount)}</span>
-          <PaymentMethodPills methods={dorsal.payment_methods} />
+          <span className="text-xs font-medium text-text-muted">{t('payment_escrow')}</span>
         </div>
       </div>
     </Link>

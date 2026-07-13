@@ -29,7 +29,6 @@ describe('publish draft storage', () => {
         fixed_shirt_size: null,
       },
       price_amount: 45,
-      payment_methods: ['bizum'],
       contact: { phone: '600000000', email: null, phone_visible: true, email_visible: true },
       sale_reason: 'Viaje de trabajo',
     });
@@ -37,6 +36,22 @@ describe('publish draft storage', () => {
     expect(loadPublishDraft()?.race_name).toBe('Media Madrid');
     expect(loadPublishDraft()?.purchase_requirements?.requires_estimated_time).toBe(true);
     expect(localStorage.getItem(PUBLISH_DRAFT_STORAGE_KEY)).toContain('Media Madrid');
+  });
+
+  it('drops legacy payment methods when loading old drafts', () => {
+    localStorage.setItem(
+      PUBLISH_DRAFT_STORAGE_KEY,
+      JSON.stringify({
+        publish: true,
+        race_name: 'Carrera antigua',
+        payment_methods: ['bizum'],
+      }),
+    );
+
+    expect(loadPublishDraft()).toEqual({
+      publish: true,
+      race_name: 'Carrera antigua',
+    });
   });
 
   it('keeps saved drafts isolated by owner', () => {
