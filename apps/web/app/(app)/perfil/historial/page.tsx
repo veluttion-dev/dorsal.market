@@ -25,7 +25,39 @@ function TransactionRow({ item }: { item: TransactionListItem }) {
   );
 }
 
-function List({ items, emptyLabel }: { items: TransactionListItem[]; emptyLabel: string }) {
+function List({
+  query,
+  emptyLabel,
+  loadingLabel,
+  errorLabel,
+}: {
+  query: {
+    isLoading: boolean;
+    isError: boolean;
+    data: { items: TransactionListItem[] } | undefined;
+  };
+  emptyLabel: string;
+  loadingLabel: string;
+  errorLabel: string;
+}) {
+  if (query.isLoading) {
+    return (
+      <div className="rounded-lg border border-border bg-bg-card p-5 text-sm text-text-secondary">
+        {loadingLabel}
+      </div>
+    );
+  }
+  if (query.isError) {
+    return (
+      <div
+        role="alert"
+        className="rounded-lg border border-red-300 bg-red-50 p-5 text-sm text-red-700"
+      >
+        {errorLabel}
+      </div>
+    );
+  }
+  const items = query.data?.items ?? [];
   if (!items.length) {
     return (
       <div className="rounded-lg border border-border bg-bg-card p-5 text-sm text-text-secondary">
@@ -58,10 +90,20 @@ export default function HistoryPage() {
           <TabsTrigger value="sales">{t('sales')}</TabsTrigger>
         </TabsList>
         <TabsContent value="purchases" className="mt-5">
-          <List items={purchases.data?.items ?? []} emptyLabel={t('no_items')} />
+          <List
+            query={purchases}
+            emptyLabel={t('no_items')}
+            loadingLabel={t('loading')}
+            errorLabel={t('load_error')}
+          />
         </TabsContent>
         <TabsContent value="sales" className="mt-5">
-          <List items={sales.data?.items ?? []} emptyLabel={t('no_items')} />
+          <List
+            query={sales}
+            emptyLabel={t('no_items')}
+            loadingLabel={t('loading')}
+            errorLabel={t('load_error')}
+          />
         </TabsContent>
       </Tabs>
     </main>

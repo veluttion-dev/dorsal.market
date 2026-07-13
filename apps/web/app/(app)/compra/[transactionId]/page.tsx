@@ -63,6 +63,22 @@ export default function TransactionTrackingPage({
   const tx = sellerTx ?? buyerTx ?? seller.data;
   const role = sellerTx ? 'seller' : 'buyer';
   const actorId = userId ?? '';
+  const buyerLoading = buyer.isLoading || buyer.isPending;
+  const sellerLoading = seller.isLoading || seller.isPending;
+  const bothFinished = !buyerLoading && !sellerLoading;
+
+  if (!tx && bothFinished && buyer.isError && seller.isError) {
+    return (
+      <main className="container mx-auto max-w-4xl px-4 py-10">
+        <div
+          role="alert"
+          className="rounded-lg border border-border bg-bg-card p-6 text-text-secondary"
+        >
+          {t('load_error')}
+        </div>
+      </main>
+    );
+  }
 
   if (!tx) {
     return (

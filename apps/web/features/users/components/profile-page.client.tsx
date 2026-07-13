@@ -6,6 +6,7 @@ import { usePatchProfile } from '@/features/users/hooks/use-patch-profile';
 import { isSessionAuthError } from '@/features/users/lib/session-errors';
 import { signOut } from 'next-auth/react';
 import { useTranslations } from 'next-intl';
+import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { toast } from 'sonner';
 
@@ -46,6 +47,13 @@ export function ProfilePage({ completeMode = false }: { completeMode?: boolean }
         <h1 className="text-3xl font-bold">{completeMode ? t('complete_title') : t('title')}</h1>
         <p className="mt-2 text-sm text-text-secondary">{t('subtitle')}</p>
       </div>
+      <section className="rounded-lg border border-border bg-bg-card p-5">
+        <h2 className="text-lg font-semibold">{t('payouts_title')}</h2>
+        <p className="mt-2 text-sm text-text-secondary">{t('payouts_body')}</p>
+        <Button asChild className="mt-4" variant="outline">
+          <Link href="/vender/onboarding">{t('payouts_cta')}</Link>
+        </Button>
+      </section>
       <ProfileForm
         user={me.data}
         onSubmit={async (input) => {

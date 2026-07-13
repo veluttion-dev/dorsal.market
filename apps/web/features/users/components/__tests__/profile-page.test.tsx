@@ -23,6 +23,10 @@ vi.mock('@/features/users/hooks/use-patch-profile', () => ({
   usePatchProfile: () => ({ mutateAsync: vi.fn() }),
 }));
 
+vi.mock('@/features/users/components/profile-form.client', () => ({
+  ProfileForm: () => <div>Profile form</div>,
+}));
+
 vi.mock('next-auth/react', () => ({
   signOut: mocks.signOut,
 }));
@@ -54,6 +58,24 @@ describe('ProfilePage', () => {
 
     await waitFor(() =>
       expect(mocks.signOut).toHaveBeenCalledWith({ callbackUrl: '/login?callbackUrl=%2Fperfil' }),
+    );
+  });
+
+  it('links to payout configuration from profile', () => {
+    mocks.profile = {
+      id: '11111111-1111-4111-8111-111111111111',
+      email: 'seller@example.com',
+      first_name: 'Seller',
+      last_name: 'Demo',
+      profile_complete: true,
+    };
+
+    render(<ProfilePage />);
+
+    expect(screen.getByRole('heading', { name: /cobros/i })).toBeVisible();
+    expect(screen.getByRole('link', { name: /configurar cobros/i })).toHaveAttribute(
+      'href',
+      '/vender/onboarding',
     );
   });
 });
