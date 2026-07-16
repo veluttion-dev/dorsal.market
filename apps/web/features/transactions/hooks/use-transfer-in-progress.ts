@@ -6,7 +6,7 @@ export function useTransferInProgress(id: string) {
   const api = useApi();
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (sellerId: string) => api.transactions.markTransferInProgress(id, sellerId),
+    mutationFn: () => api.transactions.markTransferInProgress(id),
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: ['transactions', 'buyer'] });
       void qc.invalidateQueries({ queryKey: ['transactions', 'seller'] });

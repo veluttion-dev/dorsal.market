@@ -16,11 +16,9 @@ const DISPUTABLE: TransactionStatus[] = [
 
 export function ConfirmAction({
   transactionId,
-  buyerId,
   status,
 }: {
   transactionId: string;
-  buyerId: string;
   status: TransactionStatus;
 }) {
   const t = useTranslations('buyer_actions');
@@ -28,7 +26,7 @@ export function ConfirmAction({
   const canConfirm = status === 'TRANSFER_SUBMITTED' || status === 'TRANSFER_IN_PROGRESS';
 
   async function submit() {
-    await confirm.mutateAsync(buyerId);
+    await confirm.mutateAsync();
     toast.success(t('confirmed_toast'));
   }
 
@@ -42,9 +40,7 @@ export function ConfirmAction({
             {t('confirm')}
           </Button>
         )}
-        {DISPUTABLE.includes(status) && (
-          <DisputeDialog transactionId={transactionId} buyerId={buyerId} />
-        )}
+        {DISPUTABLE.includes(status) && <DisputeDialog transactionId={transactionId} />}
       </div>
     </div>
   );

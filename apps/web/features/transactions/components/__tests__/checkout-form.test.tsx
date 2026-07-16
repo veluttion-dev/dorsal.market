@@ -230,7 +230,6 @@ describe('CheckoutForm', () => {
     await waitFor(() =>
       expect(mocks.mutateAsync).toHaveBeenCalledWith({
         dorsalId: '55555555-5555-4555-8555-555555555555',
-        buyerId: '11111111-1111-4111-8111-111111111111',
       }),
     );
     expect(await screen.findByText('Reserva activa')).toBeVisible();

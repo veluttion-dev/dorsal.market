@@ -6,7 +6,7 @@ export function useConfirmTransfer(id: string) {
   const api = useApi();
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (buyerId: string) => api.transactions.confirmTransfer(id, buyerId),
+    mutationFn: () => api.transactions.confirmTransfer(id),
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: ['transactions', 'buyer'] });
       void qc.invalidateQueries({ queryKey: ['transactions', 'seller'] });

@@ -43,7 +43,7 @@ describe('SellerOnboardingPage', () => {
 
     await user.click(screen.getByRole('button', { name: /Configurar pagos/ }));
 
-    expect(mutateAsync).toHaveBeenCalledWith('local-user-1');
+    expect(mutateAsync).toHaveBeenCalledWith();
     await waitFor(() => expect(screen.getByText('Cuenta lista para cobrar')).toBeInTheDocument());
   });
 });

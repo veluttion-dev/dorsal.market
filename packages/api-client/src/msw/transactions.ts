@@ -164,7 +164,6 @@ export const transactionsHandlers = [
   http.post(`${BASE}/api/v1/transactions`, async ({ request }) => {
     const body = (await request.json()) as {
       dorsal_id: string;
-      buyer_id?: string;
       runner_data?: {
         estimated_time?: string;
         t_shirt_size?: string;
@@ -172,7 +171,7 @@ export const transactionsHandlers = [
       };
     };
     const transactionId = crypto.randomUUID();
-    const buyerId = body.buyer_id ?? currentUserId(request);
+    const buyerId = currentUserId(request);
     const tx: MockTransaction = {
       transaction_id: transactionId,
       dorsal_id: body.dorsal_id,
@@ -288,7 +287,7 @@ export const transactionsHandlers = [
   }),
 
   http.post(`${BASE}/api/v1/transactions/:id/dispute`, async ({ params, request }) => {
-    const body = (await request.json()) as { buyer_id: string; reason: string };
+    const body = (await request.json()) as { reason: string };
     const updated = updateTransaction(
       params.id as string,
       'IN_DISPUTE',
@@ -299,7 +298,7 @@ export const transactionsHandlers = [
       {
         id: crypto.randomUUID(),
         transaction_id: params.id as string,
-        opened_by: body.buyer_id,
+        opened_by: currentUserId(request),
         reason: body.reason,
         status: 'open',
         resolution_notes: null,

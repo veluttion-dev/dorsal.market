@@ -24,15 +24,13 @@ export function useSubmitProof(id: string) {
   const api = useApi();
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (input: { sellerId: string; file: File }) => {
+    mutationFn: async (file: File) => {
       const upload = await api.transactions.getProofUploadUrl(id, {
-        sellerId: input.sellerId,
-        contentType: input.file.type || 'application/octet-stream',
+        contentType: file.type || 'application/octet-stream',
       });
-      await uploadToPresignedUrl(input.file, upload);
+      await uploadToPresignedUrl(file, upload);
       return api.transactions.submitProofUrl(id, {
         proofFileUrl: upload.file_url,
-        sellerId: input.sellerId,
       });
     },
     onSuccess: () => {

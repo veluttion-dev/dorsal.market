@@ -12,11 +12,10 @@ import type {
 } from '@dorsal/schemas';
 
 export interface TransactionsPort {
-  onboardSeller(sellerId: string): Promise<SellerOnboardingResponse>;
+  onboardSeller(): Promise<SellerOnboardingResponse>;
 
   reserveListing(input: {
     dorsalId: string;
-    buyerId: string;
     runnerData?: RunnerDataInput;
   }): Promise<ReserveListingResponse>;
   updateCheckoutRunnerData(
@@ -30,18 +29,15 @@ export interface TransactionsPort {
 
   getProofUploadUrl(
     id: string,
-    input: { sellerId: string; contentType: string },
+    input: { contentType: string },
   ): Promise<ProofUploadUrlResponse>;
   uploadProofMultipart(id: string, file: File): Promise<{ processed: boolean }>;
-  submitProofUrl(
-    id: string,
-    input: { proofFileUrl: string; sellerId: string },
-  ): Promise<{ processed: boolean }>;
+  submitProofUrl(id: string, input: { proofFileUrl: string }): Promise<{ processed: boolean }>;
 
-  markTransferInProgress(id: string, sellerId: string): Promise<{ processed: boolean }>;
+  markTransferInProgress(id: string): Promise<{ processed: boolean }>;
 
-  confirmTransfer(id: string, buyerId: string): Promise<{ processed: boolean }>;
-  openDispute(id: string, input: { buyerId: string; reason: string }): Promise<Dispute>;
+  confirmTransfer(id: string): Promise<{ processed: boolean }>;
+  openDispute(id: string, input: { reason: string }): Promise<Dispute>;
 
   createSellerProblemReport(input: {
     transactionId: string;

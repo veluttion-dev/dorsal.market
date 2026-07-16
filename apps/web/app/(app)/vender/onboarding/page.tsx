@@ -36,7 +36,7 @@ export default function SellerOnboardingPage() {
       return;
     }
     try {
-      const result = await onboard.mutateAsync(sellerId);
+      const result = await onboard.mutateAsync();
       setLastResult(result);
       if (result.onboarding_url) {
         window.open(result.onboarding_url, '_blank', 'noopener,noreferrer');

@@ -144,9 +144,9 @@ export const RunnerDataInput = z.object({
 export type RunnerDataInput = z.infer<typeof RunnerDataInput>;
 
 export const SellerOnboardingResponse = z.object({
-  account_id: z.string().optional(),
+  account_id: z.string(),
   onboarding_url: z.string().url().nullable(),
-  charges_enabled: z.boolean().optional(),
+  charges_enabled: z.boolean(),
 });
 export type SellerOnboardingResponse = z.infer<typeof SellerOnboardingResponse>;
 

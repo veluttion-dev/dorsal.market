@@ -25,13 +25,11 @@ function normalizeUtcDateTime(value: string) {
 export class TransactionsHttpAdapter implements TransactionsPort {
   constructor(private http: HttpClient) {}
 
-  async onboardSeller(sellerId: string) {
-    return SellerOnboardingResponse.parse(
-      await this.http.post('api/v1/sellers/onboard', { body: { user_id: sellerId } }),
-    );
+  async onboardSeller() {
+    return SellerOnboardingResponse.parse(await this.http.post('api/v1/sellers/onboard'));
   }
 
-  async reserveListing(input: { dorsalId: string; buyerId: string; runnerData?: RunnerDataInput }) {
+  async reserveListing(input: { dorsalId: string; runnerData?: RunnerDataInput }) {
     const response = ReserveListingResponse.parse(
       await this.http.post('api/v1/transactions', {
         body: {
@@ -68,10 +66,10 @@ export class TransactionsHttpAdapter implements TransactionsPort {
     return SellerTransactionDetail.parse(await this.http.get(`api/v1/transactions/seller/${id}`));
   }
 
-  async getProofUploadUrl(id: string, input: { sellerId: string; contentType: string }) {
+  async getProofUploadUrl(id: string, input: { contentType: string }) {
     return ProofUploadUrlResponse.parse(
       await this.http.post(`api/v1/transactions/${id}/proof-upload-url`, {
-        body: { seller_id: input.sellerId, content_type: input.contentType },
+        body: { content_type: input.contentType },
       }),
     );
   }
@@ -84,32 +82,32 @@ export class TransactionsHttpAdapter implements TransactionsPort {
     );
   }
 
-  async submitProofUrl(id: string, input: { proofFileUrl: string; sellerId: string }) {
+  async submitProofUrl(id: string, input: { proofFileUrl: string }) {
     return TransactionActionResponse.parse(
       await this.http.post(`api/v1/transactions/${id}/proof`, {
-        body: { proof_file_url: input.proofFileUrl, seller_id: input.sellerId },
+        body: { proof_file_url: input.proofFileUrl },
       }),
     );
   }
 
-  async markTransferInProgress(id: string, sellerId: string) {
+  async markTransferInProgress(id: string) {
     return TransactionActionResponse.parse(
-      await this.http.post(`api/v1/transactions/${id}/transfer-in-progress`, {
-        body: { seller_id: sellerId },
+      await this.http.post(`api/v1/transactions/${id}/transfer-in-progress`),
+    );
+  }
+
+  async confirmTransfer(id: string) {
+    return TransactionActionResponse.parse(
+      await this.http.post(`api/v1/transactions/${id}/confirm`, {
+        headers: { 'Idempotency-Key': `confirm-transfer-${id}` },
       }),
     );
   }
 
-  async confirmTransfer(id: string, buyerId: string) {
-    return TransactionActionResponse.parse(
-      await this.http.post(`api/v1/transactions/${id}/confirm`, { body: { buyer_id: buyerId } }),
-    );
-  }
-
-  async openDispute(id: string, input: { buyerId: string; reason: string }) {
+  async openDispute(id: string, input: { reason: string }) {
     return Dispute.parse(
       await this.http.post(`api/v1/transactions/${id}/dispute`, {
-        body: { buyer_id: input.buyerId, reason: input.reason },
+        body: { reason: input.reason },
       }),
     );
   }

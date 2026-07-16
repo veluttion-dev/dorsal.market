@@ -62,7 +62,6 @@ export default function TransactionTrackingPage({
     seller.data && (!userId || seller.data.buyer_contact.buyer_id !== userId) ? seller.data : null;
   const tx = sellerTx ?? buyerTx ?? seller.data;
   const role = sellerTx ? 'seller' : 'buyer';
-  const actorId = userId ?? '';
   const buyerLoading = buyer.isLoading || buyer.isPending;
   const sellerLoading = seller.isLoading || seller.isPending;
   const bothFinished = !buyerLoading && !sellerLoading;
@@ -100,21 +99,13 @@ export default function TransactionTrackingPage({
         <aside className="space-y-5">
           {role === 'buyer' && (
             <>
-              <ConfirmAction
-                transactionId={tx.transaction_id}
-                buyerId={actorId}
-                status={tx.status}
-              />
+              <ConfirmAction transactionId={tx.transaction_id} status={tx.status} />
               <ReviewForm transactionId={tx.transaction_id} status={tx.status} />
             </>
           )}
           {role === 'seller' && isSellerTransaction(tx) && (
             <>
-              <TransferActions
-                transactionId={tx.transaction_id}
-                sellerId={actorId}
-                status={tx.status}
-              />
+              <TransferActions transactionId={tx.transaction_id} status={tx.status} />
               <ReviewForm transactionId={tx.transaction_id} status={tx.status} />
               {SELLER_PROBLEM_STATUSES.includes(tx.status) && (
                 <SellerProblemReport transactionId={tx.transaction_id} />

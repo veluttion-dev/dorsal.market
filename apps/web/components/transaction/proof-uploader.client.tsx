@@ -7,17 +7,14 @@ import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { toast } from 'sonner';
 
-export function ProofUploader({
-  transactionId,
-  sellerId,
-}: { transactionId: string; sellerId: string }) {
+export function ProofUploader({ transactionId }: { transactionId: string }) {
   const t = useTranslations('proof');
   const submitProof = useSubmitProof(transactionId);
   const [file, setFile] = useState<File | null>(null);
 
   async function submit() {
     if (!file) return;
-    await submitProof.mutateAsync({ sellerId, file });
+    await submitProof.mutateAsync(file);
     toast.success(t('sent_toast'));
     setFile(null);
   }

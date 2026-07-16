@@ -5,6 +5,6 @@ import { useMutation } from '@tanstack/react-query';
 export function useOnboardSeller() {
   const api = useApi();
   return useMutation({
-    mutationFn: (sellerId: string) => api.transactions.onboardSeller(sellerId),
+    mutationFn: () => api.transactions.onboardSeller(),
   });
 }

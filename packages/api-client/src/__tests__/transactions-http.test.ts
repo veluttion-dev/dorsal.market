@@ -14,6 +14,20 @@ function createHttpStub(overrides: Partial<Record<keyof HttpClient, unknown>> = 
 }
 
 describe('TransactionsHttpAdapter', () => {
+  it('starts seller onboarding using the authenticated backend principal', async () => {
+    const post = vi.fn(async () => ({
+      account_id: 'acct_ready',
+      onboarding_url: null,
+      charges_enabled: true,
+    }));
+    const adapter = new TransactionsHttpAdapter(createHttpStub({ post }));
+
+    const result = await adapter.onboardSeller();
+
+    expect(post).toHaveBeenCalledWith('api/v1/sellers/onboard');
+    expect(result.charges_enabled).toBe(true);
+  });
+
   it('reserves a listing through the real backend endpoint shape', async () => {
     const post = vi.fn(async () => ({
       transaction_id: '11111111-1111-4111-8111-111111111111',
@@ -25,7 +39,6 @@ describe('TransactionsHttpAdapter', () => {
 
     const result = await adapter.reserveListing({
       dorsalId: '55555555-5555-4555-8555-555555555555',
-      buyerId: '22222222-2222-4222-8222-222222222222',
     });
 
     expect(post).toHaveBeenCalledWith('api/v1/transactions', {
@@ -46,7 +59,6 @@ describe('TransactionsHttpAdapter', () => {
 
     const result = await adapter.reserveListing({
       dorsalId: '55555555-5555-4555-8555-555555555555',
-      buyerId: '22222222-2222-4222-8222-222222222222',
     });
 
     expect(result.reservation_expires_at).toBe('2026-07-05T18:46:20.256562Z');
@@ -92,14 +104,77 @@ describe('TransactionsHttpAdapter', () => {
 
     const result = await adapter.confirmTransfer(
       '11111111-1111-4111-8111-111111111111',
-      '22222222-2222-4222-8222-222222222222',
     );
 
     expect(post).toHaveBeenCalledWith(
       'api/v1/transactions/11111111-1111-4111-8111-111111111111/confirm',
-      { body: { buyer_id: '22222222-2222-4222-8222-222222222222' } },
+      { headers: { 'Idempotency-Key': 'confirm-transfer-11111111-1111-4111-8111-111111111111' } },
     );
     expect(result.processed).toBe(true);
+  });
+
+  it('starts seller transfer using the authenticated backend principal', async () => {
+    const post = vi.fn(async () => ({ processed: true }));
+    const adapter = new TransactionsHttpAdapter(createHttpStub({ post }));
+
+    await adapter.markTransferInProgress('11111111-1111-4111-8111-111111111111');
+
+    expect(post).toHaveBeenCalledWith(
+      'api/v1/transactions/11111111-1111-4111-8111-111111111111/transfer-in-progress',
+    );
+  });
+
+  it('requests proof upload URLs without sending a seller id', async () => {
+    const post = vi.fn(async () => ({
+      upload_url: 'https://storage.example/upload',
+      file_url: 'https://storage.example/proof.png',
+    }));
+    const adapter = new TransactionsHttpAdapter(createHttpStub({ post }));
+
+    await adapter.getProofUploadUrl('11111111-1111-4111-8111-111111111111', {
+      contentType: 'image/png',
+    });
+
+    expect(post).toHaveBeenCalledWith(
+      'api/v1/transactions/11111111-1111-4111-8111-111111111111/proof-upload-url',
+      { body: { content_type: 'image/png' } },
+    );
+  });
+
+  it('submits proof URLs without sending a seller id', async () => {
+    const post = vi.fn(async () => ({ processed: true }));
+    const adapter = new TransactionsHttpAdapter(createHttpStub({ post }));
+
+    await adapter.submitProofUrl('11111111-1111-4111-8111-111111111111', {
+      proofFileUrl: 'https://storage.example/proof.png',
+    });
+
+    expect(post).toHaveBeenCalledWith(
+      'api/v1/transactions/11111111-1111-4111-8111-111111111111/proof',
+      { body: { proof_file_url: 'https://storage.example/proof.png' } },
+    );
+  });
+
+  it('opens disputes without sending a buyer id', async () => {
+    const post = vi.fn(async () => ({
+      id: '99999999-9999-4999-8999-999999999999',
+      transaction_id: '11111111-1111-4111-8111-111111111111',
+      opened_by: '22222222-2222-4222-8222-222222222222',
+      reason: 'The transfer has not arrived yet',
+      status: 'open',
+      resolution_notes: null,
+      created_at: '2026-07-13T10:00:00Z',
+    }));
+    const adapter = new TransactionsHttpAdapter(createHttpStub({ post }));
+
+    await adapter.openDispute('11111111-1111-4111-8111-111111111111', {
+      reason: 'The transfer has not arrived yet',
+    });
+
+    expect(post).toHaveBeenCalledWith(
+      'api/v1/transactions/11111111-1111-4111-8111-111111111111/dispute',
+      { body: { reason: 'The transfer has not arrived yet' } },
+    );
   });
 
   it('passes query params through history endpoints', async () => {
@@ -129,7 +204,6 @@ describe('TransactionsHttpAdapter', () => {
 
     await adapter.reserveListing({
       dorsalId: '55555555-5555-4555-8555-555555555555',
-      buyerId: '22222222-2222-4222-8222-222222222222',
     });
 
     expect(post).toHaveBeenCalledWith('api/v1/transactions', {
@@ -149,7 +223,6 @@ describe('TransactionsHttpAdapter', () => {
 
     await adapter.reserveListing({
       dorsalId: '55555555-5555-4555-8555-555555555555',
-      buyerId: '22222222-2222-4222-8222-222222222222',
       runnerData: {
         estimated_time: '01:45:00',
         emergency_contact: 'Ana +34600000000',

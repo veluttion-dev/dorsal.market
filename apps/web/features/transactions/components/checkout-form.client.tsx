@@ -329,7 +329,7 @@ export function CheckoutForm({
     }
 
     try {
-      const result = await reserve.mutateAsync({ dorsalId, buyerId });
+      const result = await reserve.mutateAsync({ dorsalId });
       const reservation = {
         transactionId: result.transaction_id,
         clientSecret: result.payment_client_secret,

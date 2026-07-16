@@ -14,10 +14,7 @@ import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { toast } from 'sonner';
 
-export function DisputeDialog({
-  transactionId,
-  buyerId,
-}: { transactionId: string; buyerId: string }) {
+export function DisputeDialog({ transactionId }: { transactionId: string }) {
   const t = useTranslations('dispute');
   const dispute = useOpenDispute(transactionId);
   const [open, setOpen] = useState(false);
@@ -26,7 +23,7 @@ export function DisputeDialog({
 
   async function submit() {
     if (!valid) return;
-    await dispute.mutateAsync({ buyerId, reason: reason.trim() });
+    await dispute.mutateAsync({ reason: reason.trim() });
     toast.success(t('opened_toast'));
     setOpen(false);
     setReason('');

@@ -9,11 +9,9 @@ import { toast } from 'sonner';
 
 export function TransferActions({
   transactionId,
-  sellerId,
   status,
 }: {
   transactionId: string;
-  sellerId: string;
   status: TransactionStatus;
 }) {
   const t = useTranslations('seller_actions');
@@ -22,7 +20,7 @@ export function TransferActions({
   const canUpload = status === 'TRANSFER_IN_PROGRESS' || status === 'PAYMENT_RECEIVED';
 
   async function start() {
-    await transfer.mutateAsync(sellerId);
+    await transfer.mutateAsync();
     toast.success(t('started_toast'));
   }
 
@@ -35,7 +33,7 @@ export function TransferActions({
           {t('mark_started')}
         </Button>
       )}
-      {canUpload && <ProofUploader transactionId={transactionId} sellerId={sellerId} />}
+      {canUpload && <ProofUploader transactionId={transactionId} />}
     </div>
   );
 }

@@ -6,8 +6,7 @@ export function useOpenDispute(id: string) {
   const api = useApi();
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (input: { buyerId: string; reason: string }) =>
-      api.transactions.openDispute(id, input),
+    mutationFn: (input: { reason: string }) => api.transactions.openDispute(id, input),
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: ['transactions', 'buyer'] });
     },
