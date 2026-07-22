@@ -1,3 +1,4 @@
+import { ApiError } from '@dorsal/api-client';
 import type { UserProfile } from '@dorsal/schemas';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
@@ -156,5 +157,17 @@ describe('ProfileForm', () => {
     await waitFor(() =>
       expect(screen.getByRole('button', { name: 'Guardar perfil' })).toBeEnabled(),
     );
+  });
+
+  it('shows backend detail when profile save is rejected', async () => {
+    const onSubmit = vi.fn(async () => {
+      throw new ApiError('HTTP 409', 409, { detail: 'DNI is already linked to another user' });
+    });
+    const actor = userEvent.setup();
+    render(<ProfileForm user={user} onSubmit={onSubmit} />);
+
+    await actor.click(screen.getByRole('button', { name: 'Guardar perfil' }));
+
+    expect(await screen.findByText('DNI is already linked to another user')).toBeVisible();
   });
 });

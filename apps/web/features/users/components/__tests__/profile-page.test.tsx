@@ -78,4 +78,22 @@ describe('ProfilePage', () => {
       '/vender/onboarding',
     );
   });
+
+  it('links to purchase and sales history from profile', () => {
+    mocks.profile = {
+      id: '11111111-1111-4111-8111-111111111111',
+      email: 'seller@example.com',
+      first_name: 'Seller',
+      last_name: 'Demo',
+      profile_complete: true,
+    };
+
+    render(<ProfilePage />);
+
+    expect(screen.getByRole('heading', { name: /historial y seguimientos/i })).toBeVisible();
+    expect(screen.getByRole('link', { name: /ver historial/i })).toHaveAttribute(
+      'href',
+      '/perfil/historial',
+    );
+  });
 });

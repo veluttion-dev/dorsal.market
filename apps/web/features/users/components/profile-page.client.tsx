@@ -54,6 +54,13 @@ export function ProfilePage({ completeMode = false }: { completeMode?: boolean }
           <Link href="/vender/onboarding">{t('payouts_cta')}</Link>
         </Button>
       </section>
+      <section className="rounded-lg border border-border bg-bg-card p-5">
+        <h2 className="text-lg font-semibold">{t('history_title')}</h2>
+        <p className="mt-2 text-sm text-text-secondary">{t('history_body')}</p>
+        <Button asChild className="mt-4" variant="outline">
+          <Link href="/perfil/historial">{t('history_cta')}</Link>
+        </Button>
+      </section>
       <ProfileForm
         user={me.data}
         onSubmit={async (input) => {

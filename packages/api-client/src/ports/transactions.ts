@@ -27,10 +27,7 @@ export interface TransactionsPort {
   getBuyerTransaction(id: string): Promise<BuyerTransactionDetail>;
   getSellerTransaction(id: string): Promise<SellerTransactionDetail>;
 
-  getProofUploadUrl(
-    id: string,
-    input: { contentType: string },
-  ): Promise<ProofUploadUrlResponse>;
+  getProofUploadUrl(id: string, input: { contentType: string }): Promise<ProofUploadUrlResponse>;
   uploadProofMultipart(id: string, file: File): Promise<{ processed: boolean }>;
   submitProofUrl(id: string, input: { proofFileUrl: string }): Promise<{ processed: boolean }>;
 

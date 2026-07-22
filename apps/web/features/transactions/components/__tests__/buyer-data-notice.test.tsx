@@ -56,7 +56,7 @@ describe('BuyerDataNotice', () => {
       />,
     );
 
-    expect(screen.getByText(/datos específicos de la carrera/i)).toBeInTheDocument();
+    expect(screen.getByText(/datos especificos de la carrera/i)).toBeInTheDocument();
     expect(screen.getByRole('link', { name: /Revisar perfil/i })).toHaveAttribute(
       'href',
       '/perfil',

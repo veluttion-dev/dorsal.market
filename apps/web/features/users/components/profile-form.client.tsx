@@ -10,6 +10,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { ApiError } from '@dorsal/api-client';
 import type { PatchUserProfileInput, UserProfile } from '@dorsal/schemas';
 import { FileText, IdCard, Phone, Save } from 'lucide-react';
 import { useTranslations } from 'next-intl';
@@ -128,6 +129,22 @@ function valuesFromUser(user: UserProfile): ProfileFormValues {
 function nullable(value: string) {
   const trimmed = value.trim();
   return trimmed ? trimmed : null;
+}
+
+function detailToMessage(detail: unknown): string | null {
+  if (typeof detail === 'string') return detail;
+  if (detail && typeof detail === 'object' && 'detail' in detail) {
+    const value = (detail as { detail?: unknown }).detail;
+    if (typeof value === 'string') return value;
+  }
+  return null;
+}
+
+function profileSubmitErrorMessage(error: unknown) {
+  if (error instanceof ApiError) {
+    return detailToMessage(error.detail) ?? `El backend rechazo la operacion (${error.status}).`;
+  }
+  return 'No se pudo guardar el perfil. Intentalo de nuevo.';
 }
 
 function buildPatch(initial: ProfileFormValues, current: ProfileFormValues): PatchUserProfileInput {
@@ -324,8 +341,8 @@ export function ProfileForm({
     setSubmitError(null);
     try {
       await onSubmit(buildPatch(initial, values));
-    } catch {
-      setSubmitError('No se pudo guardar el perfil. Intentalo de nuevo.');
+    } catch (error) {
+      setSubmitError(profileSubmitErrorMessage(error));
     } finally {
       setSaving(false);
     }

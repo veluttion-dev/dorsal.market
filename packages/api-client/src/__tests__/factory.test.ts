@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { UploadsHttpAdapter, UploadsMockAdapter } from '../adapters';
 import { createApi, deriveMockedModules, parseRealModules } from '../factory';
 
 describe('parseRealModules', () => {
@@ -27,8 +28,25 @@ describe('createApi', () => {
       dorsals: expect.objectContaining({ search: expect.any(Function) }),
       users: expect.any(Object),
       transactions: expect.any(Object),
+      notifications: expect.any(Object),
       reviews: expect.any(Object),
       uploads: expect.any(Object),
     });
+  });
+
+  it('uses real uploads when catalog dorsals are real', () => {
+    const api = createApi({
+      baseUrl: 'http://test',
+      getUserId: () => null,
+      realModules: 'dorsals,users',
+    });
+
+    expect(api.uploads).toBeInstanceOf(UploadsHttpAdapter);
+  });
+
+  it('keeps uploads mocked when catalog dorsals are mocked', () => {
+    const api = createApi({ baseUrl: 'http://test', getUserId: () => null });
+
+    expect(api.uploads).toBeInstanceOf(UploadsMockAdapter);
   });
 });

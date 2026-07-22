@@ -39,6 +39,10 @@ describe('NavMobile', () => {
     expect(screen.getByRole('link', { name: 'Crear cuenta' })).toHaveAttribute('href', '/registro');
 
     rerender(<NavMobile session={{ user: { name: 'Runner Demo' } }} />);
+    expect(screen.getByRole('link', { name: 'Notificaciones' })).toHaveAttribute(
+      'href',
+      '/perfil/notificaciones',
+    );
     expect(screen.getByRole('link', { name: 'Runner Demo' })).toHaveAttribute('href', '/perfil');
     expect(screen.getByRole('button', { name: /salir/i })).toBeInTheDocument();
   });

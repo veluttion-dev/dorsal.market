@@ -86,6 +86,34 @@ describe('BuyerTransactionDetail', () => {
 
     expect(BuyerTransactionDetail.parse(sample).order_summary.race_name).toBe('Madrid');
   });
+
+  it('parses seller transfer proof URL for buyer review', () => {
+    const parsed = BuyerTransactionDetail.parse({
+      transaction_id: '11111111-1111-4111-8111-111111111111',
+      status: 'TRANSFER_SUBMITTED',
+      lifecycle_state: 'TRANSFER_SUBMITTED',
+      transfer_proof_url: 'https://storage.example/proofs/proof.pdf',
+      seller_contact: {
+        seller_id: '33333333-3333-4333-8333-333333333333',
+        full_name: 'Seller Demo',
+        phone_number: null,
+        whatsapp_number: null,
+        email: null,
+      },
+      order_summary: {
+        dorsal_id: '55555555-5555-4555-8555-555555555555',
+        race_name: 'Madrid',
+        bib_number: null,
+        amount_eur: '45.00',
+      },
+      buyer_data_checklist: [],
+      timeline: [],
+      seller_deadline_at: null,
+      buyer_deadline_at: null,
+    });
+
+    expect(parsed.transfer_proof_url).toBe('https://storage.example/proofs/proof.pdf');
+  });
 });
 
 describe('SellerTransactionDetail', () => {

@@ -6,6 +6,7 @@ import { ReviewForm } from '../review-form.client';
 const mocks = vi.hoisted(() => ({
   mutateAsync: vi.fn(),
   toastSuccess: vi.fn(),
+  toastError: vi.fn(),
 }));
 
 vi.mock('@/features/users/hooks/use-create-review', () => ({
@@ -13,13 +14,14 @@ vi.mock('@/features/users/hooks/use-create-review', () => ({
 }));
 
 vi.mock('sonner', () => ({
-  toast: { success: mocks.toastSuccess },
+  toast: { success: mocks.toastSuccess, error: mocks.toastError },
 }));
 
 describe('ReviewForm', () => {
   beforeEach(() => {
     mocks.mutateAsync.mockReset();
     mocks.toastSuccess.mockReset();
+    mocks.toastError.mockReset();
   });
 
   it('submits a rating for final transactions', async () => {
@@ -45,6 +47,26 @@ describe('ReviewForm', () => {
       }),
     );
     expect(mocks.toastSuccess).toHaveBeenCalledWith('Valoracion guardada');
+  });
+
+  it('hides the form and shows a controlled message when review already exists', async () => {
+    const error = Object.assign(new Error('HTTP 409'), { status: 409 });
+    mocks.mutateAsync.mockRejectedValueOnce(error);
+    const user = userEvent.setup();
+
+    render(
+      <ReviewForm
+        transactionId="11111111-1111-4111-8111-111111111111"
+        status="RELEASED_TO_SELLER"
+      />,
+    );
+
+    await user.click(screen.getByRole('button', { name: /guardar valoracion/i }));
+
+    await waitFor(() =>
+      expect(mocks.toastError).toHaveBeenCalledWith('Ya habias valorado esta operacion'),
+    );
+    expect(screen.queryByRole('button', { name: /guardar valoracion/i })).not.toBeInTheDocument();
   });
 
   it('stays hidden until the transaction is reviewable', () => {

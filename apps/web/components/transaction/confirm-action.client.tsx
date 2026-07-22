@@ -23,7 +23,7 @@ export function ConfirmAction({
 }) {
   const t = useTranslations('buyer_actions');
   const confirm = useConfirmTransfer(transactionId);
-  const canConfirm = status === 'TRANSFER_SUBMITTED' || status === 'TRANSFER_IN_PROGRESS';
+  const canConfirm = status === 'TRANSFER_SUBMITTED';
 
   async function submit() {
     await confirm.mutateAsync();

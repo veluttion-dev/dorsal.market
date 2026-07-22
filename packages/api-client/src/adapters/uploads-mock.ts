@@ -6,4 +6,9 @@ export class UploadsMockAdapter implements UploadsPort {
   async createPresign(_req: PresignRequest): Promise<PresignResponse> {
     return { uploadUrl: 'about:blank', method: 'PUT', finalUrl: '' };
   }
+
+  async uploadPhoto(file: File) {
+    const seed = encodeURIComponent(file.name || 'dorsal');
+    return { photoUrl: `https://picsum.photos/seed/${seed}/1200/800` };
+  }
 }

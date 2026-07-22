@@ -13,6 +13,7 @@ describe('buildCognitoProviderConfig', () => {
       clientId: 'client-id',
       issuer: 'https://cognito-idp.eu-west-1.amazonaws.com/pool-id',
       client: { token_endpoint_auth_method: 'none' },
+      checks: ['pkce', 'nonce'],
     });
   });
 
@@ -27,6 +28,7 @@ describe('buildCognitoProviderConfig', () => {
       clientId: 'client-id',
       clientSecret: 'secret',
       issuer: 'https://cognito-idp.eu-west-1.amazonaws.com/pool-id',
+      checks: ['pkce', 'nonce'],
     });
   });
 });

@@ -1,6 +1,7 @@
 'use client';
 import { ConfirmAction } from '@/components/transaction/confirm-action.client';
 import { SellerProblemReport } from '@/components/transaction/seller-problem-report.client';
+import { SellerProofCard } from '@/components/transaction/seller-proof-card';
 import { TrackingTimeline } from '@/components/transaction/tracking-timeline.client';
 import { TransferActions } from '@/components/transaction/transfer-actions.client';
 import { useBuyerTransaction } from '@/features/transactions/hooks/use-buyer-transaction';
@@ -97,6 +98,7 @@ export default function TransactionTrackingPage({
           <TrackingTimeline events={tx.timeline} />
         </section>
         <aside className="space-y-5">
+          <SellerProofCard proofUrl={tx.transfer_proof_url} />
           {role === 'buyer' && (
             <>
               <ConfirmAction transactionId={tx.transaction_id} status={tx.status} />

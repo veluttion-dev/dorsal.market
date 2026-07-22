@@ -58,6 +58,13 @@ export function NavMobile({
           {session?.user ? (
             <>
               <SheetClose asChild>
+                <Link href="/perfil/notificaciones">
+                  <Button variant="ghost" className="w-full justify-start">
+                    {t('notifications')}
+                  </Button>
+                </Link>
+              </SheetClose>
+              <SheetClose asChild>
                 <Link href="/perfil">
                   <Button variant="secondary" className="w-full">
                     {session.user.name ?? t('profile')}

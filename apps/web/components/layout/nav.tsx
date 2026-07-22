@@ -1,6 +1,7 @@
 import { Button } from '@/components/ui/button';
 import { getTranslations } from 'next-intl/server';
 import Link from 'next/link';
+import { NotificationBell } from '../notifications/notification-bell.client';
 import { NavMobile } from './nav-mobile.client';
 import { SignOutButton } from './sign-out-button.client';
 import { ThemeToggle } from './theme-toggle';
@@ -37,6 +38,7 @@ export async function Nav({
           <ThemeToggle />
           {session?.user ? (
             <div className="flex items-center gap-2">
+              <NotificationBell />
               <Link href="/perfil">
                 <Button variant="secondary" size="sm">
                   {session.user.name ?? t('profile')}

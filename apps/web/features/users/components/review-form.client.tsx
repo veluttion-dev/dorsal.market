@@ -15,6 +15,15 @@ export function isReviewableStatus(status: TransactionStatus) {
   return REVIEWABLE_STATUSES.includes(status);
 }
 
+function isDuplicateReviewError(error: unknown) {
+  return (
+    typeof error === 'object' &&
+    error !== null &&
+    'status' in error &&
+    (error as { status?: unknown }).status === 409
+  );
+}
+
 export function ReviewForm({
   transactionId,
   status,
@@ -26,17 +35,28 @@ export function ReviewForm({
   const createReview = useCreateReview();
   const [rating, setRating] = useState(5);
   const [comment, setComment] = useState('');
+  const [reviewSubmitted, setReviewSubmitted] = useState(false);
 
-  if (!isReviewableStatus(status)) return null;
+  if (!isReviewableStatus(status) || reviewSubmitted) return null;
 
   async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    await createReview.mutateAsync({
-      transaction_id: transactionId,
-      rating,
-      comment: comment.trim() || undefined,
-    });
-    toast.success(t('saved_toast'));
+    try {
+      await createReview.mutateAsync({
+        transaction_id: transactionId,
+        rating,
+        comment: comment.trim() || undefined,
+      });
+      setReviewSubmitted(true);
+      toast.success(t('saved_toast'));
+    } catch (error) {
+      if (isDuplicateReviewError(error)) {
+        setReviewSubmitted(true);
+        toast.error(t('already_reviewed_toast'));
+        return;
+      }
+      throw error;
+    }
   }
 
   return (

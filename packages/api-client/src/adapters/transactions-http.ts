@@ -78,7 +78,10 @@ export class TransactionsHttpAdapter implements TransactionsPort {
     const fd = new FormData();
     fd.append('file', file);
     return TransactionActionResponse.parse(
-      await this.http.post(`api/v1/transactions/${id}/upload-proof`, { body: fd }),
+      await this.http.post(`api/v1/transactions/${id}/upload-proof`, {
+        body: fd,
+        headers: { 'Idempotency-Key': `upload-proof-${id}-${file.name}-${file.size}` },
+      }),
     );
   }
 

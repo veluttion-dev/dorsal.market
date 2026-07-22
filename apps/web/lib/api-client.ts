@@ -13,6 +13,7 @@ export function useApi() {
         baseUrl: process.env.NEXT_PUBLIC_BACKEND_API_URL as string,
         getUserId: () => user?.id ?? null,
         getAuthToken: () => sessionAuthToken(user, process.env.NEXT_PUBLIC_REAL_API_MODULES),
+        realModules: process.env.NEXT_PUBLIC_REAL_API_MODULES,
       }),
     [user],
   );

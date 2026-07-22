@@ -98,13 +98,53 @@ describe('TransactionsHttpAdapter', () => {
     expect(result.order_summary.race_name).toBe('Madrid');
   });
 
+  it('parses seller transaction detail when backend omits buyer profile whatsapp number', async () => {
+    const get = vi.fn(async () => ({
+      transaction_id: '11111111-1111-4111-8111-111111111111',
+      status: 'PAYMENT_RECEIVED',
+      lifecycle_state: 'PAYMENT_RECEIVED',
+      buyer_contact: {
+        buyer_id: '22222222-2222-4222-8222-222222222222',
+        full_name: 'Buyer Demo',
+        phone_number: '600000000',
+        whatsapp_number: null,
+        email: 'buyer@example.com',
+      },
+      buyer_profile: {
+        buyer_id: '22222222-2222-4222-8222-222222222222',
+        full_name: 'Buyer Demo',
+        dni: '88888888L',
+        phone_number: '600000000',
+        t_shirt_size: 'S',
+        estimated_time: null,
+        medical_info: null,
+        emergency_contact: null,
+      },
+      order_summary: {
+        dorsal_id: '55555555-5555-4555-8555-555555555555',
+        race_name: 'Madrid',
+        bib_number: '11',
+        amount_eur: '54.00',
+      },
+      timeline: [{ key: 'payment_held', label: 'Payment held', completed_at: null }],
+      seller_deadline_at: '2026-07-26T19:33:32.689335',
+      buyer_deadline_at: null,
+    }));
+    const adapter = new TransactionsHttpAdapter(createHttpStub({ get }));
+
+    const result = await adapter.getSellerTransaction('11111111-1111-4111-8111-111111111111');
+
+    expect(get).toHaveBeenCalledWith(
+      'api/v1/transactions/seller/11111111-1111-4111-8111-111111111111',
+    );
+    expect(result.buyer_profile?.whatsapp_number).toBeNull();
+  });
+
   it('confirms transfer and parses the backend action response', async () => {
     const post = vi.fn(async () => ({ processed: true }));
     const adapter = new TransactionsHttpAdapter(createHttpStub({ post }));
 
-    const result = await adapter.confirmTransfer(
-      '11111111-1111-4111-8111-111111111111',
-    );
+    const result = await adapter.confirmTransfer('11111111-1111-4111-8111-111111111111');
 
     expect(post).toHaveBeenCalledWith(
       'api/v1/transactions/11111111-1111-4111-8111-111111111111/confirm',
@@ -138,6 +178,24 @@ describe('TransactionsHttpAdapter', () => {
     expect(post).toHaveBeenCalledWith(
       'api/v1/transactions/11111111-1111-4111-8111-111111111111/proof-upload-url',
       { body: { content_type: 'image/png' } },
+    );
+  });
+
+  it('uploads proof multipart with an idempotency key', async () => {
+    const post = vi.fn(async () => ({ processed: true }));
+    const adapter = new TransactionsHttpAdapter(createHttpStub({ post }));
+    const file = new File(['proof-bytes'], 'proof.png', { type: 'image/png' });
+
+    await adapter.uploadProofMultipart('11111111-1111-4111-8111-111111111111', file);
+
+    expect(post).toHaveBeenCalledWith(
+      'api/v1/transactions/11111111-1111-4111-8111-111111111111/upload-proof',
+      {
+        body: expect.any(FormData),
+        headers: {
+          'Idempotency-Key': 'upload-proof-11111111-1111-4111-8111-111111111111-proof.png-11',
+        },
+      },
     );
   });
 

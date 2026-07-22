@@ -8,7 +8,8 @@
     "main_nav": "Menú de navegación principal",
     "sign_out": "Salir",
     "how_to_buy": "Cómo comprar",
-    "how_to_publish": "Cómo publicar"
+    "how_to_publish": "Cómo publicar",
+    "notifications": "Notificaciones"
   },
   "footer": {
     "tagline": "Compra y vende dorsales de carreras populares con pago en custodia. Hecho para corredores.",
@@ -104,7 +105,7 @@
     "charges_pending": "Pendiente de configurar",
     "mock_notice": "Modo local: Transaction esta mockeado, asi que Stripe no abrira una URL real.",
     "cta": "Configurar pagos",
-    "complete_banner": "Has vuelto de Stripe. Estamos verificando tu cuenta; en cuanto quede lista podras publicar.",
+    "complete_banner": "Has vuelto de Stripe. Si Stripe aun necesita datos, pulsa Configurar pagos para completar los pasos pendientes y poder publicar.",
     "refresh_banner": "El enlace de Stripe caduco. Pulsa \"Configurar pagos\" para reanudar."
   },
   "history": {
@@ -115,6 +116,17 @@
     "loading": "Cargando historial...",
     "load_error": "No se pudo cargar el historial.",
     "no_race_name": "Carrera sin nombre"
+  },
+  "notifications": {
+    "title": "Notificaciones",
+    "subtitle": "Avisos del flujo de compra y venta de tus dorsales.",
+    "nav_label": "Notificaciones",
+    "nav_label_unread": "Notificaciones: {count} sin leer",
+    "loading": "Cargando notificaciones...",
+    "load_error": "No se pudieron cargar las notificaciones.",
+    "empty": "No tienes notificaciones.",
+    "open_tracking": "Abrir seguimiento",
+    "mark_read": "Marcar como leida"
   },
   "tracking": {
     "role_buyer": "Compra",
@@ -156,6 +168,11 @@
     "title": "Acciones del comprador",
     "confirm": "Confirmar cambio",
     "confirmed_toast": "Cambio confirmado"
+  },
+  "seller_proof": {
+    "title": "Prueba del vendedor",
+    "description": "Revisa la prueba enviada antes de confirmar que has recibido el dorsal.",
+    "view": "Ver prueba"
   },
   "dispute": {
     "trigger": "Abrir disputa",
@@ -251,7 +268,8 @@
     "title": "Valorar operacion",
     "comment_label": "Comentario",
     "save": "Guardar valoracion",
-    "saved_toast": "Valoracion guardada"
+    "saved_toast": "Valoracion guardada",
+    "already_reviewed_toast": "Ya habias valorado esta operacion"
   },
   "profile": {
     "title": "Perfil",
@@ -264,6 +282,9 @@
     "payouts_title": "Cobros",
     "payouts_body": "Configura tu cuenta de cobros para poder publicar dorsales y recibir el pago cuando el comprador confirme el cambio.",
     "payouts_cta": "Configurar cobros",
+    "history_title": "Historial y seguimientos",
+    "history_body": "Revisa tus compras y ventas, entra al seguimiento de cada operacion y ejecuta las acciones pendientes.",
+    "history_cta": "Ver historial",
     "session_expired_title": "Tu sesion ha caducado",
     "session_expired_body": "Vuelve a iniciar sesion para cargar tu perfil con un token valido.",
     "session_expired_cta": "Volver a iniciar sesion",

@@ -54,6 +54,7 @@ function toBuyerDetail(tx: MockTransaction): BuyerTransactionDetail {
     transaction_id: tx.transaction_id,
     status: tx.status,
     lifecycle_state: tx.lifecycle_state,
+    transfer_proof_url: tx.proof_file_url,
     seller_contact: {
       seller_id: tx.seller_id,
       ...contact(tx.seller_id),
@@ -77,6 +78,7 @@ function toSellerDetail(tx: MockTransaction): SellerTransactionDetail {
     transaction_id: tx.transaction_id,
     status: tx.status,
     lifecycle_state: tx.lifecycle_state,
+    transfer_proof_url: tx.proof_file_url,
     buyer_contact: {
       buyer_id: tx.buyer_id,
       ...contact(tx.buyer_id),

@@ -10,5 +10,6 @@ export async function getServerApi() {
     baseUrl: env.BACKEND_API_URL,
     getUserId: () => session?.user?.id ?? null,
     getAuthToken: () => sessionAuthToken(session?.user, env.NEXT_PUBLIC_REAL_API_MODULES),
+    realModules: env.NEXT_PUBLIC_REAL_API_MODULES,
   });
 }
